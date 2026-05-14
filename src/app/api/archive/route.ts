@@ -7,13 +7,6 @@ import {
 import { isManager, resolveSessionUser } from '@/lib/auth/session';
 
 const SOURCE_FOLDERS: Record<ArchiveSource, ArchiveFolderKey[]> = {
-  service: [
-    'service-correspondence',
-    'service-maintenance',
-    'service-cleaning',
-    'service-purchase',
-    'service-other',
-  ],
   materials: [
     'material-consumable',
     'material-returnable',
@@ -51,10 +44,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     }
 
-    const source: ArchiveSource =
-      request.nextUrl.searchParams.get('source') === 'service'
-        ? 'service'
-        : 'materials';
+    const source: ArchiveSource = 'materials';
     const folder = resolveFolder(
       source,
       request.nextUrl.searchParams.get('folder')

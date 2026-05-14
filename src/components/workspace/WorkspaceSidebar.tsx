@@ -12,29 +12,16 @@ import {
 import { cn } from '@/lib/utils/cn';
 
 const ICONS: Record<string, string> = {
-  '/materials/dashboard': '▦',
-  '/materials/requests': '◫',
-  '/materials/inventory': '◩',
-  '/materials/returns': '↺',
-  '/materials/custody': '⌙',
-  '/materials/messages': '✉',
-  '/materials/users': '◉',
-  '/materials/reports': '▤',
-  '/materials/archive': '▣',
-  '/materials/audit-logs': '◎',
-  '/services/dashboard': '◧',
-  '/services/requests': '⌘',
-  '/services/maintenance': '🛠',
-  '/services/cleaning': '✦',
-  '/services/purchases': '🛒',
-  '/services/other': '◍',
-  '/services/approvals': '✓',
-  '/services/email-drafts': '↗',
-  '/services/messages': '✉',
-  '/services/users': '◉',
-  '/services/reports': '▤',
-  '/services/archive': '▣',
-  '/services/audit-logs': '◎',
+  '/materials/dashboard': 'D',
+  '/materials/requests': 'R',
+  '/materials/inventory': 'I',
+  '/materials/returns': 'B',
+  '/materials/custody': 'C',
+  '/materials/messages': 'M',
+  '/materials/users': 'U',
+  '/materials/reports': 'P',
+  '/materials/archive': 'A',
+  '/materials/audit-logs': 'L',
 };
 
 function isActive(pathname: string, href: string) {
@@ -83,7 +70,7 @@ export function WorkspaceSidebar({ workspace, role }: { workspace: WorkspaceKey;
                         className={cn('inline-flex h-10 w-10 items-center justify-center rounded-[14px] text-[16px] font-semibold', active ? 'bg-white/10 text-white' : 'bg-[#f4f8f8] text-[#2A6364]')}
                         aria-hidden="true"
                       >
-                        {ICONS[item.href] || '•'}
+                        {ICONS[item.href] || '*'}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{item.label}</span>
                     </Link>

@@ -125,7 +125,7 @@ function resolveItemLinkForRole(item: NormalizedNotification, role?: string | nu
   if (entityType === 'return' && item.entityId) return `/materials/returns?open=${item.entityId}`;
   if (entityType === 'custody' && item.entityId) return `/materials/custody?open=${item.entityId}`;
   if (entityType === 'inventory' && item.entityId) return `/materials/inventory?open=${item.entityId}`;
-  if (entityType === 'suggestion' && item.entityId) return appendOpenParam(canonicalizeAppHref('/services/requests', role), item.entityId);
+  if (entityType === 'suggestion') return canonicalizeAppHref('/materials/notifications', role);
 
   return canonicalizeAppHref('/notifications', role);
 }

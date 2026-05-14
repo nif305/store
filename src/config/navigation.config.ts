@@ -1,6 +1,6 @@
 export type AppRole = 'manager' | 'warehouse' | 'user';
 
-export type NavigationGroup = 'dashboard' | 'materials' | 'services' | 'messages' | 'governance';
+export type NavigationGroup = 'dashboard' | 'materials' | 'messages' | 'governance';
 
 export type NavigationItem = {
   href: string;
@@ -16,128 +16,84 @@ export type NavigationItem = {
     | 'messages'
     | 'users'
     | 'archive'
-    | 'maintenance'
-    | 'cleaning'
-    | 'purchases'
-    | 'reports'
-    | 'other'
-    | 'email';
+    | 'reports';
   roles?: AppRole[];
   group: NavigationGroup;
 };
 
 export const navigationItems: NavigationItem[] = [
   {
-    href: '/dashboard',
+    href: '/materials/dashboard',
     label: 'لوحة التحكم',
     icon: 'dashboard',
     roles: ['manager', 'warehouse', 'user'],
     group: 'dashboard',
   },
-
   {
-    href: '/inventory',
+    href: '/materials/inventory',
     label: 'مخزون المواد',
     icon: 'inventory',
     roles: ['manager', 'warehouse'],
     group: 'materials',
   },
   {
-    href: '/requests',
+    href: '/materials/requests',
     label: 'طلبات المواد',
     icon: 'requests',
-    roles: ['manager', 'warehouse'],
+    roles: ['manager', 'warehouse', 'user'],
     group: 'materials',
   },
   {
-    href: '/returns',
+    href: '/materials/returns',
     label: 'إرجاعات المواد',
     icon: 'returns',
-    roles: ['manager', 'warehouse'],
+    roles: ['manager', 'warehouse', 'user'],
     group: 'materials',
   },
   {
-    href: '/requests',
-    label: 'طلب مواد من المخزون',
-    icon: 'requests',
-    roles: ['user'],
-    group: 'materials',
-  },
-  {
-    href: '/custody',
-    label: 'عهدتي',
+    href: '/materials/custody',
+    label: 'العهد',
     icon: 'custody',
     roles: ['user'],
     group: 'materials',
   },
   {
-    href: '/returns',
-    label: 'طلبات الإرجاع',
-    icon: 'returns',
-    roles: ['user'],
-    group: 'materials',
-  },
-
-  {
-    href: '/service-approvals',
-    label: 'اعتماد طلبات الخدمات',
-    icon: 'maintenance',
-    roles: ['manager'],
-    group: 'services',
-  },
-  {
-    href: '/service-requests',
-    label: 'طلب خدمات',
-    icon: 'other',
-    roles: ['user'],
-    group: 'services',
-  },
-
-  {
-    href: '/messages',
+    href: '/materials/messages',
     label: 'المراسلات الداخلية',
     icon: 'messages',
     roles: ['manager', 'warehouse', 'user'],
     group: 'messages',
   },
   {
-    href: '/email-drafts',
-    label: 'مراسلات الخدمات الخارجية',
-    icon: 'email',
-    roles: ['manager'],
-    group: 'messages',
-  },
-  {
-    href: '/notifications',
+    href: '/materials/notifications',
     label: 'الإشعارات',
     icon: 'notifications',
     roles: ['warehouse', 'user'],
     group: 'messages',
   },
-
   {
-    href: '/reports',
+    href: '/materials/reports',
     label: 'التقارير',
     icon: 'reports',
     roles: ['manager'],
     group: 'governance',
   },
   {
-    href: '/archive',
+    href: '/materials/archive',
     label: 'الأرشيف',
     icon: 'archive',
     roles: ['manager'],
     group: 'governance',
   },
   {
-    href: '/audit-logs',
+    href: '/materials/audit-logs',
     label: 'سجل التدقيق',
     icon: 'audit',
     roles: ['manager'],
     group: 'governance',
   },
   {
-    href: '/users',
+    href: '/materials/users',
     label: 'المستخدمون',
     icon: 'users',
     roles: ['manager'],

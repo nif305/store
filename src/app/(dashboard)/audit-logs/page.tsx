@@ -53,7 +53,7 @@ export default function AuditLogsPage() {
   const [actionFilter, setActionFilter] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
-  const system = pathname?.startsWith('/services') ? 'services' : 'materials';
+  const system = 'materials';
 
   useEffect(() => {
     let mounted = true;
@@ -99,9 +99,7 @@ export default function AuditLogsPage() {
     decisions: rows.filter((row) => /approve|reject|issue|close|return|complete/i.test(row.action)).length,
   }), [rows, pagination.total]);
 
-  const entityOptions = system === 'services'
-    ? ['Suggestion', 'MaintenanceRequest', 'PurchaseRequest', 'EmailDraft', 'InternalMessage']
-    : ['Request', 'ReturnRequest', 'CustodyRecord', 'InventoryItem'];
+  const entityOptions = ['Request', 'ReturnRequest', 'CustodyRecord', 'InventoryItem'];
 
   function prettyDetails(value?: string | null) {
     if (!value) return '—';

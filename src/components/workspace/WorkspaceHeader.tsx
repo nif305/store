@@ -33,10 +33,10 @@ export function WorkspaceHeader({ workspace }: { workspace: WorkspaceKey }) {
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => router.push('/portal')}
+            onClick={() => router.push('/materials/dashboard')}
             className="inline-flex h-12 items-center rounded-2xl border border-[#dbe5e3] bg-[#f7f9f9] px-4 text-[14px] font-semibold text-[#27494a] transition hover:border-[#2A6364]/35 hover:bg-white"
           >
-            {t('common.chooseSystem')}
+            {t('workspace.materialsTitle')}
           </button>
 
           <div className="flex items-center gap-2 rounded-2xl border border-[#dbe5e3] bg-[#fbfcfc] px-3 py-2">

@@ -40,12 +40,8 @@ export function middleware(request: NextRequest) {
     '/audit-logs',
     '/custody',
     '/returns',
-    '/maintenance',
-    '/email-drafts',
     '/notifications',
     '/reports',
-    '/suggestions',
-    '/purchases',
     '/messages',
     '/archive',
   ];
@@ -91,7 +87,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/portal', request.url));
   }
 
-  const managerOnlyRoutes = ['/users', '/audit-logs', '/approvals', '/email-drafts'];
+  const managerOnlyRoutes = ['/users', '/audit-logs'];
 
   if (
     managerOnlyRoutes.some((route) => pathname.startsWith(route)) &&

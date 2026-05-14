@@ -71,9 +71,6 @@ async function resolveSessionUser(request: NextRequest) {
 
 function resolveSystemEntities(system?: string | null) {
   const normalized = String(system || '').toLowerCase();
-  if (normalized === 'services') {
-    return ['Suggestion', 'MaintenanceRequest', 'PurchaseRequest', 'EmailDraft', 'InternalMessage'];
-  }
   if (normalized === 'materials') {
     return ['Request', 'ReturnRequest', 'CustodyRecord', 'InventoryItem'];
   }

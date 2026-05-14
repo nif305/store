@@ -393,10 +393,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'رقم الإشعار مطلوب' }, { status: 400 });
     }
 
-    const data = await AlertService.createManagerRequestFromNotification({
-      notificationId,
-      actorId: sessionUser.id,
-    });
+    const data = null;
 
     return NextResponse.json({ data }, { headers: NO_STORE_HEADERS });
   } catch (error: any) {
