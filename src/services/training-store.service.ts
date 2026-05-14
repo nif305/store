@@ -38,16 +38,95 @@ const ON_DEMAND_ITEMS = [
 
 const PER_TRAINEE_KEYWORDS = ['قلم', 'أقلام', 'نوت', 'دفتر', 'دفاتر', 'فولدر', 'ملف', 'شهادة', 'شهادات', 'غلاف', 'أغلفة'];
 
+function escapeSvg(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function visualKind(title: string, category: string) {
+  const text = `${title} ${category}`;
+  if (/لابتوب|حاسب|كمبيوتر/i.test(text)) return 'laptop';
+  if (/ايباد|آيباد|ipad|تابلت/i.test(text)) return 'tablet';
+  if (/عرض|بروجكتور|projector/i.test(text)) return 'projector';
+  if (/ميكروفون|مايك/i.test(text)) return 'microphone';
+  if (/مكبر|سماعة|speaker/i.test(text)) return 'speaker';
+  if (/HDMI|USB|محول|وصلة|شاحن/i.test(text)) return 'cable';
+  if (/قلم|أقلام|سبورة/i.test(text)) return 'pens';
+  if (/نوت|دفتر|دفاتر/i.test(text)) return 'notebook';
+  if (/فولدر|ملف|حقيبة/i.test(text)) return 'folder';
+  if (/شهادة|شهادات|غلاف|أغلفة/i.test(text)) return 'certificate';
+  if (/لوحة|فليب|كانبان|حامل/i.test(text)) return 'board';
+  if (/إسعاف|اسعاف|طوارئ/i.test(text)) return 'firstAid';
+  if (/رياضي|بدني|كرة/i.test(text)) return 'sport';
+  return 'training';
+}
+
+function productIcon(kind: string) {
+  const common = `filter="url(#softShadow)"`;
+  switch (kind) {
+    case 'laptop':
+      return `<g ${common}><rect x="210" y="118" width="220" height="136" rx="18" fill="url(#device)" stroke="#123f45" stroke-width="8"/><rect x="232" y="140" width="176" height="88" rx="10" fill="#eaf5f3"/><path d="M178 266h284l34 38H144z" fill="#d6b879"/><path d="M240 282h160" stroke="#123f45" stroke-width="10" stroke-linecap="round"/></g>`;
+    case 'tablet':
+      return `<g ${common}><rect x="232" y="94" width="176" height="222" rx="28" fill="url(#device)" stroke="#123f45" stroke-width="8"/><rect x="254" y="124" width="132" height="154" rx="12" fill="#eaf5f3"/><circle cx="320" cy="296" r="8" fill="#d6b879"/></g>`;
+    case 'projector':
+      return `<g ${common}><rect x="205" y="168" width="230" height="118" rx="24" fill="url(#device)"/><circle cx="274" cy="226" r="38" fill="#eaf5f3" stroke="#d6b879" stroke-width="10"/><circle cx="274" cy="226" r="18" fill="#123f45"/><path d="M438 200l72-32v116l-72-32z" fill="#d6b879"/><path d="M244 300h152" stroke="#123f45" stroke-width="12" stroke-linecap="round"/></g>`;
+    case 'microphone':
+      return `<g ${common}><rect x="280" y="92" width="80" height="158" rx="40" fill="url(#device)"/><path d="M246 204c0 58 36 94 74 94s74-36 74-94" fill="none" stroke="#d6b879" stroke-width="16" stroke-linecap="round"/><path d="M320 298v42M274 340h92" stroke="#123f45" stroke-width="16" stroke-linecap="round"/><path d="M296 134h48M296 170h48M296 206h48" stroke="#eaf5f3" stroke-width="8" stroke-linecap="round"/></g>`;
+    case 'speaker':
+      return `<g ${common}><rect x="236" y="110" width="168" height="210" rx="40" fill="url(#device)"/><circle cx="320" cy="176" r="42" fill="#eaf5f3" stroke="#d6b879" stroke-width="12"/><circle cx="320" cy="264" r="34" fill="#123f45" stroke="#eaf5f3" stroke-width="10"/></g>`;
+    case 'cable':
+      return `<g ${common}><path d="M214 142c-70 74 46 82 12 146-24 45-96 12-70-42" fill="none" stroke="#123f45" stroke-width="24" stroke-linecap="round"/><path d="M334 142c88 22 94 122 14 154" fill="none" stroke="#d6b879" stroke-width="24" stroke-linecap="round"/><rect x="352" y="112" width="88" height="58" rx="14" fill="#123f45"/><rect x="412" y="128" width="44" height="26" rx="6" fill="#d6b879"/><rect x="274" y="268" width="92" height="54" rx="14" fill="#123f45"/></g>`;
+    case 'pens':
+      return `<g ${common}><rect x="228" y="94" width="34" height="214" rx="17" fill="#123f45" transform="rotate(-14 245 201)"/><rect x="304" y="88" width="34" height="220" rx="17" fill="#d6b879" transform="rotate(8 321 198)"/><rect x="378" y="104" width="34" height="204" rx="17" fill="#2A6364" transform="rotate(18 395 206)"/><path d="M204 314h232" stroke="#123f45" stroke-width="14" stroke-linecap="round"/></g>`;
+    case 'notebook':
+      return `<g ${common}><rect x="226" y="102" width="198" height="236" rx="22" fill="#fff7e8" stroke="#123f45" stroke-width="8"/><path d="M266 102v236" stroke="#d6b879" stroke-width="14"/><path d="M298 158h82M298 204h82M298 250h82" stroke="#123f45" stroke-width="9" stroke-linecap="round"/></g>`;
+    case 'folder':
+      return `<g ${common}><path d="M182 144h132l28 34h116v142H182z" fill="#d6b879"/><path d="M182 178h276v142H182z" fill="#123f45"/><path d="M214 218h196" stroke="#eaf5f3" stroke-width="14" stroke-linecap="round"/></g>`;
+    case 'certificate':
+      return `<g ${common}><rect x="210" y="102" width="220" height="236" rx="20" fill="#fffaf0" stroke="#d6b879" stroke-width="10"/><path d="M258 168h124M258 212h124M258 256h78" stroke="#123f45" stroke-width="10" stroke-linecap="round"/><circle cx="376" cy="276" r="28" fill="#7c1e3e"/><path d="M360 306l-16 38 34-18 34 18-16-38" fill="#7c1e3e"/></g>`;
+    case 'board':
+      return `<g ${common}><rect x="188" y="104" width="264" height="172" rx="18" fill="#eaf5f3" stroke="#123f45" stroke-width="12"/><path d="M232 160h176M232 204h124" stroke="#2A6364" stroke-width="12" stroke-linecap="round"/><path d="M320 276v62M240 338h160" stroke="#d6b879" stroke-width="14" stroke-linecap="round"/></g>`;
+    case 'firstAid':
+      return `<g ${common}><rect x="218" y="122" width="204" height="182" rx="28" fill="#fff" stroke="#123f45" stroke-width="10"/><path d="M286 122v-30h68v30" fill="none" stroke="#123f45" stroke-width="12"/><path d="M320 172v82M279 213h82" stroke="#7c1e3e" stroke-width="24" stroke-linecap="round"/></g>`;
+    case 'sport':
+      return `<g ${common}><circle cx="320" cy="210" r="92" fill="#eaf5f3" stroke="#123f45" stroke-width="12"/><path d="M250 170c40 18 94 18 140 0M250 250c40-18 94-18 140 0M320 118c-30 54-30 130 0 184M320 118c30 54 30 130 0 184" stroke="#d6b879" stroke-width="10" fill="none" stroke-linecap="round"/></g>`;
+    default:
+      return `<g ${common}><rect x="214" y="116" width="212" height="172" rx="28" fill="url(#device)"/><path d="M254 164h132M254 208h92M254 252h118" stroke="#eaf5f3" stroke-width="14" stroke-linecap="round"/><path d="M230 306h180" stroke="#d6b879" stroke-width="16" stroke-linecap="round"/></g>`;
+  }
+}
+
 function svgImage(title: string, category: string) {
-  const palette = category.includes('تقنية') || category.includes('حاسب')
-    ? ['#163e44', '#d0b284']
-    : category.includes('مكتبية')
-      ? ['#2A6364', '#8fb4ae']
-      : category.includes('طباعة') || category.includes('شهاد')
-        ? ['#7c1e3e', '#d0b284']
-        : ['#2A6364', '#f2efe6'];
-  const shortTitle = title.slice(0, 34);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400"><rect width="640" height="400" fill="${palette[1]}"/><rect x="32" y="32" width="576" height="336" rx="28" fill="#fff" opacity=".72"/><circle cx="530" cy="86" r="54" fill="${palette[0]}" opacity=".16"/><circle cx="112" cy="312" r="70" fill="${palette[0]}" opacity=".10"/><path d="M180 122h280v156H180z" rx="22" fill="${palette[0]}" opacity=".92"/><path d="M222 164h196M222 204h150M222 244h106" stroke="#fff" stroke-width="16" stroke-linecap="round" opacity=".72"/><text x="320" y="342" text-anchor="middle" font-family="Arial, Tahoma, sans-serif" font-size="34" font-weight="700" fill="${palette[0]}">${shortTitle}</text></svg>`;
+  const isTech = category.includes('تقنية') || category.includes('حاسب') || /لابتوب|ايباد|HDMI|USB|ميكروفون|مكبر|عرض/i.test(title);
+  const isCertificate = /شهادة|غلاف|طباعة/i.test(`${title} ${category}`);
+  const primary = isTech ? '#123f45' : isCertificate ? '#7c1e3e' : '#2A6364';
+  const accent = '#d6b879';
+  const safeTitle = escapeSvg(title.length > 34 ? `${title.slice(0, 32)}…` : title);
+  const kind = visualKind(title, category);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400" direction="rtl">
+    <defs>
+      <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0" stop-color="#f8fbfb"/>
+        <stop offset="1" stop-color="#eef4f3"/>
+      </linearGradient>
+      <linearGradient id="device" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0" stop-color="${primary}"/>
+        <stop offset="1" stop-color="#3f7473"/>
+      </linearGradient>
+      <filter id="softShadow" x="-30%" y="-30%" width="160%" height="170%">
+        <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#163e44" flood-opacity=".20"/>
+      </filter>
+    </defs>
+    <rect width="640" height="400" rx="0" fill="url(#bg)"/>
+    <circle cx="92" cy="84" r="76" fill="${accent}" opacity=".14"/>
+    <circle cx="548" cy="314" r="98" fill="${primary}" opacity=".09"/>
+    <rect x="46" y="34" width="548" height="300" rx="34" fill="#fff" opacity=".78"/>
+    <ellipse cx="320" cy="322" rx="162" ry="24" fill="#163e44" opacity=".08"/>
+    ${productIcon(kind)}
+    <text x="320" y="365" text-anchor="middle" font-family="Cairo, Arial, Tahoma, sans-serif" font-size="30" font-weight="800" fill="${primary}">${safeTitle}</text>
+  </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
