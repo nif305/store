@@ -45,7 +45,7 @@ export function WorkspaceShell({ workspace, children }: { workspace: WorkspaceKe
       </a>
       <div className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-4 px-4 py-4 lg:flex-row lg:items-start lg:gap-5 lg:px-5 lg:py-5">
         <div className="order-1 w-full lg:order-1 lg:sticky lg:top-4 lg:w-[300px] lg:flex-none">
-          <WorkspaceSidebar workspace={workspace} role={role} />
+          <WorkspaceSidebar workspace={workspace} role={role} canManageTrainerNeeds={!!user.canManageTrainerNeeds} />
         </div>
 
         <main id="main-content" tabIndex={-1} className="order-2 min-w-0 flex-1 outline-none lg:order-2" aria-label={getWorkspaceTitle(workspace, language)}>

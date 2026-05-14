@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
         createdAt: user.createdAt.toISOString(),
         lastLoginAt: null,
         mustChangePassword: false,
+        canManageTrainerNeeds: !!(user as any).canManageTrainerNeeds,
         undertaking: {
           accepted: !!user.undertaking?.accepted,
           acceptedAt: user.undertaking?.acceptedAt

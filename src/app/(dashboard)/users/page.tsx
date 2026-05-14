@@ -27,6 +27,7 @@ type UserRow = {
   preferredLanguage: AppLanguage;
   status: UserStatus;
   createdAt?: string | null;
+  canManageTrainerNeeds?: boolean;
 };
 
 type FormState = {
@@ -37,6 +38,7 @@ type FormState = {
   operationalProject: string;
   hasManagerRole: boolean;
   hasWarehouseRole: boolean;
+  canManageTrainerNeeds: boolean;
   preferredLanguage: AppLanguage;
   status: UserStatus;
   password: string;
@@ -67,6 +69,7 @@ const emptyForm: FormState = {
   operationalProject: '',
   hasManagerRole: false,
   hasWarehouseRole: false,
+  canManageTrainerNeeds: false,
   preferredLanguage: 'ar',
   status: 'active',
   password: '',
@@ -193,6 +196,7 @@ function normalizeUser(row: any): UserRow {
     preferredLanguage: normalizeLanguage(row?.preferredLanguage),
     status: row?.status === 'disabled' ? 'disabled' : 'active',
     createdAt: row?.createdAt ?? null,
+    canManageTrainerNeeds: !!row?.canManageTrainerNeeds,
   };
 }
 
@@ -340,6 +344,7 @@ export default function UsersPage() {
       operationalProject: row.operationalProject || row.department || '',
       hasManagerRole: row.roles.includes('manager'),
       hasWarehouseRole: row.roles.includes('warehouse'),
+      canManageTrainerNeeds: !!row.canManageTrainerNeeds,
       preferredLanguage: row.preferredLanguage || 'ar',
       status: row.status,
       password: '',
@@ -372,7 +377,7 @@ export default function UsersPage() {
       if (form.hasWarehouseRole) roles.push('warehouse');
       if (form.hasManagerRole) roles.push('manager');
 
-      const payload: Record<string, string | string[]> = {
+      const payload: Record<string, string | string[] | boolean> = {
         fullName: form.fullName.trim(),
         email: form.email.trim(),
         mobile: form.mobile.trim(),
@@ -381,6 +386,7 @@ export default function UsersPage() {
         preferredLanguage: form.preferredLanguage,
         status: form.status,
         roles,
+        canManageTrainerNeeds: form.canManageTrainerNeeds,
       };
 
       if (form.password.trim()) {
@@ -878,6 +884,23 @@ export default function UsersPage() {
                       <div className="text-sm font-bold text-[#152625]">مسؤول مخزن</div>
                       <div className="mt-1 text-xs leading-6 text-[#61706f]">
                         يضيف صلاحيات الصرف والاستلام مع بقاء صلاحية الموظف.
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={form.canManageTrainerNeeds}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, canManageTrainerNeeds: e.target.checked }))
+                      }
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#016564] focus:ring-[#016564]"
+                    />
+                    <div>
+                      <div className="text-sm font-bold text-[#152625]">إدارة احتياجات المدربين</div>
+                      <div className="mt-1 text-xs leading-6 text-[#61706f]">
+                        تظهر له صفحة احتياجات المدربين ويتابع طلبات مساعد تجهيز الدورة دون منحه صلاحية مدير أو مخزن.
                       </div>
                     </div>
                   </label>

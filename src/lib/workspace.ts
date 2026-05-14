@@ -64,7 +64,8 @@ function getSharedMessagesItem(_workspace: WorkspaceKey, language: AppLanguage):
 export function getWorkspaceGroups(
   workspace: WorkspaceKey,
   role: AppRole,
-  language: AppLanguage = 'ar'
+  language: AppLanguage = 'ar',
+  options: { canManageTrainerNeeds?: boolean } = {}
 ): WorkspaceNavGroup[] {
   const systemItems: WorkspaceNavItem[] = [];
 
@@ -105,9 +106,23 @@ export function getWorkspaceGroups(
             label: label(language, role === 'user' ? 'workspace.materialsRequestUser' : 'workspace.materialsRequests'),
             roles: ['manager', 'warehouse', 'user'],
           },
+          ...(role === 'manager' || role === 'warehouse' || options.canManageTrainerNeeds
+            ? [
+                {
+                  href: '/materials/trainer-needs',
+                  label: 'احتياجات المدربين',
+                  roles: ['manager', 'warehouse', 'user'] as AppRole[],
+                },
+              ]
+            : []),
           {
             href: '/materials/inventory',
             label: label(language, 'workspace.inventory'),
+            roles: ['manager', 'warehouse'],
+          },
+          {
+            href: '/materials/store-admin',
+            label: 'إدارة المتجر',
             roles: ['manager', 'warehouse'],
           },
           {

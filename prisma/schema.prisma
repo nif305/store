@@ -18,6 +18,7 @@ model User {
   preferredLanguage String           @default("ar")
   passwordHash     String
   roles            Role[]             @default([USER])
+  canManageTrainerNeeds Boolean       @default(false)
   status           Status             @default(PENDING)
   avatar           String?
   createdAt        DateTime           @default(now())
@@ -30,6 +31,8 @@ model User {
   sentMessages     InternalMessage[]  @relation("SentMessages")
   receivedMessages InternalMessage[]  @relation("ReceivedMessages")
   returnRequests   ReturnRequest[]    @relation("RequestedReturns")
+  assignedTrainerNeeds TrainerNeed[]   @relation("AssignedTrainerNeeds")
+  trainerNeedReservations StoreReservation[]
 
   @@map("users")
 }
@@ -87,6 +90,9 @@ model InventoryItem {
   requestItems           RequestItem[]
   custodyRecords         CustodyRecord[]
   maintenanceRequests    MaintenanceRequest[]
+  storeCatalogItems      StoreCatalogItem[]
+  trainerNeedItems       TrainerNeedItem[]
+  storeReservations      StoreReservation[]
 
   @@index([code])
   @@index([name])
@@ -123,6 +129,7 @@ model Request {
   processedById   String?
   items           RequestItem[]
   custodyRecords  CustodyRecord[]
+  trainerNeeds    TrainerNeed[]
 
   @@index([status])
   @@map("requests")
@@ -384,4 +391,182 @@ model InternalMessage {
 
   @@index([receiverId, isRead])
   @@map("internal_messages")
+}
+
+model StoreCatalogItem {
+  id              String              @id @default(cuid())
+  inventoryItemId String?
+  inventoryItem   InventoryItem?      @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  title           String
+  description     String?
+  category        String
+  imageUrl        String?
+  isVisible       Boolean             @default(true)
+  isOnDemand      Boolean             @default(false)
+  onDemandNote    String?
+  sortOrder       Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  trainerNeedItems TrainerNeedItem[]
+  bundleItems      StoreBundleItem[]
+  alternativesFrom StoreItemAlternative[] @relation("AlternativeSource")
+  alternativesTo   StoreItemAlternative[] @relation("AlternativeTarget")
+
+  @@index([inventoryItemId])
+  @@index([category])
+  @@index([isVisible])
+  @@map("store_catalog_items")
+}
+
+model StoreItemAlternative {
+  id            String           @id @default(cuid())
+  sourceItemId  String
+  sourceItem    StoreCatalogItem @relation("AlternativeSource", fields: [sourceItemId], references: [id], onDelete: Cascade)
+  alternativeId String
+  alternative   StoreCatalogItem @relation("AlternativeTarget", fields: [alternativeId], references: [id], onDelete: Cascade)
+  note          String?
+  requiresTrainerApproval Boolean @default(false)
+  createdAt     DateTime         @default(now())
+
+  @@unique([sourceItemId, alternativeId])
+  @@index([alternativeId])
+  @@map("store_item_alternatives")
+}
+
+model StoreBundle {
+  id          String            @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String?
+  isVisible   Boolean           @default(true)
+  sortOrder   Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  items       StoreBundleItem[]
+
+  @@index([isVisible])
+  @@map("store_bundles")
+}
+
+model StoreBundleItem {
+  id            String           @id @default(cuid())
+  bundleId      String
+  bundle        StoreBundle      @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  catalogItemId String
+  catalogItem   StoreCatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  quantity      Int              @default(1)
+
+  @@unique([bundleId, catalogItemId])
+  @@index([catalogItemId])
+  @@map("store_bundle_items")
+}
+
+model TrainerNeed {
+  id             String            @id @default(cuid())
+  code           String            @unique
+  trainerName    String
+  courseName     String
+  traineeCount   Int
+  startDate      DateTime
+  status         TrainerNeedStatus @default(NEW)
+  readinessScore Int               @default(0)
+  assignedToId   String?
+  assignedTo     User?             @relation("AssignedTrainerNeeds", fields: [assignedToId], references: [id], onDelete: SetNull)
+  decisionNote   String?
+  linkedRequestId String?
+  linkedRequest   Request?         @relation(fields: [linkedRequestId], references: [id], onDelete: SetNull)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  items          TrainerNeedItem[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([startDate])
+  @@map("trainer_needs")
+}
+
+model TrainerNeedItem {
+  id                    String                 @id @default(cuid())
+  needId                String
+  need                  TrainerNeed            @relation(fields: [needId], references: [id], onDelete: Cascade)
+  catalogItemId          String?
+  catalogItem            StoreCatalogItem?      @relation(fields: [catalogItemId], references: [id], onDelete: SetNull)
+  inventoryItemId        String?
+  inventoryItem          InventoryItem?         @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  title                  String
+  requestedQty           Int
+  availableAtSubmission  Int                    @default(0)
+  reservedQty            Int                    @default(0)
+  shortageQty            Int                    @default(0)
+  approvedQty            Int                    @default(0)
+  status                 TrainerNeedItemStatus  @default(REQUESTED)
+  handlingMode           TrainerNeedHandlingMode?
+  coordinatorNote        String?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  reservations           StoreReservation[]
+
+  @@index([needId])
+  @@index([catalogItemId])
+  @@index([inventoryItemId])
+  @@index([status])
+  @@map("trainer_need_items")
+}
+
+model StoreReservation {
+  id             String                 @id @default(cuid())
+  needItemId     String
+  needItem       TrainerNeedItem        @relation(fields: [needItemId], references: [id], onDelete: Cascade)
+  inventoryItemId String
+  inventoryItem   InventoryItem         @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  quantity        Int
+  status          StoreReservationStatus @default(ACTIVE)
+  createdById     String?
+  createdBy       User?                  @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt       DateTime               @default(now())
+  releasedAt      DateTime?
+
+  @@index([inventoryItemId, status])
+  @@index([needItemId])
+  @@map("store_reservations")
+}
+
+enum TrainerNeedStatus {
+  NEW
+  IN_REVIEW
+  ASSIGNED
+  PLAN_PROPOSED
+  RESERVED_AVAILABLE
+  SHORTAGE_IN_PROGRESS
+  READY_TO_REQUEST
+  CONVERTED_TO_REQUEST
+  COMPLETED
+  CANCELLED
+}
+
+enum TrainerNeedItemStatus {
+  REQUESTED
+  AVAILABLE
+  RESERVED
+  SHORTAGE
+  ALTERNATIVE_PROPOSED
+  ON_DEMAND
+  CANCELLED
+  CONVERTED
+}
+
+enum TrainerNeedHandlingMode {
+  RESERVE_FROM_STOCK
+  USE_ALTERNATIVE
+  WAIT_FOR_STOCK
+  INTERNAL_SOURCE
+  TRY_TO_PROVIDE
+  CANCEL_ITEM
+}
+
+enum StoreReservationStatus {
+  ACTIVE
+  RELEASED
+  CONVERTED
+  CANCELLED
 }

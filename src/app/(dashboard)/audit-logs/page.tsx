@@ -123,7 +123,7 @@ export default function AuditLogsPage() {
     <div className="space-y-4 sm:space-y-5">
       <section className="rounded-[24px] border border-[#d6d7d4] bg-white px-4 py-4 shadow-sm sm:rounded-[28px] sm:px-5 sm:py-5">
         <div className="space-y-2">
-          <h1 className="text-[24px] font-extrabold leading-[1.25] text-[#016564] sm:text-[30px]">{system === 'services' ? 'سجل تدقيق الخدمات' : 'سجل تدقيق المواد'}</h1>
+          <h1 className="text-[24px] font-extrabold leading-[1.25] text-[#016564] sm:text-[30px]">سجل تدقيق المواد</h1>
           <p className="text-[13px] leading-7 text-[#61706f] sm:text-sm">سجل تدقيق محسّن مع تصفية حسب النظام والزمن والكيان والإجراء، لعرض السجلات الصحيحة فقط دون ضوضاء.</p>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">

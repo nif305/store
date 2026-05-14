@@ -77,6 +77,7 @@ function mapUser(user: any) {
     createdAt: user.createdAt?.toISOString?.() || null,
     lastLoginAt: null,
     mustChangePassword: false,
+    canManageTrainerNeeds: !!user.canManageTrainerNeeds,
   };
 }
 
@@ -201,6 +202,7 @@ export async function POST(request: NextRequest) {
     const preferredLanguage = normalizeLanguage(body?.preferredLanguage);
     const password = normalizeText(body?.password);
     const roles = normalizeRoles(body?.roles ?? body?.role ?? 'user');
+    const canManageTrainerNeeds = !!body?.canManageTrainerNeeds;
 
     if (!fullName || !email || !mobile || !password) {
       return NextResponse.json({ error: 'البيانات المطلوبة غير مكتملة' }, { status: 400 });
@@ -225,6 +227,7 @@ export async function POST(request: NextRequest) {
         preferredLanguage,
         passwordHash: hashPassword(password),
         roles,
+        canManageTrainerNeeds,
         status: 'ACTIVE',
       },
       include: {

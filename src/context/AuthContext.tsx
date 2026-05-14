@@ -31,6 +31,7 @@ export type AppUser = {
   createdAt?: string | null;
   lastLoginAt?: string | null;
   mustChangePassword?: boolean;
+  canManageTrainerNeeds?: boolean;
 };
 
 type LoginResponse = {
@@ -129,6 +130,7 @@ function normalizeUser(user: any): AppUser {
     createdAt: user?.createdAt || null,
     lastLoginAt: user?.lastLoginAt || null,
     mustChangePassword: !!user?.mustChangePassword,
+    canManageTrainerNeeds: !!user?.canManageTrainerNeeds,
   };
 }
 

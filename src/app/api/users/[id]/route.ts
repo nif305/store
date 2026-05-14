@@ -60,6 +60,7 @@ function mapUser(user: any) {
     createdAt: user.createdAt?.toISOString?.() || null,
     lastLoginAt: null,
     mustChangePassword: false,
+    canManageTrainerNeeds: !!user.canManageTrainerNeeds,
   };
 }
 
@@ -81,11 +82,15 @@ async function updateUserHandler(request: NextRequest, context: { params: Promis
     const operationalProject = normalizeText(body?.operationalProject);
     const password = normalizeText(body?.password);
     const status = normalizeText(body?.status).toLowerCase();
-
     const currentUser = await prisma.user.findUnique({ where: { id }, include: { undertaking: true } });
     if (!currentUser) {
       return NextResponse.json({ error: 'المستخدم غير موجود' }, { status: 404 });
     }
+
+    const canManageTrainerNeeds =
+      typeof body?.canManageTrainerNeeds === 'boolean'
+        ? body.canManageTrainerNeeds
+        : currentUser.canManageTrainerNeeds;
 
     const preferredLanguage = body?.preferredLanguage
       ? normalizeLanguage(body.preferredLanguage)
@@ -111,6 +116,7 @@ async function updateUserHandler(request: NextRequest, context: { params: Promis
         preferredLanguage,
         passwordHash: password ? hashPassword(password) : currentUser.passwordHash,
         roles: requestedRoles,
+        canManageTrainerNeeds,
         status: status ? toPrismaStatus(status) : currentUser.status,
       },
       include: { undertaking: true },

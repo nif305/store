@@ -14,7 +14,9 @@ import { cn } from '@/lib/utils/cn';
 const ICONS: Record<string, string> = {
   '/materials/dashboard': 'D',
   '/materials/requests': 'R',
+  '/materials/trainer-needs': 'T',
   '/materials/inventory': 'I',
+  '/materials/store-admin': 'S',
   '/materials/returns': 'B',
   '/materials/custody': 'C',
   '/materials/messages': 'M',
@@ -28,10 +30,18 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function WorkspaceSidebar({ workspace, role }: { workspace: WorkspaceKey; role: AppRole }) {
+export function WorkspaceSidebar({
+  workspace,
+  role,
+  canManageTrainerNeeds = false,
+}: {
+  workspace: WorkspaceKey;
+  role: AppRole;
+  canManageTrainerNeeds?: boolean;
+}) {
   const pathname = usePathname();
   const { t, language } = useI18n();
-  const groups = getWorkspaceGroups(workspace, role, language);
+  const groups = getWorkspaceGroups(workspace, role, language, { canManageTrainerNeeds });
 
   return (
     <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden border-b border-[#dce6e3] bg-white lg:min-h-screen lg:w-[300px] lg:border-b-0 lg:border-r">

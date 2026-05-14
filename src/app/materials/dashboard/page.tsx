@@ -233,6 +233,27 @@ export default function MaterialsDashboardPage() {
 
   return (
     <div className="space-y-5">
+      <section className="rounded-[8px] border border-[#dce6e3] bg-white p-5 shadow-[0_16px_34px_-32px_rgba(15,23,42,0.2)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="text-[12px] font-bold text-[#2A6364]">رابط المدربين</div>
+            <h2 className="mt-1 text-[22px] font-extrabold text-[#223738]">مساعد تجهيز الدورة</h2>
+            <p className="mt-2 max-w-[760px] text-[13px] leading-7 text-[#70807e]">
+              متجر تشغيلي لاختيار مستلزمات التدريب، ثم تنتقل الاحتياجات لقسم احتياجات المدربين للحجز الذكي والتحويل إلى طلب مواد.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href="/training-kit" target="_blank" className="rounded-[8px] bg-[#2A6364] px-5 py-3 text-[14px] font-extrabold text-white">
+              فتح مساعد تجهيز الدورة
+            </a>
+            {user?.role === 'manager' || user?.role === 'warehouse' || user?.canManageTrainerNeeds ? (
+              <a href="/materials/trainer-needs" className="rounded-[8px] border border-[#2A6364] px-5 py-3 text-[14px] font-extrabold text-[#2A6364]">
+                احتياجات المدربين
+              </a>
+            ) : null}
+          </div>
+        </div>
+      </section>
       {isEmployee ? (
         <section className="rounded-[26px] border border-white/80 bg-white p-5 shadow-[0_18px_38px_-34px_rgba(15,23,42,0.2)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">

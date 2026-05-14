@@ -10,6 +10,7 @@ export type SessionUser = {
   email: string;
   employeeId: string;
   fullName: string;
+  canManageTrainerNeeds: boolean;
 };
 
 function normalizeRole(value: unknown): Role {
@@ -70,6 +71,7 @@ export async function resolveSessionUser(request: NextRequest): Promise<SessionU
         employeeId: true,
         status: true,
         roles: true,
+        canManageTrainerNeeds: true,
       },
     });
   }
@@ -90,6 +92,7 @@ export async function resolveSessionUser(request: NextRequest): Promise<SessionU
         employeeId: true,
         status: true,
         roles: true,
+        canManageTrainerNeeds: true,
       },
     });
   }
@@ -105,6 +108,7 @@ export async function resolveSessionUser(request: NextRequest): Promise<SessionU
         employeeId: true,
         status: true,
         roles: true,
+        canManageTrainerNeeds: true,
       },
     });
   }
@@ -149,6 +153,7 @@ export async function resolveSessionUser(request: NextRequest): Promise<SessionU
     email: user.email || cookieEmail,
     employeeId: user.employeeId || cookieEmployeeId,
     fullName: user.fullName || cookieName,
+    canManageTrainerNeeds: !!user.canManageTrainerNeeds,
   };
 }
 

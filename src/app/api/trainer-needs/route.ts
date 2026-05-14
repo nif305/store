@@ -1,0 +1,21 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { resolveSessionUser } from '@/lib/auth/session';
+import {
+  canManageTrainerNeeds,
+  listTrainerNeedAssignees,
+  listTrainerNeeds,
+} from '@/services/training-store.service';
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await resolveSessionUser(request);
+    if (!canManageTrainerNeeds(session)) {
+      return NextResponse.json({ error: 'غير مصرح بالاطلاع على احتياجات المدربين' }, { status: 403 });
+    }
+
+    const [needs, assignees] = await Promise.all([listTrainerNeeds(), listTrainerNeedAssignees()]);
+    return NextResponse.json({ data: needs, assignees });
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message || 'تعذر جلب احتياجات المدربين' }, { status: 401 });
+  }
+}

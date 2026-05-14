@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
         createdAt: user.createdAt?.toISOString?.() || null,
         lastLoginAt: null,
         mustChangePassword: false,
+        canManageTrainerNeeds: !!(user as any).canManageTrainerNeeds,
         undertaking: {
           accepted: !!user.undertaking?.accepted,
           acceptedAt: user.undertaking?.acceptedAt ? user.undertaking.acceptedAt.toISOString() : null,
