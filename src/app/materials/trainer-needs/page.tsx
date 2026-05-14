@@ -23,6 +23,7 @@ type Need = {
   courseName: string;
   traineeCount: number;
   startDate: string;
+  endDate?: string | null;
   status: string;
   readinessScore: number;
   assignedToId?: string | null;
@@ -166,9 +167,13 @@ export default function TrainerNeedsPage() {
 
               <div className="grid gap-3 md:grid-cols-4">
                 <ActionButton label="اقتراح خطة تجهيز" busy={busy === `${selected.id}:plan`} onClick={() => action(selected.id, 'plan')} />
-                <ActionButton label="حجز المتاح مؤقتا" busy={busy === `${selected.id}:reserve`} onClick={() => action(selected.id, 'reserve')} />
-                <ActionButton label="تحويل لطلب مواد" busy={busy === `${selected.id}:convert`} onClick={() => action(selected.id, 'convert')} />
+                <ActionButton label="اعتماد الخطة والتحويل لطلب مواد" busy={busy === `${selected.id}:convert`} onClick={() => action(selected.id, 'convert')} />
                 <ActionButton label="إلغاء الاحتياج" tone="danger" busy={busy === `${selected.id}:cancel`} onClick={() => action(selected.id, 'cancel')} />
+              </div>
+
+              <div className="rounded-[8px] border border-[#dce6e3] bg-[#fbfcfc] p-4 text-[13px] leading-7 text-[#536866]">
+                عند اعتماد الخطة يتم إنشاء الحجز الذكي تلقائيًا ثم تحويل المواد المتاحة إلى طلب مواد. تاريخ نهاية الدورة
+                {selected.endDate ? ` (${new Date(selected.endDate).toLocaleDateString('ar-SA')})` : ''} يستخدم كتاريخ إرجاع متوقع للمواد المسترجعة.
               </div>
 
               <div className="rounded-[8px] border border-[#dce6e3] p-4">

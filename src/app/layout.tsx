@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from 'next';
+﻿import type { Metadata, Viewport } from 'next';
 import { Cairo } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
@@ -12,7 +12,7 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: 'منصة حوكمة وإدارة المخزون',
+  title: 'منصة مواد التدريب',
   description: 'وكالة التدريب',
 };
 
@@ -43,3 +43,4 @@ export default function RootLayout({
     </html>
   );
 }
+

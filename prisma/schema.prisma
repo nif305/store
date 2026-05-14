@@ -455,10 +455,16 @@ model StoreBundleItem {
   catalogItemId String
   catalogItem   StoreCatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
   quantity      Int              @default(1)
+  quantityMode  StoreBundleQuantityMode @default(FIXED)
 
   @@unique([bundleId, catalogItemId])
   @@index([catalogItemId])
   @@map("store_bundle_items")
+}
+
+enum StoreBundleQuantityMode {
+  FIXED
+  PER_TRAINEE
 }
 
 model TrainerNeed {
@@ -468,6 +474,7 @@ model TrainerNeed {
   courseName     String
   traineeCount   Int
   startDate      DateTime
+  endDate        DateTime?
   status         TrainerNeedStatus @default(NEW)
   readinessScore Int               @default(0)
   assignedToId   String?

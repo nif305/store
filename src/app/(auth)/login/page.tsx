@@ -163,10 +163,22 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <div className="mt-6 text-center text-[14px] leading-7 text-[#5f687b]">
-                {t('auth.requestAccountPrompt')}
-                <Link href="/request-account" className="mx-2 text-[#016564]">
-                  {t('auth.requestAccountLink')}
+              <div className="mt-5 grid gap-3">
+                <Link
+                  href="/training-kit"
+                  className="group flex items-center gap-4 rounded-[20px] border border-[#d8e3e1] bg-[#f8fbfb] px-4 py-4 text-right transition hover:border-[#016564] hover:bg-white"
+                >
+                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] bg-[#016564] text-white shadow-[0_14px_24px_rgba(1,101,100,0.18)]">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden="true">
+                      <path d="M4 7.5 12 3l8 4.5-8 4.5L4 7.5Z" stroke="currentColor" strokeWidth="1.8" />
+                      <path d="M4 7.5v8.8L12 21l8-4.7V7.5" stroke="currentColor" strokeWidth="1.8" />
+                      <path d="M8.5 13.5h7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[16px] font-extrabold text-[#163e44]">مساعد تجهيز الدورة</span>
+                    <span className="mt-1 block text-[12px] leading-6 text-[#687b79]">دخول مباشر للمدربين لاختيار مستلزمات التدريب</span>
+                  </span>
                 </Link>
               </div>
             </div>

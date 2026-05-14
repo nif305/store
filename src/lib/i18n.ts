@@ -1285,7 +1285,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'هذا الإشعار لا يدعم التحويل إلى طلب مدير.':
     'This notification cannot be converted into a manager request.',
   'صيانة وشراء ونظافة وطلبات أخرى': 'Maintenance, purchasing, cleaning, and other requests',
-  'منصة حوكمة وإدارة المخزون': 'Inventory Governance and Management Platform',
+  'منصة حوكمة وإدارة المخزون': 'Training Materials Platform',
   'وكالة التدريب': 'Training Deputieship',
   'مسودات البريد ومتابعتها': 'Email Drafts and Follow-up',
   'مرسلة': 'Sent',

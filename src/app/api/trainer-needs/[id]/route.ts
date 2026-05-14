@@ -46,6 +46,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ data: await reserveTrainerNeedAvailable(id, session.id) });
     }
     if (action === 'convert') {
+      await reserveTrainerNeedAvailable(id, session.id);
       return NextResponse.json({ data: await convertTrainerNeedToRequest(id, session) });
     }
     if (action === 'cancel') {

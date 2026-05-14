@@ -1,5 +1,6 @@
 import {
   Role,
+  StoreBundleQuantityMode,
   Status,
   StoreReservationStatus,
   TrainerNeedHandlingMode,
@@ -13,6 +14,11 @@ import type { SessionUser } from '@/lib/auth/session';
 const ON_DEMAND_NOTE = 'غير متوفر في المخزن، سيتم محاولة توفيره بناء على الطلب.';
 
 const ON_DEMAND_ITEMS = [
+  'لابتوب تدريبي',
+  'شاحن لابتوب احتياطي',
+  'وصلة HDMI',
+  'محول USB-C متعدد المنافذ',
+  'جهاز عرض متنقل',
   'حقيبة مدرب خاصة',
   'ملصقات نشاط تدريبي',
   'بطاقات تصويت',
@@ -24,16 +30,26 @@ const ON_DEMAND_ITEMS = [
   'نماذج تقييم مطبوعة',
   'شهادات خاصة',
   'لوحات كانبان',
-  'أدوات عصف ذهني',
   'مكبر صوت محمول',
   'ميكروفون لاسلكي',
   'كروت أسماء فاخرة',
-  'ملفات برنامج خاصة',
-  'مطبوعات ملونة',
-  'أقلام سبورة إضافية',
-  'أدوات نشاط جماعي',
   'حقيبة مستلزمات طارئة',
 ];
+
+const PER_TRAINEE_KEYWORDS = ['قلم', 'أقلام', 'نوت', 'دفتر', 'دفاتر', 'فولدر', 'ملف', 'شهادة', 'شهادات', 'غلاف', 'أغلفة'];
+
+function svgImage(title: string, category: string) {
+  const palette = category.includes('تقنية') || category.includes('حاسب')
+    ? ['#163e44', '#d0b284']
+    : category.includes('مكتبية')
+      ? ['#2A6364', '#8fb4ae']
+      : category.includes('طباعة') || category.includes('شهاد')
+        ? ['#7c1e3e', '#d0b284']
+        : ['#2A6364', '#f2efe6'];
+  const shortTitle = title.slice(0, 34);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400"><rect width="640" height="400" fill="${palette[1]}"/><rect x="32" y="32" width="576" height="336" rx="28" fill="#fff" opacity=".72"/><circle cx="530" cy="86" r="54" fill="${palette[0]}" opacity=".16"/><circle cx="112" cy="312" r="70" fill="${palette[0]}" opacity=".10"/><path d="M180 122h280v156H180z" rx="22" fill="${palette[0]}" opacity=".92"/><path d="M222 164h196M222 204h150M222 244h106" stroke="#fff" stroke-width="16" stroke-linecap="round" opacity=".72"/><text x="320" y="342" text-anchor="middle" font-family="Arial, Tahoma, sans-serif" font-size="34" font-weight="700" fill="${palette[0]}">${shortTitle}</text></svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
 
 function normalizeText(value: unknown) {
   return String(value || '').trim();
@@ -42,6 +58,12 @@ function normalizeText(value: unknown) {
 function normalizeQty(value: unknown) {
   const qty = Math.floor(Number(value || 0));
   return Number.isFinite(qty) ? Math.max(0, qty) : 0;
+}
+
+function onDemandCategory(title: string) {
+  return /لابتوب|HDMI|USB|محول|عرض|شاحن|ميكروفون|مكبر/.test(title)
+    ? 'الأجهزة التقنية والحاسب'
+    : 'مواد عند الطلب';
 }
 
 export function canManageTrainerNeeds(session: Pick<SessionUser, 'role' | 'canManageTrainerNeeds'>) {
@@ -76,13 +98,50 @@ async function ensureStoreSeed() {
     });
   }
 
+  const existingInventoryRows = existingCatalog.filter((item) => item.inventoryItemId);
+  if (existingInventoryRows.length) {
+    const inventoryById = new Map(inventoryItems.map((item) => [item.id, item]));
+    await Promise.all(
+      existingInventoryRows.map((row) => {
+        const inventory = inventoryById.get(row.inventoryItemId!);
+        if (!inventory) return null;
+        return prisma.storeCatalogItem.update({
+          where: { id: row.id },
+          data: {
+            title: inventory.name,
+            description: inventory.description || null,
+            category: inventory.category || 'مواد تدريبية',
+          },
+        });
+      }).filter(Boolean) as Promise<unknown>[]
+    );
+  }
+
   const missingOnDemand = ON_DEMAND_ITEMS.filter((title) => !onDemandTitles.has(title));
+  const seededOnDemandRows = existingCatalog.filter((item) => item.isOnDemand && ON_DEMAND_ITEMS.includes(item.title));
+  const retiredSeedRows = existingCatalog.filter((item) => item.isOnDemand && !ON_DEMAND_ITEMS.includes(item.title));
+  if (retiredSeedRows.length) {
+    await prisma.storeCatalogItem.updateMany({
+      where: { id: { in: retiredSeedRows.map((item) => item.id) } },
+      data: { isVisible: false },
+    });
+  }
+  if (seededOnDemandRows.length) {
+    await Promise.all(
+      seededOnDemandRows.map((item) =>
+        prisma.storeCatalogItem.update({
+          where: { id: item.id },
+          data: { category: onDemandCategory(item.title), isVisible: true },
+        })
+      )
+    );
+  }
   if (missingOnDemand.length) {
     await prisma.storeCatalogItem.createMany({
       data: missingOnDemand.map((title, index) => ({
         title,
         description: ON_DEMAND_NOTE,
-        category: 'مواد عند الطلب',
+        category: onDemandCategory(title),
         isVisible: true,
         isOnDemand: true,
         onDemandNote: ON_DEMAND_NOTE,
@@ -121,10 +180,38 @@ async function ensureStoreSeed() {
             bundleId: bundle.id,
             catalogItemId: item.id,
             quantity: 1,
+            quantityMode: PER_TRAINEE_KEYWORDS.some((word) => item.title.includes(word))
+              ? StoreBundleQuantityMode.PER_TRAINEE
+              : StoreBundleQuantityMode.FIXED,
           })),
           skipDuplicates: true,
         });
       }
+    }
+  }
+
+  const perTraineeBundleCount = await prisma.storeBundleItem.count({
+    where: { quantityMode: StoreBundleQuantityMode.PER_TRAINEE },
+  });
+  if (perTraineeBundleCount === 0) {
+    const perTraineeItems = await prisma.storeCatalogItem.findMany({
+      where: {
+        isVisible: true,
+        OR: PER_TRAINEE_KEYWORDS.map((word) => ({ title: { contains: word, mode: 'insensitive' as const } })),
+      },
+      take: 8,
+    });
+    const bundles = await prisma.storeBundle.findMany({ select: { id: true } });
+    for (const bundle of bundles) {
+      await prisma.storeBundleItem.createMany({
+        data: perTraineeItems.map((item) => ({
+          bundleId: bundle.id,
+          catalogItemId: item.id,
+          quantity: 1,
+          quantityMode: StoreBundleQuantityMode.PER_TRAINEE,
+        })),
+        skipDuplicates: true,
+      });
     }
   }
 }
@@ -154,7 +241,7 @@ function mapCatalogItem(item: any, reservationMap: Map<string, number>) {
     title: item.title,
     description: item.description,
     category: item.category,
-    imageUrl: item.imageUrl || inventory?.imageUrl || null,
+    imageUrl: item.imageUrl || inventory?.imageUrl || svgImage(item.title, item.category),
     isVisible: item.isVisible,
     isOnDemand: item.isOnDemand,
     onDemandNote: item.onDemandNote || (item.isOnDemand ? ON_DEMAND_NOTE : null),
@@ -198,7 +285,7 @@ export async function getPublicCatalog() {
     include: {
       items: {
         include: {
-          catalogItem: { include: { inventoryItem: true } },
+        catalogItem: { include: { inventoryItem: true } },
         },
       },
     },
@@ -213,10 +300,13 @@ export async function getPublicCatalog() {
       title: bundle.title,
       description: bundle.description,
       imageUrl: bundle.imageUrl,
+      isVisible: bundle.isVisible,
       items: bundle.items.map((row) => ({
         catalogItemId: row.catalogItemId,
         quantity: row.quantity,
+        quantityMode: row.quantityMode,
         title: row.catalogItem.title,
+        imageUrl: row.catalogItem.imageUrl || row.catalogItem.inventoryItem?.imageUrl || svgImage(row.catalogItem.title, row.catalogItem.category),
       })),
     })),
   };
@@ -235,7 +325,7 @@ export async function updateCatalogItem(id: string, data: any) {
       title: normalizeText(data.title) || undefined,
       description: normalizeText(data.description) || null,
       category: normalizeText(data.category) || undefined,
-      imageUrl: normalizeText(data.imageUrl) || null,
+      imageUrl: normalizeText(data.imageUrl || data.imageDataUrl) || null,
       isVisible: typeof data.isVisible === 'boolean' ? data.isVisible : undefined,
       onDemandNote: normalizeText(data.onDemandNote) || null,
       sortOrder: Number.isFinite(Number(data.sortOrder)) ? Number(data.sortOrder) : undefined,
@@ -268,13 +358,14 @@ export async function createTrainerNeed(data: any) {
   const courseName = normalizeText(data.courseName);
   const traineeCount = normalizeQty(data.traineeCount);
   const startDate = data.startDate ? new Date(data.startDate) : null;
+  const endDate = data.endDate ? new Date(data.endDate) : null;
   const rows = Array.isArray(data.items)
     ? data.items
         .map((item: any) => ({ catalogItemId: normalizeText(item.catalogItemId), quantity: normalizeQty(item.quantity) }))
         .filter((item: any) => item.catalogItemId && item.quantity > 0)
     : [];
 
-  if (!trainerName || !courseName || !startDate || Number.isNaN(startDate.getTime()) || traineeCount <= 0) {
+  if (!trainerName || !courseName || !startDate || Number.isNaN(startDate.getTime()) || !endDate || Number.isNaN(endDate.getTime()) || traineeCount <= 0) {
     throw new Error('بيانات الدورة الأساسية غير مكتملة');
   }
   if (!rows.length) throw new Error('يجب اختيار مادة واحدة على الأقل');
@@ -296,6 +387,7 @@ export async function createTrainerNeed(data: any) {
       courseName,
       traineeCount,
       startDate,
+      endDate,
       status: TrainerNeedStatus.NEW,
       items: {
         create: rows.map((row: any) => {
@@ -573,7 +665,10 @@ export async function convertTrainerNeedToRequest(id: string, session: SessionUs
     department: session.department,
     purpose: `تجهيز دورة: ${need.courseName} - المدرب: ${need.trainerName}`,
     notes: `تم إنشاؤه من احتياج المدرب ${need.code}. الحجز الذكي لا يخصم المخزون؛ الخصم يتم عند الصرف من المخزن.`,
-    items: requestItems,
+    items: requestItems.map((item: any) => ({
+      ...item,
+      expectedReturnDate: need.endDate ? need.endDate.toISOString().slice(0, 10) : null,
+    })),
   });
 
   await prisma.$transaction(async (tx) => {
@@ -600,7 +695,11 @@ export async function convertTrainerNeedToRequest(id: string, session: SessionUs
 export async function createStoreBundle(data: any) {
   const title = normalizeText(data.title);
   const items = Array.isArray(data.items)
-    ? data.items.map((item: any) => ({ catalogItemId: normalizeText(item.catalogItemId), quantity: normalizeQty(item.quantity) || 1 })).filter((item: any) => item.catalogItemId)
+    ? data.items.map((item: any) => ({
+        catalogItemId: normalizeText(item.catalogItemId),
+        quantity: normalizeQty(item.quantity) || 1,
+        quantityMode: item.quantityMode === StoreBundleQuantityMode.PER_TRAINEE ? StoreBundleQuantityMode.PER_TRAINEE : StoreBundleQuantityMode.FIXED,
+      })).filter((item: any) => item.catalogItemId)
     : [];
   if (!title) throw new Error('اسم البكج مطلوب');
 
@@ -613,6 +712,42 @@ export async function createStoreBundle(data: any) {
       items: { create: items },
     },
   });
+}
+
+export async function updateStoreBundle(id: string, data: any) {
+  const title = normalizeText(data.title);
+  const items = Array.isArray(data.items)
+    ? data.items.map((item: any) => ({
+        catalogItemId: normalizeText(item.catalogItemId),
+        quantity: normalizeQty(item.quantity) || 1,
+        quantityMode: item.quantityMode === StoreBundleQuantityMode.PER_TRAINEE ? StoreBundleQuantityMode.PER_TRAINEE : StoreBundleQuantityMode.FIXED,
+      })).filter((item: any) => item.catalogItemId)
+    : [];
+  if (!title) throw new Error('اسم البكج مطلوب');
+
+  return prisma.$transaction(async (tx) => {
+    const bundle = await tx.storeBundle.update({
+      where: { id },
+      data: {
+        title,
+        description: normalizeText(data.description) || null,
+        imageUrl: normalizeText(data.imageUrl || data.imageDataUrl) || null,
+        isVisible: typeof data.isVisible === 'boolean' ? data.isVisible : true,
+      },
+    });
+    await tx.storeBundleItem.deleteMany({ where: { bundleId: id } });
+    if (items.length) {
+      await tx.storeBundleItem.createMany({
+        data: items.map((item: any) => ({ ...item, bundleId: id })),
+        skipDuplicates: true,
+      });
+    }
+    return bundle;
+  });
+}
+
+export async function deleteStoreBundle(id: string) {
+  return prisma.storeBundle.delete({ where: { id } });
 }
 
 export async function upsertAlternative(data: any) {

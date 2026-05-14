@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, {
   createContext,
@@ -52,8 +52,8 @@ function applyDocumentLanguage(language: AppLanguage) {
   document.body.dataset.language = language;
   document.title =
     language === 'ar'
-      ? 'منصة حوكمة وإدارة المخزون'
-      : 'Training Deputieship Platform';
+      ? 'منصة مواد التدريب'
+      : 'Training Materials Platform';
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -119,3 +119,4 @@ export function useLanguage() {
 
   return context;
 }
+
