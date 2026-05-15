@@ -33,6 +33,7 @@ model User {
   returnRequests   ReturnRequest[]    @relation("RequestedReturns")
   assignedTrainerNeeds TrainerNeed[]   @relation("AssignedTrainerNeeds")
   trainerNeedReservations StoreReservation[]
+  approvedRoomBookings TrainingRoomBooking[] @relation("ApprovedRoomBookings")
 
   @@map("users")
 }
@@ -482,6 +483,7 @@ model TrainerNeed {
   decisionNote   String?
   linkedRequestId String?
   linkedRequest   Request?         @relation(fields: [linkedRequestId], references: [id], onDelete: SetNull)
+  roomBooking    TrainingRoomBooking?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   items          TrainerNeedItem[]
@@ -536,6 +538,63 @@ model StoreReservation {
   @@index([inventoryItemId, status])
   @@index([needItemId])
   @@map("store_reservations")
+}
+
+model TrainingRoom {
+  id              String                @id @default(cuid())
+  name            String
+  type            String
+  capacity        Int
+  location        String?
+  description     String?
+  equipment       String[]              @default([])
+  layoutOptions   String[]              @default([])
+  imageUrl        String?
+  isVisible       Boolean               @default(true)
+  sortOrder       Int                   @default(0)
+  internalNotes   String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  requestedBookings TrainingRoomBooking[] @relation("RequestedRoom")
+  approvedBookings  TrainingRoomBooking[] @relation("ApprovedRoom")
+
+  @@index([isVisible])
+  @@index([type])
+  @@index([capacity])
+  @@map("training_rooms")
+}
+
+model TrainingRoomBooking {
+  id              String                    @id @default(cuid())
+  trainerNeedId   String                    @unique
+  trainerNeed     TrainerNeed               @relation(fields: [trainerNeedId], references: [id], onDelete: Cascade)
+  requestedRoomId String?
+  requestedRoom   TrainingRoom?             @relation("RequestedRoom", fields: [requestedRoomId], references: [id], onDelete: SetNull)
+  approvedRoomId  String?
+  approvedRoom    TrainingRoom?             @relation("ApprovedRoom", fields: [approvedRoomId], references: [id], onDelete: SetNull)
+  status          TrainingRoomBookingStatus @default(REQUESTED)
+  requestedLayout String?
+  coordinatorNote String?
+  startDate       DateTime
+  endDate         DateTime
+  approvedById    String?
+  approvedBy      User?                     @relation("ApprovedRoomBookings", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt      DateTime?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  @@index([requestedRoomId])
+  @@index([approvedRoomId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("training_room_bookings")
+}
+
+enum TrainingRoomBookingStatus {
+  REQUESTED
+  APPROVED
+  ALTERNATIVE_PROPOSED
+  CANCELLED
 }
 
 enum TrainerNeedStatus {

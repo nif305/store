@@ -24,8 +24,22 @@ type Bundle = {
   items: { catalogItemId: string; quantity: number; quantityMode?: 'FIXED' | 'PER_TRAINEE'; title: string; imageUrl?: string | null }[];
 };
 
+type TrainingRoom = {
+  id: string;
+  name: string;
+  type: string;
+  capacity: number;
+  location?: string | null;
+  description?: string | null;
+  equipment: string[];
+  layoutOptions: string[];
+  imageUrl?: string | null;
+  isAvailable: boolean;
+  capacityFit: boolean;
+};
+
 type Cart = Record<string, number>;
-type View = 'home' | 'bundles' | 'orders';
+type View = 'home' | 'bundles' | 'rooms' | 'orders';
 
 const colors = {
   ink: '#243736',
@@ -42,10 +56,14 @@ const colors = {
 export default function TrainingKitPage() {
   const [items, setItems] = useState<StoreItem[]>([]);
   const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [rooms, setRooms] = useState<TrainingRoom[]>([]);
   const [view, setView] = useState<View>('home');
   const [category, setCategory] = useState('الكل');
   const [query, setQuery] = useState('');
+  const [roomType, setRoomType] = useState('الكل');
   const [cart, setCart] = useState<Cart>({});
+  const [selectedRoomId, setSelectedRoomId] = useState('');
+  const [requestedLayout, setRequestedLayout] = useState('');
   const [form, setForm] = useState({ trainerName: '', courseName: '', startDate: '', endDate: '', traineeCount: '' });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -59,6 +77,16 @@ export default function TrainingKitPage() {
     setBundles(Array.isArray(json.bundles) ? json.bundles : []);
   }
 
+  async function loadRooms() {
+    const params = new URLSearchParams();
+    if (form.startDate) params.set('startDate', form.startDate);
+    if (form.endDate) params.set('endDate', form.endDate);
+    if (form.traineeCount) params.set('traineeCount', form.traineeCount);
+    const response = await fetch(`/api/training-rooms/public?${params.toString()}`, { cache: 'no-store' });
+    const json = await response.json().catch(() => ({}));
+    setRooms(Array.isArray(json.rooms) ? json.rooms : []);
+  }
+
   useEffect(() => {
     let mounted = true;
     loadCatalog()
@@ -69,6 +97,10 @@ export default function TrainingKitPage() {
     };
   }, []);
 
+  useEffect(() => {
+    loadRooms().catch(() => undefined);
+  }, [form.startDate, form.endDate, form.traineeCount]);
+
   const traineeCount = Math.max(0, Number(form.traineeCount || 0));
   const cartRows = useMemo(
     () =>
@@ -78,6 +110,9 @@ export default function TrainingKitPage() {
     [cart, items]
   );
   const categories = useMemo(() => ['الكل', ...Array.from(new Set(items.map((item) => item.category)))], [items]);
+  const roomTypes = useMemo(() => ['الكل', ...Array.from(new Set(rooms.map((room) => room.type)))], [rooms]);
+  const selectedRoom = useMemo(() => rooms.find((room) => room.id === selectedRoomId) || null, [rooms, selectedRoomId]);
+  const visibleRooms = useMemo(() => rooms.filter((room) => roomType === 'الكل' || room.type === roomType), [rooms, roomType]);
   const visibleItems = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return items.filter((item) => {
@@ -136,13 +171,18 @@ export default function TrainingKitPage() {
           ...form,
           traineeCount,
           items: cartRows.map((row) => ({ catalogItemId: row.item.id, quantity: row.quantity })),
+          roomId: selectedRoomId || null,
+          requestedLayout,
         }),
       });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(json?.error || 'تعذر إرسال الطلبات');
       setResultCode(json?.data?.code || '');
       setCart({});
+      setSelectedRoomId('');
+      setRequestedLayout('');
       await loadCatalog();
+      await loadRooms();
     } catch (err: any) {
       setError(err?.message || 'تعذر إرسال الطلبات');
     } finally {
@@ -164,6 +204,7 @@ export default function TrainingKitPage() {
           <nav className="flex flex-wrap gap-2">
             <NavButton active={view === 'home'} onClick={() => setView('home')}>الرئيسية</NavButton>
             <NavButton active={view === 'bundles'} onClick={() => setView('bundles')}>البكجات المقترحة</NavButton>
+            <NavButton active={view === 'rooms'} onClick={() => setView('rooms')}>القاعات</NavButton>
             <NavButton active={view === 'orders'} onClick={() => setView('orders')}>الطلبات ({stats.cart})</NavButton>
             <Link href="/login" className="rounded-[8px] border border-[#cfded9] bg-[#fbfdfc] px-4 py-2 text-[13px] text-[#315f5d] transition hover:border-[#b8cbc6] hover:bg-white">تسجيل الدخول</Link>
           </nav>
@@ -207,15 +248,31 @@ export default function TrainingKitPage() {
 
         {view === 'bundles' ? <BundlesView bundles={bundles} traineeCount={traineeCount} onAdd={addBundle} /> : null}
 
+        {view === 'rooms' ? (
+          <RoomsView
+            rooms={visibleRooms}
+            roomTypes={roomTypes}
+            roomType={roomType}
+            selectedRoomId={selectedRoomId}
+            requestedLayout={requestedLayout}
+            setRoomType={setRoomType}
+            setSelectedRoomId={setSelectedRoomId}
+            setRequestedLayout={setRequestedLayout}
+            goOrders={() => setView('orders')}
+          />
+        ) : null}
+
         {view === 'orders' ? (
           <OrdersView
             form={form}
             setForm={setForm}
             cartRows={cartRows}
+            selectedRoom={selectedRoom}
             setQty={setQty}
             submitting={submitting}
             onSubmit={submitNeed}
             goHome={() => setView('home')}
+            goRooms={() => setView('rooms')}
           />
         ) : null}
       </div>
@@ -225,7 +282,7 @@ export default function TrainingKitPage() {
       </footer>
 
       {view !== 'orders' && stats.cart > 0 ? (
-        <CheckoutBar count={stats.cart} uniqueCount={cartRows.length} onCheckout={() => setView('orders')} />
+        <CheckoutBar count={stats.cart} uniqueCount={cartRows.length} onCheckout={() => setView('rooms')} />
       ) : null}
     </main>
   );
@@ -314,22 +371,107 @@ function BundlesView({ bundles, traineeCount, onAdd }: { bundles: Bundle[]; trai
   );
 }
 
+function RoomsView({
+  rooms,
+  roomTypes,
+  roomType,
+  selectedRoomId,
+  requestedLayout,
+  setRoomType,
+  setSelectedRoomId,
+  setRequestedLayout,
+  goOrders,
+}: {
+  rooms: TrainingRoom[];
+  roomTypes: string[];
+  roomType: string;
+  selectedRoomId: string;
+  requestedLayout: string;
+  setRoomType: (value: string) => void;
+  setSelectedRoomId: (value: string) => void;
+  setRequestedLayout: (value: string) => void;
+  goOrders: () => void;
+}) {
+  const selected = rooms.find((room) => room.id === selectedRoomId);
+  return (
+    <section className="rounded-[14px] border border-[#d5e0dc] bg-[#fbfdfc] p-4 shadow-[0_14px_40px_rgba(36,55,54,0.06)]">
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 className="text-[24px] text-[#243736]">اختيار القاعة التدريبية</h2>
+          <p className="mt-1 text-[13px] text-[#6d7b78]">اختر القاعة المناسبة للدورة. الاعتماد النهائي يتم من المنسق لمنع التعارض.</p>
+        </div>
+        <div className="flex gap-2 overflow-x-auto">
+          {roomTypes.map((type) => (
+            <button key={type} type="button" onClick={() => setRoomType(type)} className={`shrink-0 rounded-[999px] border px-4 py-2 text-[13px] ${roomType === type ? 'border-[#9bb4af] bg-[#e8f1ef] text-[#203634]' : 'border-[#d4dfdc] bg-white text-[#53635f]'}`}>
+              {type}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {rooms.map((room) => (
+          <article key={room.id} className={`overflow-hidden rounded-[14px] border bg-white transition ${selectedRoomId === room.id ? 'border-[#315f5d] ring-2 ring-[#d9e7e3]' : 'border-[#d5e0dc]'}`}>
+            <ProductImage title={room.name} imageUrl={room.imageUrl} ratio="aspect-[16/9]" />
+            <div className="space-y-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[18px] text-[#243736]">{room.name}</div>
+                  <div className="mt-1 text-[12px] text-[#6d7b78]">{room.type} - سعة {room.capacity}</div>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-[11px] ${room.isAvailable ? 'bg-[#eef8f2] text-[#1e6b4c]' : 'bg-[#fff1f3] text-[#7a3147]'}`}>
+                  {room.isAvailable ? 'متاحة' : 'محجوزة'}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {room.layoutOptions.slice(0, 3).map((layout) => <span key={layout} className="rounded-full bg-[#f4f7f6] px-2 py-1 text-[11px] text-[#53635f]">{layout}</span>)}
+              </div>
+              <button type="button" onClick={() => setSelectedRoomId(room.id)} disabled={!room.isAvailable} className="h-10 w-full rounded-[8px] bg-[#315f5d] text-[13px] text-white disabled:bg-[#aab7b4]">
+                {selectedRoomId === room.id ? 'تم اختيار القاعة' : 'اختيار القاعة'}
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+      {selected ? (
+        <div className="mt-4 rounded-[12px] border border-[#d5e0dc] bg-white p-4">
+          <label className="block">
+            <span className="mb-1 block text-[12px] text-[#53635f]">نمط ترتيب القاعة المطلوب</span>
+            <select value={requestedLayout} onChange={(event) => setRequestedLayout(event.target.value)} className="h-11 w-full rounded-[8px] border border-[#cfded9] bg-white px-3">
+              <option value="">بدون تفضيل محدد</option>
+              {selected.layoutOptions.map((layout) => <option key={layout} value={layout}>{layout}</option>)}
+            </select>
+          </label>
+        </div>
+      ) : null}
+      <div className="mt-5 flex justify-end">
+        <button type="button" onClick={goOrders} className="h-11 rounded-[8px] bg-[#315f5d] px-6 text-[14px] text-white">
+          متابعة ومراجعة طلب تجهيز الدورة
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function OrdersView({
   form,
   setForm,
   cartRows,
+  selectedRoom,
   setQty,
   submitting,
   onSubmit,
   goHome,
+  goRooms,
 }: {
   form: { trainerName: string; courseName: string; startDate: string; endDate: string; traineeCount: string };
   setForm: React.Dispatch<React.SetStateAction<{ trainerName: string; courseName: string; startDate: string; endDate: string; traineeCount: string }>>;
   cartRows: { item: StoreItem; quantity: number }[];
+  selectedRoom: TrainingRoom | null;
   setQty: (id: string, qty: number) => void;
   submitting: boolean;
   onSubmit: (event: React.FormEvent) => void;
   goHome: () => void;
+  goRooms: () => void;
 }) {
   return (
     <form onSubmit={onSubmit} className="grid gap-5 xl:grid-cols-[1fr_420px]">
@@ -369,6 +511,11 @@ function OrdersView({
         </div>
         <div className="mt-4 rounded-[10px] border border-[#e8ddbf] bg-[#fbf6ea] px-4 py-3 text-[13px] leading-6 text-[#6f5a2f]">
           تاريخ نهاية الدورة يستخدم كتاريخ إرجاع متوقع للمواد المسترجعة عند تحويل الاحتياج إلى طلب مواد.
+        </div>
+        <div className="mt-4 rounded-[10px] border border-[#d5e0dc] bg-white px-4 py-3 text-[13px] leading-6 text-[#53635f]">
+          <div className="text-[#243736]">القاعة المطلوبة</div>
+          <div className="mt-1">{selectedRoom ? `${selectedRoom.name} - ${selectedRoom.type} - سعة ${selectedRoom.capacity}` : 'لم يتم اختيار قاعة بعد'}</div>
+          <button type="button" onClick={goRooms} className="mt-3 rounded-[8px] border border-[#cfded9] px-3 py-2 text-[12px] text-[#315f5d]">اختيار أو تعديل القاعة</button>
         </div>
         <button type="submit" disabled={submitting || cartRows.length === 0} className="mt-5 h-12 w-full rounded-[8px] bg-[#315f5d] text-[15px] text-white shadow-[0_12px_28px_rgba(49,95,93,0.20)] transition hover:bg-[#274f4d] disabled:cursor-not-allowed disabled:bg-[#aab7b4] disabled:shadow-none">
           {submitting ? 'جاري الإرسال...' : 'إرسال الطلبات'}

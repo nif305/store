@@ -8,6 +8,7 @@ import {
   ReturnStatus,
   Role,
   Status,
+  TrainingRoomBookingStatus,
 } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { resolveSessionUser as resolveVerifiedSessionUser } from '@/lib/auth/session';
@@ -140,6 +141,24 @@ export async function GET(request: NextRequest) {
     const unreadNotifications = await runDashboardQuery(() =>
       prisma.notification.count({ where: { userId: session.id, isRead: false } })
     );
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+    const totalTrainingRooms = await runDashboardQuery(() => prisma.trainingRoom.count());
+    const roomsBookedToday = await runDashboardQuery(() =>
+      prisma.trainingRoomBooking.count({
+        where: {
+          status: TrainingRoomBookingStatus.APPROVED,
+          startDate: { lte: todayEnd },
+          endDate: { gte: todayStart },
+        },
+      })
+    );
+    const pendingRoomBookings = await runDashboardQuery(() =>
+      prisma.trainingRoomBooking.count({ where: { status: TrainingRoomBookingStatus.REQUESTED } })
+    );
     const latestUpdates = await runDashboardQuery(() =>
       prisma.notification.findMany({ where: { userId: session.id }, orderBy: { createdAt: 'desc' }, take: 4 })
     );
@@ -197,6 +216,10 @@ export async function GET(request: NextRequest) {
           delayedCustody,
           unreadNotifications,
           requestItemsCount,
+          totalTrainingRooms,
+          roomsBookedToday,
+          roomsAvailableToday: Math.max(totalTrainingRooms - roomsBookedToday, 0),
+          pendingRoomBookings,
         },
         latestUpdates,
       },

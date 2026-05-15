@@ -17,6 +17,8 @@ const ICONS: Record<string, string> = {
   '/materials/trainer-needs': 'T',
   '/materials/inventory': 'I',
   '/materials/store-admin': 'S',
+  '/materials/rooms-admin': 'Q',
+  '/materials/rooms-schedule': 'G',
   '/materials/returns': 'B',
   '/materials/custody': 'C',
   '/materials/messages': 'M',

@@ -30,10 +30,19 @@ type Need = {
   assignedToId?: string | null;
   assignedTo?: { id: string; fullName: string } | null;
   linkedRequest?: { id: string; code: string; status: string } | null;
+  roomBooking?: {
+    id: string;
+    status: string;
+    requestedLayout?: string | null;
+    coordinatorNote?: string | null;
+    requestedRoom?: RoomItem | null;
+    approvedRoom?: RoomItem | null;
+  } | null;
   items: NeedItem[];
   createdAt: string;
 };
 
+type RoomItem = { id: string; name: string; type: string; capacity: number; isAvailable?: boolean };
 type Assignee = { id: string; fullName: string; department?: string | null };
 type Viewer = { id: string; role: string };
 type CatalogItem = {
@@ -79,6 +88,8 @@ export default function TrainerNeedsPage() {
   const [needs, setNeeds] = useState<Need[]>([]);
   const [assignees, setAssignees] = useState<Assignee[]>([]);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [rooms, setRooms] = useState<RoomItem[]>([]);
+  const [selectedRoomId, setSelectedRoomId] = useState('');
   const [draftRows, setDraftRows] = useState<DraftRow[]>([]);
   const [addCatalogItemId, setAddCatalogItemId] = useState('');
   const [selectedId, setSelectedId] = useState('');
@@ -139,6 +150,9 @@ export default function TrainerNeedsPage() {
       setAssignees(Array.isArray(needsJson.assignees) ? needsJson.assignees : []);
       setViewer(needsJson.viewer || null);
       setCatalog(Array.isArray(catalogJson.items) ? catalogJson.items : []);
+      const roomsResponse = await fetch('/api/training-rooms/public', { cache: 'no-store' });
+      const roomsJson = await roomsResponse.json().catch(() => ({}));
+      setRooms(Array.isArray(roomsJson.rooms) ? roomsJson.rooms : []);
 
       const params = new URLSearchParams(window.location.search);
       const openId = params.get('open');
@@ -176,6 +190,7 @@ export default function TrainerNeedsPage() {
           coordinatorNote: item.coordinatorNote || '',
         }))
     );
+    setSelectedRoomId(opened.roomBooking?.approvedRoom?.id || opened.roomBooking?.requestedRoom?.id || '');
   }, [opened?.id]);
 
   function openNeed(id: string) {
@@ -205,6 +220,14 @@ export default function TrainerNeedsPage() {
         setSelectedId('');
         window.history.replaceState(null, '', '/materials/trainer-needs');
         setNotice('تم حذف الطلب.');
+        return;
+      }
+
+      if (actionName === 'approve-room' || actionName === 'cancel-room') {
+        await load();
+        setSelectedId(needId);
+        setOpenedId(needId);
+        setNotice(actionName === 'approve-room' ? 'تم اعتماد القاعة لهذا الطلب.' : 'تم إلغاء حجز القاعة.');
         return;
       }
 
@@ -426,6 +449,28 @@ export default function TrainerNeedsPage() {
                   </button>
                 </div>
               </div>
+
+              <section className="rounded-[8px] border border-[#dce6e3] bg-white p-4">
+                <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <div className="text-[16px] font-extrabold text-[#223738]">القاعة التدريبية</div>
+                    <div className="mt-1 text-[12px] text-[#71817f]">
+                      المطلوبة: {opened.roomBooking?.requestedRoom?.name || 'لم يحدد المدرب قاعة'} - المعتمدة: {opened.roomBooking?.approvedRoom?.name || 'لم تعتمد بعد'}
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-[#f3f7f6] px-3 py-1 text-[12px] text-[#2A6364]">{opened.roomBooking?.status || 'بدون طلب قاعة'}</span>
+                </div>
+                <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto]">
+                  <select value={selectedRoomId} onChange={(event) => setSelectedRoomId(event.target.value)} className="h-11 rounded-[8px] border border-[#dce6e3] bg-white px-3 text-[13px] outline-none">
+                    <option value="">اختر قاعة للاعتماد أو البديل</option>
+                    {rooms.map((room) => (
+                      <option key={room.id} value={room.id}>{room.name} - {room.type} - سعة {room.capacity}</option>
+                    ))}
+                  </select>
+                  <button type="button" disabled={!selectedRoomId || busy === `${opened.id}:approve-room`} onClick={() => action(opened.id, 'approve-room', { roomId: selectedRoomId })} className="h-11 rounded-[8px] bg-[#2A6364] px-4 text-[13px] font-bold text-white disabled:opacity-50">اعتماد القاعة</button>
+                  <button type="button" disabled={!opened.roomBooking || busy === `${opened.id}:cancel-room`} onClick={() => action(opened.id, 'cancel-room')} className="h-11 rounded-[8px] border border-[#7c1e3e] px-4 text-[13px] font-bold text-[#7c1e3e] disabled:opacity-50">إلغاء حجز القاعة</button>
+                </div>
+              </section>
 
               {!isLocked ? (
                 <div className="rounded-[8px] border border-[#dce6e3] bg-white p-4">

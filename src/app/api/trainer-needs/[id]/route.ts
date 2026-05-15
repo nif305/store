@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveSessionUser } from '@/lib/auth/session';
+import { approveRoomBooking, cancelRoomBooking } from '@/services/training-rooms.service';
 import {
   assignTrainerNeed,
   canManageTrainerNeeds,
@@ -62,6 +63,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
     if (action === 'delete') {
       return NextResponse.json({ data: await deleteTrainerNeed(id) });
+    }
+    if (action === 'approve-room') {
+      return NextResponse.json({ data: await approveRoomBooking(id, String(body?.roomId || ''), session, String(body?.note || '')) });
+    }
+    if (action === 'cancel-room') {
+      return NextResponse.json({ data: await cancelRoomBooking(id, String(body?.note || '')) });
     }
 
     return NextResponse.json({ error: 'إجراء غير صالح' }, { status: 400 });

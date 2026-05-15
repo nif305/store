@@ -10,6 +10,7 @@ import {
 import { prisma } from '@/lib/prisma';
 import { RequestService } from '@/services/request.service';
 import type { SessionUser } from '@/lib/auth/session';
+import { ensureTrainingRoomsSeed } from '@/services/training-rooms.service';
 
 const ON_DEMAND_NOTE = 'غير متوفر في المخزن، سيتم محاولة توفيره بناء على الطلب.';
 
@@ -385,12 +386,15 @@ export async function createOnDemandCatalogItem(data: any) {
 
 export async function createTrainerNeed(data: any) {
   await ensureStoreSeed();
+  await ensureTrainingRoomsSeed();
 
   const trainerName = normalizeText(data.trainerName);
   const courseName = normalizeText(data.courseName);
   const traineeCount = normalizeQty(data.traineeCount);
   const startDate = data.startDate ? new Date(data.startDate) : null;
   const endDate = data.endDate ? new Date(data.endDate) : null;
+  const requestedRoomId = normalizeText(data.roomId || data.requestedRoomId);
+  const requestedLayout = normalizeText(data.requestedLayout);
   const rows = Array.isArray(data.items)
     ? data.items
         .map((item: any) => ({ catalogItemId: normalizeText(item.catalogItemId), quantity: normalizeQty(item.quantity) }))
@@ -408,46 +412,68 @@ export async function createTrainerNeed(data: any) {
   });
   const byId = new Map(catalog.map((item) => [item.id, item]));
   if (catalog.length !== rows.length) throw new Error('توجد مادة غير متاحة في المتجر');
+  let requestedRoom = null;
+  if (requestedRoomId) {
+    requestedRoom = await prisma.trainingRoom.findFirst({
+      where: { id: requestedRoomId, isVisible: true },
+      select: { id: true },
+    });
+    if (!requestedRoom) throw new Error('القاعة المحددة غير متاحة');
+  }
 
   const count = await prisma.trainerNeed.count();
   const code = `TN-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
-  const need = await prisma.trainerNeed.create({
-    data: {
-      code,
-      trainerName,
-      courseName,
-      traineeCount,
-      startDate,
-      endDate,
-      status: TrainerNeedStatus.NEW,
-      items: {
-        create: rows.map((row: any) => {
-          const item = byId.get(row.catalogItemId)!;
-          const available = item.inventoryItem?.availableQty || 0;
-          const shortage = item.inventoryItemId ? Math.max(row.quantity - available, 0) : row.quantity;
-          return {
-            catalogItemId: item.id,
-            inventoryItemId: item.inventoryItemId,
-            title: item.title,
-            requestedQty: row.quantity,
-            availableAtSubmission: available,
-            shortageQty: shortage,
-            status: item.isOnDemand
-              ? TrainerNeedItemStatus.ON_DEMAND
-              : shortage > 0
-                ? TrainerNeedItemStatus.SHORTAGE
-                : TrainerNeedItemStatus.AVAILABLE,
-            handlingMode: item.isOnDemand
-              ? TrainerNeedHandlingMode.TRY_TO_PROVIDE
-              : shortage > 0
-                ? TrainerNeedHandlingMode.INTERNAL_SOURCE
-                : TrainerNeedHandlingMode.RESERVE_FROM_STOCK,
-          };
-        }),
+  const need = await prisma.$transaction(async (tx) => {
+    const created = await tx.trainerNeed.create({
+      data: {
+        code,
+        trainerName,
+        courseName,
+        traineeCount,
+        startDate,
+        endDate,
+        status: TrainerNeedStatus.NEW,
+        items: {
+          create: rows.map((row: any) => {
+            const item = byId.get(row.catalogItemId)!;
+            const available = item.inventoryItem?.availableQty || 0;
+            const shortage = item.inventoryItemId ? Math.max(row.quantity - available, 0) : row.quantity;
+            return {
+              catalogItemId: item.id,
+              inventoryItemId: item.inventoryItemId,
+              title: item.title,
+              requestedQty: row.quantity,
+              availableAtSubmission: available,
+              shortageQty: shortage,
+              status: item.isOnDemand
+                ? TrainerNeedItemStatus.ON_DEMAND
+                : shortage > 0
+                  ? TrainerNeedItemStatus.SHORTAGE
+                  : TrainerNeedItemStatus.AVAILABLE,
+              handlingMode: item.isOnDemand
+                ? TrainerNeedHandlingMode.TRY_TO_PROVIDE
+                : shortage > 0
+                  ? TrainerNeedHandlingMode.INTERNAL_SOURCE
+                  : TrainerNeedHandlingMode.RESERVE_FROM_STOCK,
+            };
+          }),
+        },
       },
-    },
-    include: { items: true },
+      include: { items: true },
+    });
+    if (requestedRoomId) {
+      await tx.trainingRoomBooking.create({
+        data: {
+          trainerNeedId: created.id,
+          requestedRoomId,
+          requestedLayout: requestedLayout || null,
+          startDate,
+          endDate: endDate || startDate,
+        },
+      });
+    }
+    return created;
   });
 
   const targets = await prisma.user.findMany({
@@ -481,6 +507,12 @@ function includeNeed() {
   return {
     assignedTo: { select: { id: true, fullName: true, department: true, email: true } },
     linkedRequest: { select: { id: true, code: true, status: true } },
+    roomBooking: {
+      include: {
+        requestedRoom: true,
+        approvedRoom: true,
+      },
+    },
     items: {
       include: {
         inventoryItem: true,

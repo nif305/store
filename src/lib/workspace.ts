@@ -113,6 +113,11 @@ export function getWorkspaceGroups(
                   label: 'احتياجات المدربين',
                   roles: ['manager', 'warehouse', 'user'] as AppRole[],
                 },
+                {
+                  href: '/materials/rooms-schedule',
+                  label: 'جدول القاعات',
+                  roles: ['manager', 'warehouse', 'user'] as AppRole[],
+                },
               ]
             : []),
           {
@@ -123,6 +128,11 @@ export function getWorkspaceGroups(
           {
             href: '/materials/store-admin',
             label: 'إدارة المتجر',
+            roles: ['manager', 'warehouse'],
+          },
+          {
+            href: '/materials/rooms-admin',
+            label: 'إدارة القاعات',
             roles: ['manager', 'warehouse'],
           },
           {
