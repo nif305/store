@@ -8,6 +8,7 @@ import {
   proposeTrainerNeedPlan,
   releaseTrainerNeedReservations,
   reserveTrainerNeedAvailable,
+  updateTrainerNeedOrder,
 } from '@/services/training-store.service';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -42,10 +43,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (action === 'plan') {
       return NextResponse.json({ data: await proposeTrainerNeedPlan(id) });
     }
+    if (action === 'update-order') {
+      return NextResponse.json({ data: await updateTrainerNeedOrder(id, body) });
+    }
     if (action === 'reserve') {
       return NextResponse.json({ data: await reserveTrainerNeedAvailable(id, session.id) });
     }
     if (action === 'convert') {
+      if (Array.isArray(body?.items)) {
+        await updateTrainerNeedOrder(id, body);
+      }
       await reserveTrainerNeedAvailable(id, session.id);
       return NextResponse.json({ data: await convertTrainerNeedToRequest(id, session) });
     }

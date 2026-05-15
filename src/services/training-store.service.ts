@@ -518,6 +518,81 @@ export async function assignTrainerNeed(id: string, assignedToId: string | null)
   return mapNeed(need);
 }
 
+export async function updateTrainerNeedOrder(id: string, data: any) {
+  const need = await prisma.trainerNeed.findUnique({ where: { id }, include: includeNeed() });
+  if (!need) throw new Error('احتياج المدرب غير موجود');
+  if (need.linkedRequestId || need.status === TrainerNeedStatus.CONVERTED_TO_REQUEST) {
+    throw new Error('لا يمكن تعديل الطلب بعد تحويله إلى طلب مواد');
+  }
+
+  const rows = Array.isArray(data.items)
+    ? data.items
+        .map((item: any) => ({
+          catalogItemId: normalizeText(item.catalogItemId),
+          quantity: normalizeQty(item.requestedQty ?? item.quantity),
+          coordinatorNote: normalizeText(item.coordinatorNote),
+        }))
+        .filter((item: any) => item.catalogItemId && item.quantity > 0)
+    : [];
+
+  if (!rows.length) throw new Error('يجب أن يحتوي الطلب على مادة واحدة على الأقل');
+
+  const catalogIds: string[] = Array.from(new Set(rows.map((item: any) => String(item.catalogItemId))));
+  const catalog: any[] = await prisma.storeCatalogItem.findMany({
+    where: { id: { in: catalogIds }, isVisible: true },
+    include: { inventoryItem: true },
+  });
+  const byId = new Map(catalog.map((item) => [item.id, item]));
+  if (catalog.length !== catalogIds.length) throw new Error('توجد مادة غير متاحة في المتجر');
+
+  await prisma.$transaction(async (tx) => {
+    await tx.storeReservation.updateMany({
+      where: { needItemId: { in: need.items.map((item: any) => item.id) }, status: StoreReservationStatus.ACTIVE },
+      data: { status: StoreReservationStatus.RELEASED, releasedAt: new Date() },
+    });
+    await tx.trainerNeedItem.deleteMany({ where: { needId: id } });
+    await tx.trainerNeedItem.createMany({
+      data: rows.map((row: any) => {
+        const item = byId.get(row.catalogItemId)!;
+        const available = item.inventoryItem?.availableQty || 0;
+        const shortage = item.inventoryItemId ? Math.max(row.quantity - available, 0) : row.quantity;
+        return {
+          needId: id,
+          catalogItemId: item.id,
+          inventoryItemId: item.inventoryItemId,
+          title: item.title,
+          requestedQty: row.quantity,
+          approvedQty: row.quantity,
+          availableAtSubmission: available,
+          reservedQty: 0,
+          shortageQty: shortage,
+          status: item.isOnDemand
+            ? TrainerNeedItemStatus.ON_DEMAND
+            : shortage > 0
+              ? TrainerNeedItemStatus.SHORTAGE
+              : TrainerNeedItemStatus.AVAILABLE,
+          handlingMode: item.isOnDemand
+            ? TrainerNeedHandlingMode.TRY_TO_PROVIDE
+            : shortage > 0
+              ? TrainerNeedHandlingMode.INTERNAL_SOURCE
+              : TrainerNeedHandlingMode.RESERVE_FROM_STOCK,
+          coordinatorNote: row.coordinatorNote || null,
+        };
+      }),
+    });
+    await tx.trainerNeed.update({
+      where: { id },
+      data: {
+        status: TrainerNeedStatus.IN_REVIEW,
+        readinessScore: 0,
+        decisionNote: normalizeText(data.decisionNote) || need.decisionNote,
+      },
+    });
+  });
+
+  return getTrainerNeed(id);
+}
+
 export async function proposeTrainerNeedPlan(id: string) {
   const need = await prisma.trainerNeed.findUnique({ where: { id }, include: includeNeed() });
   if (!need) throw new Error('احتياج المدرب غير موجود');
@@ -585,7 +660,16 @@ export async function reserveTrainerNeedAvailable(id: string, actorId: string) {
       });
 
       if (!item.inventoryItemId) continue;
-      const reserveQty = Math.min(item.requestedQty, item.inventoryItem?.availableQty || 0);
+      const otherReserved = await tx.storeReservation.aggregate({
+        where: {
+          inventoryItemId: item.inventoryItemId,
+          status: StoreReservationStatus.ACTIVE,
+          needItem: { needId: { not: id } },
+        },
+        _sum: { quantity: true },
+      });
+      const freeQty = Math.max((item.inventoryItem?.availableQty || 0) - (otherReserved._sum.quantity || 0), 0);
+      const reserveQty = Math.min(item.requestedQty, freeQty);
       if (reserveQty > 0) {
         await tx.storeReservation.create({
           data: {
