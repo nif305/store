@@ -766,6 +766,27 @@ export async function releaseTrainerNeedReservations(id: string, status: Trainer
   return getTrainerNeed(id);
 }
 
+export async function deleteTrainerNeed(id: string) {
+  const need = await prisma.trainerNeed.findUnique({
+    where: { id },
+    select: { id: true, linkedRequestId: true, status: true, items: { select: { id: true } } },
+  });
+  if (!need) throw new Error('طلب المدرب غير موجود');
+  if (need.linkedRequestId || need.status === TrainerNeedStatus.CONVERTED_TO_REQUEST) {
+    throw new Error('لا يمكن حذف الطلب بعد تحويله إلى طلب مواد. يمكن فتح طلب المواد المرتبط ومتابعته من صفحة الطلبات.');
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.storeReservation.updateMany({
+      where: { needItemId: { in: need.items.map((item) => item.id) }, status: StoreReservationStatus.ACTIVE },
+      data: { status: StoreReservationStatus.CANCELLED, releasedAt: new Date() },
+    });
+    await tx.trainerNeed.delete({ where: { id } });
+  });
+
+  return { id, deleted: true };
+}
+
 export async function convertTrainerNeedToRequest(id: string, session: SessionUser) {
   const need = await prisma.trainerNeed.findUnique({ where: { id }, include: includeNeed() });
   if (!need) throw new Error('احتياج المدرب غير موجود');

@@ -4,6 +4,7 @@ import {
   assignTrainerNeed,
   canManageTrainerNeeds,
   convertTrainerNeedToRequest,
+  deleteTrainerNeed,
   getTrainerNeed,
   proposeTrainerNeedPlan,
   releaseTrainerNeedReservations,
@@ -58,6 +59,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
     if (action === 'cancel') {
       return NextResponse.json({ data: await releaseTrainerNeedReservations(id) });
+    }
+    if (action === 'delete') {
+      return NextResponse.json({ data: await deleteTrainerNeed(id) });
     }
 
     return NextResponse.json({ error: 'إجراء غير صالح' }, { status: 400 });
