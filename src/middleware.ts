@@ -89,7 +89,7 @@ export function middleware(request: NextRequest) {
   }
 
   const managerOnlyRoutes = ['/users', '/audit-logs', '/materials/users', '/materials/reports', '/materials/archive', '/materials/audit-logs'];
-  const warehouseOrManagerRoutes = ['/materials/inventory', '/materials/store-admin'];
+  const warehouseOrManagerRoutes = ['/materials/inventory', '/materials/store-admin', '/materials/rooms-admin'];
 
   if (
     managerOnlyRoutes.some((route) => pathname.startsWith(route)) &&

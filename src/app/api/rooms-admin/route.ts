@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveSessionUser } from '@/lib/auth/session';
 import {
+  canAdminRooms,
   canManageRooms,
   createTrainingRoom,
   getRoomsAdminCatalog,
@@ -11,9 +12,14 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const session = await resolveSessionUser(request);
-    if (!canManageRooms(session)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     const mode = request.nextUrl.searchParams.get('mode');
-    if (mode === 'bookings') return NextResponse.json({ bookings: await listRoomBookings() });
+
+    if (mode === 'bookings') {
+      if (!canManageRooms(session)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
+      return NextResponse.json({ bookings: await listRoomBookings() });
+    }
+
+    if (!canAdminRooms(session)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     return NextResponse.json(await getRoomsAdminCatalog());
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'تعذر جلب القاعات' }, { status: 401 });
@@ -23,7 +29,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await resolveSessionUser(request);
-    if (!canManageRooms(session)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
+    if (!canAdminRooms(session)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     const body = await request.json();
     return NextResponse.json({ data: await createTrainingRoom(body) }, { status: 201 });
   } catch (error: any) {
@@ -34,7 +40,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const session = await resolveSessionUser(request);
-    if (!canManageRooms(session)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
+    if (!canAdminRooms(session)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     const body = await request.json();
     const id = String(body?.id || '').trim();
     if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });

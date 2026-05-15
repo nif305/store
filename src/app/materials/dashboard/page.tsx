@@ -38,6 +38,7 @@ export default function MaterialsDashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { language } = useI18n();
   const isEmployee = user?.role === 'user';
+  const canSeeRoomOperations = user?.role === 'manager' || user?.role === 'warehouse' || !!user?.canManageTrainerNeeds;
   const ui = (source: string) => translateStaticUiText(source, language);
   const materialRequestsTotal =
     metrics?.materialRequestsTotal ??
@@ -258,6 +259,7 @@ export default function MaterialsDashboardPage() {
           </div>
         </div>
       </section>
+      {canSeeRoomOperations ? (
       <section className="grid gap-3 md:grid-cols-4">
         <a href="/materials/rooms-schedule" className="rounded-[8px] border border-[#dce6e3] bg-white p-4 transition hover:border-[#2A6364]">
           <div className="text-[12px] text-[#71817f]">القاعات المحجوزة اليوم</div>
@@ -276,6 +278,7 @@ export default function MaterialsDashboardPage() {
           <div className="mt-2 text-[28px] font-extrabold text-[#223738]">{metrics?.totalTrainingRooms ?? 0}</div>
         </a>
       </section>
+      ) : null}
       {isEmployee ? (
         <section className="rounded-[26px] border border-white/80 bg-white p-5 shadow-[0_18px_38px_-34px_rgba(15,23,42,0.2)]">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">

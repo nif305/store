@@ -146,14 +146,16 @@ export async function GET(request: NextRequest) {
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date(now);
     todayEnd.setHours(23, 59, 59, 999);
-    const totalTrainingRooms = await runDashboardQuery(() => prisma.trainingRoom.count());
-    const roomsBookedToday = await runDashboardQuery(() =>
-      prisma.trainingRoomBooking.count({
+    const totalTrainingRooms = await runDashboardQuery(() => prisma.trainingRoom.count({ where: { isVisible: true } }));
+    const roomBookingsToday = await runDashboardQuery(() =>
+      prisma.trainingRoomBooking.findMany({
         where: {
           status: TrainingRoomBookingStatus.APPROVED,
+          approvedRoomId: { not: null },
           startDate: { lte: todayEnd },
           endDate: { gte: todayStart },
         },
+        select: { approvedRoomId: true },
       })
     );
     const pendingRoomBookings = await runDashboardQuery(() =>
@@ -162,6 +164,7 @@ export async function GET(request: NextRequest) {
     const latestUpdates = await runDashboardQuery(() =>
       prisma.notification.findMany({ where: { userId: session.id }, orderBy: { createdAt: 'desc' }, take: 4 })
     );
+    const roomsBookedToday = new Set(roomBookingsToday.map((booking) => booking.approvedRoomId).filter(Boolean)).size;
 
     const totalInventory = sumCounts(inventoryStatusRows);
     const lowStock = countBy(inventoryStatusRows, 'status', ItemStatus.LOW_STOCK);

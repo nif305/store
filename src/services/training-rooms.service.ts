@@ -49,6 +49,10 @@ export function canManageRooms(session: Pick<SessionUser, 'role' | 'canManageTra
   return session.role === Role.MANAGER || session.role === Role.WAREHOUSE || !!session.canManageTrainerNeeds;
 }
 
+export function canAdminRooms(session: Pick<SessionUser, 'role'>) {
+  return session.role === Role.MANAGER || session.role === Role.WAREHOUSE;
+}
+
 export async function ensureTrainingRoomsSeed() {
   const count = await prisma.trainingRoom.count();
   if (count > 0) return;
