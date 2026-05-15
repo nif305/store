@@ -170,7 +170,7 @@ export default function TrainingKitPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1480px] px-4 py-6">
+      <div className={`mx-auto max-w-[1480px] px-4 py-6 ${view !== 'orders' && stats.cart > 0 ? 'pb-28' : ''}`}>
         <section className="mb-5 overflow-hidden rounded-[10px] border border-[#dbe4e1] bg-white">
           <div className="grid gap-5 p-5 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
@@ -223,6 +223,10 @@ export default function TrainingKitPage() {
       <footer className="border-t border-[#dbe4e1] bg-white px-4 py-5 text-center text-[13px] text-[#6d7b78]">
         حقوق النشر - إدارة عمليات التدريب وكالة التدريب 2026
       </footer>
+
+      {view !== 'orders' && stats.cart > 0 ? (
+        <CheckoutBar count={stats.cart} uniqueCount={cartRows.length} onCheckout={() => setView('orders')} />
+      ) : null}
     </main>
   );
 }
@@ -384,9 +388,42 @@ function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; set
           <div className="mt-1 text-[12px] text-[#6d7b78]">{item.category}</div>
         </div>
         <StockLine item={item} />
-        <QuantityControl value={qty} onMinus={() => setQty(item.id, qty - 1)} onPlus={() => setQty(item.id, qty + 1)} onChange={(value) => setQty(item.id, value)} />
+        {qty > 0 ? (
+          <div className="flex items-center justify-between gap-3">
+            <QuantityControl value={qty} onMinus={() => setQty(item.id, qty - 1)} onPlus={() => setQty(item.id, qty + 1)} onChange={(value) => setQty(item.id, value)} />
+            <span className="text-[12px] text-[#6d7b78]">ضمن الطلبات</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setQty(item.id, 1)}
+            className="h-10 w-full rounded-[6px] border border-[#cfdcda] bg-[#f8fbfa] text-[14px] text-[#315f5d] transition hover:border-[#8aa6a1] hover:bg-[#edf5f4]"
+          >
+            إضافة للطلبات
+          </button>
+        )}
       </div>
     </article>
+  );
+}
+
+function CheckoutBar({ count, uniqueCount, onCheckout }: { count: number; uniqueCount: number; onCheckout: () => void }) {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#dbe4e1] bg-white/95 px-4 py-3 shadow-[0_-12px_32px_rgba(36,55,54,0.10)] backdrop-blur">
+      <div className="mx-auto flex max-w-[880px] items-center justify-between gap-3 rounded-[10px] border border-[#dbe4e1] bg-[#f8fbfa] p-2">
+        <div className="min-w-0 px-2">
+          <div className="text-[14px] text-[#243736]">تم اختيار {count} مادة</div>
+          <div className="text-[12px] text-[#6d7b78]">{uniqueCount} صنف في الطلبات</div>
+        </div>
+        <button
+          type="button"
+          onClick={onCheckout}
+          className="h-11 shrink-0 rounded-[8px] bg-[#315f5d] px-6 text-[14px] text-white transition hover:bg-[#274f4d]"
+        >
+          إتمام الطلب
+        </button>
+      </div>
+    </div>
   );
 }
 
