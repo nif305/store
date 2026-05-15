@@ -336,7 +336,7 @@ export default function TrainerNeedsPage() {
           ) : filteredNeeds.length === 0 ? (
             <div className="py-12 text-center text-[#71817f]">لا توجد طلبات ضمن هذا التصنيف حالياً</div>
           ) : (
-            <div className="max-h-[calc(100vh-280px)] space-y-2 overflow-y-auto">
+            <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
               {filteredNeeds.map((need) => (
                 <div
                   key={need.id}
