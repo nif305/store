@@ -35,6 +35,7 @@ type Need = {
 };
 
 type Assignee = { id: string; fullName: string; department?: string | null };
+type Viewer = { id: string; role: string };
 type CatalogItem = {
   id: string;
   title: string;
@@ -44,6 +45,7 @@ type CatalogItem = {
   temporarilyReservedQty: number;
 };
 type DraftRow = { catalogItemId: string; title: string; requestedQty: number; coordinatorNote?: string };
+type RequestBucket = 'pending' | 'active' | 'done';
 
 const statusLabel: Record<string, string> = {
   NEW: 'جديد',
@@ -61,6 +63,18 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleDateString('ar-SA');
 }
 
+function requestBucket(status: string, assignedToId?: string | null): RequestBucket {
+  if (status === 'CONVERTED_TO_REQUEST' || status === 'CANCELLED') return 'done';
+  if (!assignedToId || status === 'NEW' || status === 'IN_REVIEW') return 'pending';
+  return 'active';
+}
+
+const bucketLabel: Record<RequestBucket, string> = {
+  pending: 'الطلبات المعلقة',
+  active: 'الطلبات النشطة',
+  done: 'الطلبات المنتهية',
+};
+
 export default function TrainerNeedsPage() {
   const [needs, setNeeds] = useState<Need[]>([]);
   const [assignees, setAssignees] = useState<Assignee[]>([]);
@@ -73,10 +87,21 @@ export default function TrainerNeedsPage() {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [bucket, setBucket] = useState<RequestBucket>('pending');
+  const [viewer, setViewer] = useState<Viewer | null>(null);
 
   const selected = useMemo(() => needs.find((need) => need.id === selectedId) || needs[0], [needs, selectedId]);
   const opened = useMemo(() => needs.find((need) => need.id === openedId) || null, [needs, openedId]);
   const isLocked = opened?.status === 'CONVERTED_TO_REQUEST' || !!opened?.linkedRequest;
+  const bucketCounts = useMemo(() => ({
+    pending: needs.filter((need) => requestBucket(need.status, need.assignedToId) === 'pending').length,
+    active: needs.filter((need) => requestBucket(need.status, need.assignedToId) === 'active').length,
+    done: needs.filter((need) => requestBucket(need.status, need.assignedToId) === 'done').length,
+  }), [needs]);
+  const filteredNeeds = useMemo(
+    () => needs.filter((need) => requestBucket(need.status, need.assignedToId) === bucket),
+    [bucket, needs]
+  );
 
   const draftStats = useMemo(() => {
     let requested = 0;
@@ -112,13 +137,16 @@ export default function TrainerNeedsPage() {
       const nextNeeds = Array.isArray(needsJson.data) ? needsJson.data : [];
       setNeeds(nextNeeds);
       setAssignees(Array.isArray(needsJson.assignees) ? needsJson.assignees : []);
+      setViewer(needsJson.viewer || null);
       setCatalog(Array.isArray(catalogJson.items) ? catalogJson.items : []);
 
       const params = new URLSearchParams(window.location.search);
       const openId = params.get('open');
       if (openId && nextNeeds.some((need: Need) => need.id === openId)) {
+        const openedNeed = nextNeeds.find((need: Need) => need.id === openId);
         setSelectedId(openId);
         setOpenedId(openId);
+        if (openedNeed) setBucket(requestBucket(openedNeed.status, openedNeed.assignedToId));
       } else if (!selectedId && nextNeeds[0]) {
         setSelectedId(nextNeeds[0].id);
       }
@@ -183,6 +211,20 @@ export default function TrainerNeedsPage() {
       setNeeds((prev) => prev.map((need) => (need.id === needId ? json.data : need)));
       setSelectedId(needId);
       setOpenedId(needId);
+      if (
+        actionName === 'assign' &&
+        body.assignedToId &&
+        body.assignedToId !== viewer?.id &&
+        viewer?.role !== 'MANAGER' &&
+        viewer?.role !== 'WAREHOUSE'
+      ) {
+        setNeeds((prev) => prev.filter((need) => need.id !== needId));
+        setOpenedId('');
+        setSelectedId('');
+        window.history.replaceState(null, '', '/materials/trainer-needs');
+        setNotice('تم إسناد الطلب، ولن يظهر في قائمتك لأنه أصبح موجهاً لموظف آخر.');
+        return;
+      }
       if (actionName === 'update-order') setNotice('تم حفظ تعديل الطلب.');
       if (actionName === 'convert') setNotice('تم اعتماد الطلب وتحويل الكميات المتوفرة إلى طلب مواد للمخزن.');
       if (actionName === 'cancel') setNotice('تم إلغاء الطلب وفك أي حجز مؤقت مرتبط به.');
@@ -250,13 +292,28 @@ export default function TrainerNeedsPage() {
             <h2 className="font-extrabold">الطلبات الواردة</h2>
             <button onClick={load} className="rounded-[8px] border border-[#dce6e3] px-3 py-1.5 text-[12px] font-bold">تحديث</button>
           </div>
+          <div className="mb-4 grid grid-cols-3 gap-2">
+            {(['pending', 'active', 'done'] as RequestBucket[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setBucket(key)}
+                className={`rounded-[8px] border px-2 py-2 text-[12px] transition ${
+                  bucket === key ? 'border-[#2A6364] bg-[#2A6364] text-white' : 'border-[#dce6e3] bg-white text-[#536866]'
+                }`}
+              >
+                <span className="block font-bold">{bucketLabel[key]}</span>
+                <span className="mt-1 block text-[15px] font-extrabold">{bucketCounts[key]}</span>
+              </button>
+            ))}
+          </div>
           {loading ? (
             <div className="py-12 text-center text-[#71817f]">جاري التحميل...</div>
-          ) : needs.length === 0 ? (
-            <div className="py-12 text-center text-[#71817f]">لا توجد طلبات مدربين حالياً</div>
+          ) : filteredNeeds.length === 0 ? (
+            <div className="py-12 text-center text-[#71817f]">لا توجد طلبات ضمن هذا التصنيف حالياً</div>
           ) : (
             <div className="max-h-[calc(100vh-280px)] space-y-2 overflow-y-auto">
-              {needs.map((need) => (
+              {filteredNeeds.map((need) => (
                 <div
                   key={need.id}
                   className={`rounded-[8px] border p-4 transition ${
@@ -276,6 +333,9 @@ export default function TrainerNeedsPage() {
                     <MiniStat label="مواد" value={need.items.length} />
                     <MiniStat label="متدربين" value={need.traineeCount} />
                     <MiniStat label="تاريخ الدورة" value={formatDate(need.startDate)} />
+                  </div>
+                  <div className="mt-3 rounded-[8px] bg-[#f6f9f8] px-3 py-2 text-[12px] text-[#536866]">
+                    مسند إلى: <span className="font-bold text-[#223738]">{need.assignedTo?.fullName || 'غير مسند'}</span>
                   </div>
                   <button
                     type="button"

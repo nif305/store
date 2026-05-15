@@ -524,8 +524,17 @@ async function mapNeed(need: any) {
   };
 }
 
-export async function listTrainerNeeds() {
+export async function listTrainerNeeds(session?: Pick<SessionUser, 'id' | 'role'>) {
+  const canSeeAll = !session || session.role === Role.MANAGER || session.role === Role.WAREHOUSE;
   const needs = await prisma.trainerNeed.findMany({
+    where: canSeeAll
+      ? undefined
+      : {
+          OR: [
+            { assignedToId: null },
+            { assignedToId: session.id },
+          ],
+        },
     include: includeNeed(),
     orderBy: [{ createdAt: 'desc' }],
     take: 100,
