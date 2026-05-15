@@ -37,7 +37,8 @@ const ON_DEMAND_ITEMS = [
   'حقيبة مستلزمات طارئة',
 ];
 
-const PER_TRAINEE_KEYWORDS = ['قلم', 'أقلام', 'نوت', 'دفتر', 'دفاتر', 'فولدر', 'ملف', 'شهادة', 'شهادات', 'غلاف', 'أغلفة'];
+const PER_TRAINEE_KEYWORDS = ['قلم', 'أقلام', 'نوت', 'دفتر', 'دفاتر', 'فولدر', 'ملف'];
+const EXCLUDED_DEFAULT_BUNDLE_KEYWORDS = ['شهادة', 'شهادات', 'غلاف', 'أغلفة'];
 
 function normalizeText(value: unknown) {
   return String(value || '').trim();
@@ -140,6 +141,13 @@ async function ensureStoreSeed() {
   }
 
   const bundleCount = await prisma.storeBundle.count();
+  await prisma.storeBundleItem.deleteMany({
+    where: {
+      catalogItem: {
+        OR: EXCLUDED_DEFAULT_BUNDLE_KEYWORDS.map((word) => ({ title: { contains: word, mode: 'insensitive' as const } })),
+      },
+    },
+  });
   if (bundleCount === 0) {
     const visibleItems = await prisma.storeCatalogItem.findMany({
       where: { isVisible: true, isOnDemand: false },

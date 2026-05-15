@@ -249,7 +249,7 @@ export default function TrainerNeedsPage() {
         setNotice('تم إسناد الطلب، ولن يظهر في قائمتك لأنه أصبح موجهاً لموظف آخر.');
         return;
       }
-      if (actionName === 'update-order') setNotice('تم حفظ تعديل الطلب.');
+      if (actionName === 'update-order') setNotice('تم حفظ تعديلات البنود.');
       if (actionName === 'convert') setNotice('تم اعتماد الطلب وتحويل الكميات المتوفرة إلى طلب مواد للمخزن.');
       if (actionName === 'cancel') setNotice('تم إلغاء الطلب وفك أي حجز مؤقت مرتبط به.');
     } catch (err: any) {
@@ -310,7 +310,7 @@ export default function TrainerNeedsPage() {
       {error ? <div className="rounded-[8px] bg-[#fff1f3] px-4 py-3 text-[13px] font-bold text-[#7c1e3e]">{error}</div> : null}
       {notice ? <div className="rounded-[8px] bg-[#eef8f2] px-4 py-3 text-[13px] font-bold text-[#1e6b4c]">{notice}</div> : null}
 
-      <div className={opened ? 'space-y-5' : 'grid gap-5 xl:grid-cols-[410px_1fr]'}>
+      <div className="space-y-5">
         <section className={opened ? 'hidden' : 'rounded-[8px] border border-[#dce6e3] bg-white p-4'}>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-extrabold">الطلبات الواردة</h2>
@@ -358,9 +358,19 @@ export default function TrainerNeedsPage() {
                     <MiniStat label="متدربين" value={need.traineeCount} />
                     <MiniStat label="تاريخ الدورة" value={formatDate(need.startDate)} />
                   </div>
-                  <div className="mt-3 rounded-[8px] bg-[#f6f9f8] px-3 py-2 text-[12px] text-[#536866]">
-                    مسند إلى: <span className="font-bold text-[#223738]">{need.assignedTo?.fullName || 'غير مسند'}</span>
-                  </div>
+                  <label className="mt-3 block rounded-[8px] bg-[#f6f9f8] px-3 py-2 text-[12px] text-[#536866]">
+                    <span className="mb-1 block">إسناد الطلب</span>
+                    <select
+                      value={need.assignedToId || ''}
+                      onChange={(event) => action(need.id, 'assign', { assignedToId: event.target.value || null })}
+                      className="h-9 w-full rounded-[8px] border border-[#dce6e3] bg-white px-2 text-[12px] outline-none"
+                    >
+                      <option value="">غير مسند</option>
+                      {assignees.map((user) => (
+                        <option key={user.id} value={user.id}>{user.fullName}</option>
+                      ))}
+                    </select>
+                  </label>
                   <button
                     type="button"
                     onClick={() => openNeed(need.id)}
@@ -374,7 +384,7 @@ export default function TrainerNeedsPage() {
           )}
         </section>
 
-        <section className="rounded-[8px] border border-[#dce6e3] bg-white p-5">
+        <section className={opened ? 'rounded-[8px] border border-[#dce6e3] bg-white p-5' : 'hidden'}>
           {opened ? (
             <div className="space-y-5">
               <div className="flex flex-col gap-3 border-b border-[#edf1f1] pb-4 lg:flex-row lg:items-center lg:justify-between">
@@ -422,33 +432,15 @@ export default function TrainerNeedsPage() {
                 الكميات المتوفرة فقط تتحول إلى طلب مواد للمخزن. المواد غير المتوفرة لا يتم تحويلها للصرف؛ تبقى واضحة للمنسق كمطلوب يحتاج توفير أو حذف أو استبدال قبل الاعتماد. إذا كانت مادة غير منطقية احذفها من الجدول ثم احفظ تعديل الطلب.
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
-                <label className="block">
-                  <span className="mb-1 block text-[12px] font-bold text-[#536866]">إسناد الطلب</span>
-                  <select
-                    value={opened.assignedToId || ''}
-                    onChange={(event) => action(opened.id, 'assign', { assignedToId: event.target.value || null })}
-                    disabled={isLocked}
-                    className="h-11 w-full rounded-[8px] border border-[#dce6e3] bg-white px-3 outline-none disabled:bg-[#f4f6f6]"
-                  >
-                    <option value="">بدون إسناد</option>
-                    {assignees.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.fullName} {user.department ? `- ${user.department}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={() => action(opened.id, 'cancel')}
-                    disabled={isLocked || busy === `${opened.id}:cancel`}
-                    className="h-11 w-full rounded-[8px] border border-[#7c1e3e] text-[13px] font-bold text-[#7c1e3e] disabled:opacity-50"
-                  >
-                    إلغاء الطلب
-                  </button>
-                </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => action(opened.id, 'cancel')}
+                  disabled={isLocked || busy === `${opened.id}:cancel`}
+                  className="h-11 rounded-[8px] border border-[#7c1e3e] px-5 text-[13px] font-bold text-[#7c1e3e] disabled:opacity-50"
+                >
+                  إلغاء الطلب
+                </button>
               </div>
 
               <section className="rounded-[8px] border border-[#dce6e3] bg-white p-4">
@@ -573,7 +565,7 @@ export default function TrainerNeedsPage() {
 
               <div className="flex flex-col gap-3 lg:flex-row lg:justify-between">
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <ActionButton label="حفظ تعديل الطلب" busy={busy === `${opened.id}:update-order`} disabled={isLocked || draftRows.length === 0} onClick={() => action(opened.id, 'update-order', { items: draftRows })} />
+                  <ActionButton label="حفظ تعديلات البنود" busy={busy === `${opened.id}:update-order`} disabled={isLocked || draftRows.length === 0} onClick={() => action(opened.id, 'update-order', { items: draftRows })} />
                   <ActionButton label="اعتماد الطلب وتحويل المتوفر للمخزن" busy={busy === `${opened.id}:convert`} disabled={isLocked || draftRows.length === 0 || draftStats.convertible === 0} onClick={() => action(opened.id, 'convert', { items: draftRows })} />
                 </div>
                 <button

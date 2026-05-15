@@ -432,7 +432,7 @@ function RoomsView({
   const setRequestedLayout = (_value: string) => undefined;
 
   return (
-    <section className="grid gap-5 xl:grid-cols-[1fr_380px]">
+    <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_390px]">
       <div className="rounded-[14px] border border-[#d5e0dc] bg-[#fbfdfc] p-4 shadow-[0_14px_40px_rgba(36,55,54,0.06)]">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -481,7 +481,7 @@ function RoomsView({
         </div>
       </div>
 
-      <aside className="rounded-[14px] border border-[#d5e0dc] bg-[#fffdf8] p-4 shadow-[0_14px_40px_rgba(36,55,54,0.07)] xl:sticky xl:top-24 xl:self-start">
+      <aside className="rounded-[14px] border border-[#d5e0dc] bg-[#fffdf8] p-4 shadow-[0_14px_40px_rgba(36,55,54,0.07)] lg:sticky lg:top-24 lg:max-h-[calc(100vh-120px)] lg:self-start lg:overflow-y-auto">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-[20px] text-[#243736]">ملخص حجز القاعات</h3>
