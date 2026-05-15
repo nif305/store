@@ -218,6 +218,12 @@ export default function TrainerNeedsPage() {
     }
   }
 
+  function closeOpened() {
+    setOpenedId('');
+    setNotice('');
+    window.history.replaceState(null, '', '/materials/trainer-needs');
+  }
+
   return (
     <div className="space-y-5" dir="rtl">
       <section className="rounded-[8px] border border-[#dce6e3] bg-white p-5">
@@ -238,8 +244,8 @@ export default function TrainerNeedsPage() {
       {error ? <div className="rounded-[8px] bg-[#fff1f3] px-4 py-3 text-[13px] font-bold text-[#7c1e3e]">{error}</div> : null}
       {notice ? <div className="rounded-[8px] bg-[#eef8f2] px-4 py-3 text-[13px] font-bold text-[#1e6b4c]">{notice}</div> : null}
 
-      <div className="grid gap-5 xl:grid-cols-[410px_1fr]">
-        <section className="rounded-[8px] border border-[#dce6e3] bg-white p-4">
+      <div className={opened ? 'space-y-5' : 'grid gap-5 xl:grid-cols-[410px_1fr]'}>
+        <section className={opened ? 'hidden' : 'rounded-[8px] border border-[#dce6e3] bg-white p-4'}>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-extrabold">الطلبات الواردة</h2>
             <button onClick={load} className="rounded-[8px] border border-[#dce6e3] px-3 py-1.5 text-[12px] font-bold">تحديث</button>
@@ -257,7 +263,7 @@ export default function TrainerNeedsPage() {
                     selected?.id === need.id ? 'border-[#2A6364] bg-[#eef6f5]' : 'border-[#dce6e3] bg-white'
                   }`}
                 >
-                  <button type="button" onClick={() => setSelectedId(need.id)} className="w-full text-right">
+                  <button type="button" onClick={() => openNeed(need.id)} className="w-full text-right">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-extrabold">{need.courseName}</div>
@@ -287,6 +293,20 @@ export default function TrainerNeedsPage() {
         <section className="rounded-[8px] border border-[#dce6e3] bg-white p-5">
           {opened ? (
             <div className="space-y-5">
+              <div className="flex flex-col gap-3 border-b border-[#edf1f1] pb-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="text-[12px] font-bold text-[#2A6364]">نموذج طلب مواد تدريبية</div>
+                  <div className="mt-1 text-[18px] font-extrabold text-[#223738]">مراجعة الطلب وتعديل بنوده قبل التحويل للمخزن</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeOpened}
+                  className="h-10 rounded-[8px] border border-[#dce6e3] px-4 text-[13px] font-bold text-[#2A6364]"
+                >
+                  العودة إلى قائمة الطلبات
+                </button>
+              </div>
+
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="text-[13px] font-bold text-[#2A6364]">{opened.code}</div>
@@ -362,8 +382,17 @@ export default function TrainerNeedsPage() {
                 </div>
               ) : null}
 
-              <div className="overflow-x-auto rounded-[8px] border border-[#dce6e3]">
-                <table className="w-full min-w-[980px] text-right text-[13px]">
+              <div className="overflow-visible rounded-[8px] border border-[#dce6e3]">
+                <table className="w-full table-fixed text-right text-[13px]">
+                  <colgroup>
+                    <col className="w-[24%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[9%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[25%]" />
+                  </colgroup>
                   <thead className="bg-[#f6f9f8] text-[#536866]">
                     <tr>
                       <th className="px-4 py-3">المادة</th>
@@ -398,7 +427,7 @@ export default function TrainerNeedsPage() {
                           </td>
                           <td className="px-4 py-3">
                             {isLocked ? row.requestedQty : (
-                              <input type="number" min={1} value={row.requestedQty} onChange={(event) => updateDraftRow(row.catalogItemId, { requestedQty: Math.max(1, Number(event.target.value || 1)) })} className="h-10 w-24 rounded-[8px] border border-[#dce6e3] px-2" />
+                              <input type="number" min={1} value={row.requestedQty} onChange={(event) => updateDraftRow(row.catalogItemId, { requestedQty: Math.max(1, Number(event.target.value || 1)) })} className="h-10 w-full rounded-[8px] border border-[#dce6e3] px-2" />
                             )}
                           </td>
                           <td className="px-4 py-3">{stockQty}</td>
@@ -409,8 +438,8 @@ export default function TrainerNeedsPage() {
                             {isLocked ? (
                               <div className="max-w-[280px] text-[12px] leading-6 text-[#536866]">{row.coordinatorNote || '-'}</div>
                             ) : (
-                              <div className="flex items-center gap-2">
-                                <input value={row.coordinatorNote || ''} onChange={(event) => updateDraftRow(row.catalogItemId, { coordinatorNote: event.target.value })} placeholder="مثال: حذف غير منطقي / توفير لاحق / تخفيض الكمية" className="h-10 min-w-[260px] rounded-[8px] border border-[#dce6e3] px-2 text-[12px]" />
+                              <div className="grid gap-2">
+                                <input value={row.coordinatorNote || ''} onChange={(event) => updateDraftRow(row.catalogItemId, { coordinatorNote: event.target.value })} placeholder="مثال: حذف غير منطقي / توفير لاحق / تخفيض الكمية" className="h-10 w-full rounded-[8px] border border-[#dce6e3] px-2 text-[12px]" />
                                 <button type="button" onClick={() => removeDraftRow(row.catalogItemId)} className="h-10 rounded-[8px] bg-[#7c1e3e] px-3 text-[12px] font-bold text-white">حذف البند</button>
                               </div>
                             )}
