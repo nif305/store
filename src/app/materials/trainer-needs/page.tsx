@@ -34,6 +34,7 @@ type Need = {
     id: string;
     status: string;
     requestedLayout?: string | null;
+    requestedPlan?: { roomId: string; layout?: string; startDate?: string; endDate?: string }[] | null;
     coordinatorNote?: string | null;
     requestedRoom?: RoomItem | null;
     approvedRoom?: RoomItem | null;
@@ -454,10 +455,24 @@ export default function TrainerNeedsPage() {
                 <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <div className="text-[16px] font-extrabold text-[#223738]">القاعة التدريبية</div>
-                    <div className="mt-1 text-[12px] text-[#71817f]">
-                      المطلوبة: {opened.roomBooking?.requestedRoom?.name || 'لم يحدد المدرب قاعة'} - المعتمدة: {opened.roomBooking?.approvedRoom?.name || 'لم تعتمد بعد'}
-                    </div>
+                  <div className="mt-1 text-[12px] text-[#71817f]">
+                    المطلوبة: {opened.roomBooking?.requestedRoom?.name || 'لم يحدد المدرب قاعة'} - المعتمدة: {opened.roomBooking?.approvedRoom?.name || 'لم تعتمد بعد'}
                   </div>
+                  {opened.roomBooking?.requestedPlan?.length ? (
+                    <div className="mt-3 grid gap-2 md:grid-cols-2">
+                      {opened.roomBooking.requestedPlan.map((plan, index) => {
+                        const room = rooms.find((item) => item.id === plan.roomId);
+                        return (
+                          <div key={`${plan.roomId}-${index}`} className="rounded-[8px] border border-[#edf1f1] bg-[#fbfcfc] px-3 py-2 text-[12px] text-[#536866]">
+                            <div className="font-bold text-[#223738]">{room?.name || 'قاعة محددة'}</div>
+                            <div className="mt-1">من {formatDate(plan.startDate)} إلى {formatDate(plan.endDate)}</div>
+                            <div className="mt-1">الترتيب: {plan.layout || 'بدون تفضيل محدد'}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
                   <span className="rounded-full bg-[#f3f7f6] px-3 py-1 text-[12px] text-[#2A6364]">{opened.roomBooking?.status || 'بدون طلب قاعة'}</span>
                 </div>
                 <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto]">

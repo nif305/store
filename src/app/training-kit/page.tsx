@@ -40,6 +40,7 @@ type TrainingRoom = {
 
 type Cart = Record<string, number>;
 type View = 'home' | 'bundles' | 'rooms' | 'orders';
+type RoomSelection = { roomId: string; layout: string; startDate: string; endDate: string };
 
 const colors = {
   ink: '#243736',
@@ -62,8 +63,7 @@ export default function TrainingKitPage() {
   const [query, setQuery] = useState('');
   const [roomType, setRoomType] = useState('الكل');
   const [cart, setCart] = useState<Cart>({});
-  const [selectedRoomId, setSelectedRoomId] = useState('');
-  const [requestedLayout, setRequestedLayout] = useState('');
+  const [roomSelections, setRoomSelections] = useState<RoomSelection[]>([]);
   const [form, setForm] = useState({ trainerName: '', courseName: '', startDate: '', endDate: '', traineeCount: '' });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -111,7 +111,13 @@ export default function TrainingKitPage() {
   );
   const categories = useMemo(() => ['الكل', ...Array.from(new Set(items.map((item) => item.category)))], [items]);
   const roomTypes = useMemo(() => ['الكل', ...Array.from(new Set(rooms.map((room) => room.type)))], [rooms]);
-  const selectedRoom = useMemo(() => rooms.find((room) => room.id === selectedRoomId) || null, [rooms, selectedRoomId]);
+  const selectedRooms = useMemo(
+    () =>
+      roomSelections
+        .map((selection) => ({ selection, room: rooms.find((room) => room.id === selection.roomId) || null }))
+        .filter((row) => row.room) as { selection: RoomSelection; room: TrainingRoom }[],
+    [rooms, roomSelections]
+  );
   const visibleRooms = useMemo(() => rooms.filter((room) => roomType === 'الكل' || room.type === roomType), [rooms, roomType]);
   const visibleItems = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -171,16 +177,20 @@ export default function TrainingKitPage() {
           ...form,
           traineeCount,
           items: cartRows.map((row) => ({ catalogItemId: row.item.id, quantity: row.quantity })),
-          roomId: selectedRoomId || null,
-          requestedLayout,
+          roomId: roomSelections[0]?.roomId || null,
+          requestedLayout: roomSelections[0]?.layout || '',
+          roomSelections: roomSelections.map((selection) => ({
+            ...selection,
+            startDate: selection.startDate || form.startDate,
+            endDate: selection.endDate || form.endDate || form.startDate,
+          })),
         }),
       });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(json?.error || 'تعذر إرسال الطلبات');
       setResultCode(json?.data?.code || '');
       setCart({});
-      setSelectedRoomId('');
-      setRequestedLayout('');
+      setRoomSelections([]);
       await loadCatalog();
       await loadRooms();
     } catch (err: any) {
@@ -253,11 +263,10 @@ export default function TrainingKitPage() {
             rooms={visibleRooms}
             roomTypes={roomTypes}
             roomType={roomType}
-            selectedRoomId={selectedRoomId}
-            requestedLayout={requestedLayout}
+            roomSelections={roomSelections}
+            form={form}
             setRoomType={setRoomType}
-            setSelectedRoomId={setSelectedRoomId}
-            setRequestedLayout={setRequestedLayout}
+            setRoomSelections={setRoomSelections}
             goOrders={() => setView('orders')}
           />
         ) : null}
@@ -267,7 +276,7 @@ export default function TrainingKitPage() {
             form={form}
             setForm={setForm}
             cartRows={cartRows}
-            selectedRoom={selectedRoom}
+            selectedRooms={selectedRooms}
             setQty={setQty}
             submitting={submitting}
             onSubmit={submitNeed}
@@ -375,23 +384,154 @@ function RoomsView({
   rooms,
   roomTypes,
   roomType,
-  selectedRoomId,
-  requestedLayout,
+  roomSelections,
+  form,
   setRoomType,
-  setSelectedRoomId,
-  setRequestedLayout,
+  setRoomSelections,
   goOrders,
 }: {
   rooms: TrainingRoom[];
   roomTypes: string[];
   roomType: string;
-  selectedRoomId: string;
-  requestedLayout: string;
+  roomSelections: RoomSelection[];
+  form: { startDate: string; endDate: string; traineeCount: string };
   setRoomType: (value: string) => void;
-  setSelectedRoomId: (value: string) => void;
-  setRequestedLayout: (value: string) => void;
+  setRoomSelections: React.Dispatch<React.SetStateAction<RoomSelection[]>>;
   goOrders: () => void;
 }) {
+  const selectedRoomIds = new Set(roomSelections.map((selection) => selection.roomId));
+  const selectionRows = roomSelections
+    .map((selection) => ({ selection, room: rooms.find((room) => room.id === selection.roomId) }))
+    .filter((row) => row.room) as { selection: RoomSelection; room: TrainingRoom }[];
+  const dateReady = !!form.startDate && !!form.endDate;
+
+  function selectRoom(room: TrainingRoom) {
+    if (!room.isAvailable) return;
+    setRoomSelections((prev) => {
+      const exists = prev.some((selection) => selection.roomId === room.id);
+      if (exists) return prev.filter((selection) => selection.roomId !== room.id);
+      return [
+        ...prev,
+        {
+          roomId: room.id,
+          layout: room.layoutOptions[0] || '',
+          startDate: form.startDate,
+          endDate: form.endDate || form.startDate,
+        },
+      ];
+    });
+  }
+
+  function updateSelection(roomId: string, patch: Partial<RoomSelection>) {
+    setRoomSelections((prev) => prev.map((selection) => (selection.roomId === roomId ? { ...selection, ...patch } : selection)));
+  }
+
+  const selectedRoomId = '';
+  const requestedLayout = '';
+  const setSelectedRoomId = (_value: string) => undefined;
+  const setRequestedLayout = (_value: string) => undefined;
+
+  return (
+    <section className="grid gap-5 xl:grid-cols-[1fr_380px]">
+      <div className="rounded-[14px] border border-[#d5e0dc] bg-[#fbfdfc] p-4 shadow-[0_14px_40px_rgba(36,55,54,0.06)]">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-[24px] text-[#243736]">حجز القاعات التدريبية</h2>
+            <p className="mt-1 text-[13px] text-[#6d7b78]">اختر قاعة واحدة لكل فترة الدورة، أو أكثر من قاعة إذا كانت الدورة تحتاج أماكن مختلفة في أيام مختلفة.</p>
+          </div>
+          <div className="flex gap-2 overflow-x-auto">
+            {roomTypes.map((type) => (
+              <button key={type} type="button" onClick={() => setRoomType(type)} className={`shrink-0 rounded-[999px] border px-4 py-2 text-[13px] ${roomType === type ? 'border-[#9bb4af] bg-[#e8f1ef] text-[#203634]' : 'border-[#d4dfdc] bg-white text-[#53635f]'}`}>
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
+        {!dateReady ? (
+          <div className="mb-4 rounded-[10px] border border-[#e8ddbf] bg-[#fff9ec] px-4 py-3 text-[13px] leading-6 text-[#7f6b43]">
+            أدخل تاريخ بداية ونهاية الدورة في صفحة الطلبات حتى تظهر الإتاحة حسب أيام الدورة بدقة.
+          </div>
+        ) : null}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {rooms.map((room) => {
+            const selected = selectedRoomIds.has(room.id);
+            return (
+              <article key={room.id} className={`overflow-hidden rounded-[14px] border bg-white transition ${selected ? 'border-[#315f5d] ring-2 ring-[#d9e7e3]' : 'border-[#d5e0dc]'}`}>
+                <ProductImage title={room.name} imageUrl={room.imageUrl} ratio="aspect-[16/9]" />
+                <div className="space-y-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[18px] text-[#243736]">{room.name}</div>
+                      <div className="mt-1 text-[12px] text-[#6d7b78]">{room.type} - سعة {room.capacity}</div>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-[11px] ${room.isAvailable ? 'bg-[#eef8f2] text-[#1e6b4c]' : 'bg-[#fff1f3] text-[#7a3147]'}`}>
+                      {room.isAvailable ? 'متاحة للفترة' : 'محجوزة للفترة'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {room.layoutOptions.slice(0, 3).map((layout) => <span key={layout} className="rounded-full bg-[#f4f7f6] px-2 py-1 text-[11px] text-[#53635f]">{layout}</span>)}
+                  </div>
+                  <button type="button" onClick={() => selectRoom(room)} disabled={!room.isAvailable} className={`h-10 w-full rounded-[8px] text-[13px] transition disabled:bg-[#aab7b4] ${selected ? 'border border-[#315f5d] bg-white text-[#315f5d]' : 'bg-[#315f5d] text-white'}`}>
+                    {selected ? 'إلغاء اختيار القاعة' : 'اختيار القاعة'}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+
+      <aside className="rounded-[14px] border border-[#d5e0dc] bg-[#fffdf8] p-4 shadow-[0_14px_40px_rgba(36,55,54,0.07)] xl:sticky xl:top-24 xl:self-start">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-[20px] text-[#243736]">ملخص حجز القاعات</h3>
+            <div className="mt-1 text-[12px] text-[#6d7b78]">{selectionRows.length} قاعة محددة</div>
+          </div>
+          {selectionRows.length ? (
+            <button type="button" onClick={() => setRoomSelections([])} className="rounded-[8px] border border-[#e3c8d1] px-3 py-2 text-[12px] text-[#7a3147]">مسح الكل</button>
+          ) : null}
+        </div>
+        <div className="mt-4 space-y-3">
+          {selectionRows.length === 0 ? (
+            <div className="rounded-[10px] border border-dashed border-[#cfded9] bg-white px-4 py-8 text-center text-[13px] leading-6 text-[#6d7b78]">
+              اختر قاعة من البطاقات، وسيظهر الحجز هنا مباشرة بدون النزول إلى آخر الصفحة.
+            </div>
+          ) : selectionRows.map(({ selection, room }) => (
+            <div key={room.id} className="rounded-[10px] border border-[#d5e0dc] bg-white p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-[15px] text-[#243736]">{room.name}</div>
+                  <div className="mt-1 text-[12px] text-[#6d7b78]">{room.type} - سعة {room.capacity}</div>
+                </div>
+                <button type="button" onClick={() => setRoomSelections((prev) => prev.filter((row) => row.roomId !== room.id))} className="text-[12px] text-[#7a3147]">حذف</button>
+              </div>
+              <div className="mt-3 grid gap-2">
+                <label className="text-[12px] text-[#53635f]">
+                  من
+                  <input type="date" value={selection.startDate} min={form.startDate || undefined} max={form.endDate || undefined} onChange={(event) => updateSelection(room.id, { startDate: event.target.value })} className="mt-1 h-10 w-full rounded-[8px] border border-[#cfded9] px-3" />
+                </label>
+                <label className="text-[12px] text-[#53635f]">
+                  إلى
+                  <input type="date" value={selection.endDate} min={selection.startDate || form.startDate || undefined} max={form.endDate || undefined} onChange={(event) => updateSelection(room.id, { endDate: event.target.value })} className="mt-1 h-10 w-full rounded-[8px] border border-[#cfded9] px-3" />
+                </label>
+                <label className="text-[12px] text-[#53635f]">
+                  ترتيب القاعة
+                  <select value={selection.layout} onChange={(event) => updateSelection(room.id, { layout: event.target.value })} className="mt-1 h-10 w-full rounded-[8px] border border-[#cfded9] bg-white px-3">
+                    <option value="">بدون تفضيل محدد</option>
+                    {room.layoutOptions.map((layout) => <option key={layout} value={layout}>{layout}</option>)}
+                  </select>
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={goOrders} className="mt-4 h-12 w-full rounded-[8px] bg-[#315f5d] text-[14px] text-white shadow-[0_12px_28px_rgba(49,95,93,0.20)]">
+          متابعة ومراجعة طلب التجهيز
+        </button>
+      </aside>
+    </section>
+  );
+
   const selected = rooms.find((room) => room.id === selectedRoomId);
   return (
     <section className="rounded-[14px] border border-[#d5e0dc] bg-[#fbfdfc] p-4 shadow-[0_14px_40px_rgba(36,55,54,0.06)]">
@@ -456,7 +596,7 @@ function OrdersView({
   form,
   setForm,
   cartRows,
-  selectedRoom,
+  selectedRooms,
   setQty,
   submitting,
   onSubmit,
@@ -466,7 +606,7 @@ function OrdersView({
   form: { trainerName: string; courseName: string; startDate: string; endDate: string; traineeCount: string };
   setForm: React.Dispatch<React.SetStateAction<{ trainerName: string; courseName: string; startDate: string; endDate: string; traineeCount: string }>>;
   cartRows: { item: StoreItem; quantity: number }[];
-  selectedRoom: TrainingRoom | null;
+  selectedRooms: { selection: RoomSelection; room: TrainingRoom }[];
   setQty: (id: string, qty: number) => void;
   submitting: boolean;
   onSubmit: (event: React.FormEvent) => void;
@@ -513,8 +653,12 @@ function OrdersView({
           تاريخ نهاية الدورة يستخدم كتاريخ إرجاع متوقع للمواد المسترجعة عند تحويل الاحتياج إلى طلب مواد.
         </div>
         <div className="mt-4 rounded-[10px] border border-[#d5e0dc] bg-white px-4 py-3 text-[13px] leading-6 text-[#53635f]">
-          <div className="text-[#243736]">القاعة المطلوبة</div>
-          <div className="mt-1">{selectedRoom ? `${selectedRoom.name} - ${selectedRoom.type} - سعة ${selectedRoom.capacity}` : 'لم يتم اختيار قاعة بعد'}</div>
+          <div className="text-[#243736]">القاعات المطلوبة</div>
+          <div className="mt-1 space-y-1">
+            {selectedRooms.length ? selectedRooms.map(({ selection, room }) => (
+              <div key={room.id}>{room.name} - {selection.startDate || 'بدون تاريخ'} إلى {selection.endDate || 'بدون تاريخ'}</div>
+            )) : 'لم يتم اختيار قاعة بعد'}
+          </div>
           <button type="button" onClick={goRooms} className="mt-3 rounded-[8px] border border-[#cfded9] px-3 py-2 text-[12px] text-[#315f5d]">اختيار أو تعديل القاعة</button>
         </div>
         <button type="submit" disabled={submitting || cartRows.length === 0} className="mt-5 h-12 w-full rounded-[8px] bg-[#315f5d] text-[15px] text-white shadow-[0_12px_28px_rgba(49,95,93,0.20)] transition hover:bg-[#274f4d] disabled:cursor-not-allowed disabled:bg-[#aab7b4] disabled:shadow-none">

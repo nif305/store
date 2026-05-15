@@ -8,6 +8,7 @@ type Booking = {
   startDate: string;
   endDate: string;
   requestedLayout?: string | null;
+  requestedPlan?: { roomId: string; layout?: string; startDate?: string; endDate?: string }[] | null;
   requestedRoom?: { name: string; type: string; capacity: number } | null;
   approvedRoom?: { name: string; type: string; capacity: number } | null;
   trainerNeed: { code: string; courseName: string; trainerName: string; traineeCount: number; assignedTo?: { fullName: string } | null };
@@ -91,6 +92,13 @@ export default function RoomsSchedulePage() {
                   <div>المتدربون: {booking.trainerNeed.traineeCount}</div>
                   <div>المسند إليه: {booking.trainerNeed.assignedTo?.fullName || 'غير مسند'}</div>
                 </div>
+                {booking.requestedPlan?.length ? (
+                  <div className="mt-3 rounded-[8px] border border-[#edf1f1] bg-white px-3 py-2 text-[12px] leading-6 text-[#536866]">
+                    {booking.requestedPlan.map((plan, index) => (
+                      <div key={`${plan.roomId}-${index}`}>فترة {index + 1}: من {formatDate(plan.startDate || booking.startDate)} إلى {formatDate(plan.endDate || booking.endDate)} - {plan.layout || 'بدون تفضيل محدد'}</div>
+                    ))}
+                  </div>
+                ) : null}
               </article>
             );
           })}

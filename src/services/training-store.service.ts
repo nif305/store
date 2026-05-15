@@ -395,6 +395,17 @@ export async function createTrainerNeed(data: any) {
   const endDate = data.endDate ? new Date(data.endDate) : null;
   const requestedRoomId = normalizeText(data.roomId || data.requestedRoomId);
   const requestedLayout = normalizeText(data.requestedLayout);
+  const roomSelections = Array.isArray(data.roomSelections)
+    ? data.roomSelections
+        .map((row: any) => ({
+          roomId: normalizeText(row.roomId),
+          layout: normalizeText(row.layout),
+          startDate: normalizeText(row.startDate),
+          endDate: normalizeText(row.endDate),
+        }))
+        .filter((row: any) => row.roomId)
+    : [];
+  const primaryRoomId = roomSelections[0]?.roomId || requestedRoomId;
   const rows = Array.isArray(data.items)
     ? data.items
         .map((item: any) => ({ catalogItemId: normalizeText(item.catalogItemId), quantity: normalizeQty(item.quantity) }))
@@ -413,12 +424,14 @@ export async function createTrainerNeed(data: any) {
   const byId = new Map(catalog.map((item) => [item.id, item]));
   if (catalog.length !== rows.length) throw new Error('توجد مادة غير متاحة في المتجر');
   let requestedRoom = null;
-  if (requestedRoomId) {
-    requestedRoom = await prisma.trainingRoom.findFirst({
-      where: { id: requestedRoomId, isVisible: true },
+  if (primaryRoomId) {
+    const requestedRoomIds = Array.from(new Set([primaryRoomId, ...roomSelections.map((row: any) => row.roomId)].filter(Boolean)));
+    const availableRooms = await prisma.trainingRoom.findMany({
+      where: { id: { in: requestedRoomIds }, isVisible: true },
       select: { id: true },
     });
-    if (!requestedRoom) throw new Error('القاعة المحددة غير متاحة');
+    if (availableRooms.length !== requestedRoomIds.length) throw new Error('توجد قاعة محددة غير متاحة');
+    requestedRoom = availableRooms[0] || null;
   }
 
   const count = await prisma.trainerNeed.count();
@@ -462,12 +475,13 @@ export async function createTrainerNeed(data: any) {
       },
       include: { items: true },
     });
-    if (requestedRoomId) {
+    if (primaryRoomId) {
       await tx.trainingRoomBooking.create({
         data: {
           trainerNeedId: created.id,
-          requestedRoomId,
-          requestedLayout: requestedLayout || null,
+          requestedRoomId: primaryRoomId,
+          requestedLayout: roomSelections[0]?.layout || requestedLayout || null,
+          requestedPlan: roomSelections.length ? roomSelections : undefined,
           startDate,
           endDate: endDate || startDate,
         },
