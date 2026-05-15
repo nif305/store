@@ -484,11 +484,11 @@ function RoomsView({
       <aside className="rounded-[14px] border border-[#d5e0dc] bg-[#fffdf8] p-3 shadow-[0_14px_40px_rgba(36,55,54,0.07)] xl:fixed xl:left-[max(1rem,calc((100vw-1480px)/2+1rem))] xl:top-24 xl:z-20 xl:w-[390px]">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-[20px] text-[#243736]">ملخص حجز القاعات</h3>
+            <h3 className="text-[18px] text-[#243736]">ملخص حجز القاعات</h3>
             <div className="mt-1 text-[12px] text-[#6d7b78]">{selectionRows.length} قاعة محددة</div>
           </div>
           {selectionRows.length ? (
-            <button type="button" onClick={() => setRoomSelections([])} className="rounded-[8px] border border-[#e3c8d1] px-3 py-2 text-[12px] text-[#7a3147]">مسح الكل</button>
+            <button type="button" onClick={() => setRoomSelections([])} className="rounded-[8px] border border-[#e3c8d1] px-2 py-1.5 text-[12px] text-[#7a3147]">مسح الكل</button>
           ) : null}
         </div>
         <div className="mt-3 space-y-2">
@@ -497,26 +497,26 @@ function RoomsView({
               اختر قاعة من البطاقات، وسيظهر الحجز هنا مباشرة بدون النزول إلى آخر الصفحة.
             </div>
           ) : selectionRows.map(({ selection, room }) => (
-            <div key={room.id} className="rounded-[10px] border border-[#d5e0dc] bg-white p-2.5">
-              <div className="flex items-start justify-between gap-2">
+            <div key={room.id} className="rounded-[10px] border border-[#d5e0dc] bg-white p-1.5">
+              <div className="flex items-center justify-between gap-2">
                 <div>
-                  <div className="text-[15px] text-[#243736]">{room.name}</div>
-                  <div className="mt-1 text-[12px] text-[#6d7b78]">{room.type} - سعة {room.capacity}</div>
+                  <div className="text-[13px] text-[#243736]">{room.name}</div>
+                  <div className="text-[10px] text-[#6d7b78]">{room.type} - سعة {room.capacity}</div>
                 </div>
                 <button type="button" onClick={() => setRoomSelections((prev) => prev.filter((row) => row.roomId !== room.id))} className="text-[12px] text-[#7a3147]">حذف</button>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <label className="text-[12px] text-[#53635f]">
+              <div className="mt-1 grid grid-cols-2 gap-1">
+                <label className="text-[10px] text-[#53635f]">
                   من
-                  <input type="date" value={selection.startDate} min={form.startDate || undefined} max={form.endDate || undefined} onChange={(event) => updateSelection(room.id, { startDate: event.target.value })} className="mt-1 h-9 w-full rounded-[8px] border border-[#cfded9] px-2" />
+                  <input type="date" value={selection.startDate} min={form.startDate || undefined} max={form.endDate || undefined} onChange={(event) => updateSelection(room.id, { startDate: event.target.value })} className="mt-0.5 h-7 w-full rounded-[8px] border border-[#cfded9] px-2 text-[11px]" />
                 </label>
-                <label className="text-[12px] text-[#53635f]">
+                <label className="text-[10px] text-[#53635f]">
                   إلى
-                  <input type="date" value={selection.endDate} min={selection.startDate || form.startDate || undefined} max={form.endDate || undefined} onChange={(event) => updateSelection(room.id, { endDate: event.target.value })} className="mt-1 h-9 w-full rounded-[8px] border border-[#cfded9] px-2" />
+                  <input type="date" value={selection.endDate} min={selection.startDate || form.startDate || undefined} max={form.endDate || undefined} onChange={(event) => updateSelection(room.id, { endDate: event.target.value })} className="mt-0.5 h-7 w-full rounded-[8px] border border-[#cfded9] px-2 text-[11px]" />
                 </label>
-                <label className="col-span-2 text-[12px] text-[#53635f]">
+                <label className="col-span-2 text-[10px] text-[#53635f]">
                   ترتيب القاعة
-                  <select value={selection.layout} onChange={(event) => updateSelection(room.id, { layout: event.target.value })} className="mt-1 h-9 w-full rounded-[8px] border border-[#cfded9] bg-white px-2">
+                  <select value={selection.layout} onChange={(event) => updateSelection(room.id, { layout: event.target.value })} className="mt-0.5 h-7 w-full rounded-[8px] border border-[#cfded9] bg-white px-2 text-[11px]">
                     <option value="">بدون تفضيل محدد</option>
                     {room.layoutOptions.map((layout) => <option key={layout} value={layout}>{layout}</option>)}
                   </select>
@@ -525,7 +525,7 @@ function RoomsView({
             </div>
           ))}
         </div>
-        <button type="button" onClick={goOrders} className="mt-4 h-12 w-full rounded-[8px] bg-[#315f5d] text-[14px] text-white shadow-[0_12px_28px_rgba(49,95,93,0.20)]">
+        <button type="button" onClick={goOrders} className="mt-2 h-10 w-full rounded-[8px] bg-[#315f5d] text-[14px] text-white shadow-[0_12px_28px_rgba(49,95,93,0.20)]">
           متابعة ومراجعة طلب التجهيز
         </button>
       </aside>
