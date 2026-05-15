@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ItemStatus, ItemType } from '@prisma/client';
+import { ItemStatus, ItemType, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { InventoryService } from '@/services/inventory.service';
 import { approvedInventorySeed } from '@/lib/inventory/approvedInventory';
 import { getInventorySearchTerms } from '@/lib/inventoryLocalization';
+import { resolveSessionUser } from '@/lib/auth/session';
 
 function normalizeStatus(status: string | null): ItemStatus | undefined {
   if (!status) return undefined;
@@ -28,8 +29,23 @@ function normalizeType(type: string | null): ItemType | undefined {
   return undefined;
 }
 
+function canManageInventory(role: Role) {
+  return role === Role.MANAGER || role === Role.WAREHOUSE;
+}
+
+function resolveErrorStatus(error: unknown, fallback: number, request: NextRequest) {
+  const message = String((error as { message?: string })?.message || '');
+  const hasSession = request.cookies.has('inventory_platform_session') || request.cookies.has('user_id');
+  if (!hasSession) return 401;
+  if (message.includes('تسجيل الدخول') || message.includes('الحساب') || message.includes('المستخدم')) {
+    return 401;
+  }
+  return fallback;
+}
+
 export async function GET(request: NextRequest) {
   try {
+    await resolveSessionUser(request);
     const searchParams = request.nextUrl.searchParams;
 
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -108,13 +124,18 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'تعذر جلب بيانات المخزون' },
-      { status: 500 },
+      { status: resolveErrorStatus(error, 500, request) },
     );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await resolveSessionUser(request);
+    if (!canManageInventory(session.role)) {
+      return NextResponse.json({ error: 'غير مصرح بإدارة المخزون' }, { status: 403 });
+    }
+
     const body = await request.json();
 
     if (body?.mode === 'seedApprovedInventory') {
@@ -181,7 +202,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'تعذر إنشاء الصنف' },
-      { status: 400 },
+      { status: resolveErrorStatus(error, 400, request) },
     );
   }
 }

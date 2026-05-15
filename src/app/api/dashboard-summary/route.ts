@@ -10,6 +10,7 @@ import {
   Status,
 } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { resolveSessionUser as resolveVerifiedSessionUser } from '@/lib/auth/session';
 
 type GroupCountRow = Record<string, unknown> & {
   _count: {
@@ -108,7 +109,7 @@ function countBy(rows: GroupCountRow[], key: string, value: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await resolveSessionUser(request);
+    const session = await resolveVerifiedSessionUser(request);
     // Dashboard cards are operational summaries, not row-level lists. Keep them
     // global so every role sees the platform state instead of an empty personal
     // slice; detailed pages still enforce their own role-based access rules.

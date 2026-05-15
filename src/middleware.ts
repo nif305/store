@@ -31,6 +31,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/pending-approval');
 
   const protectedRoutes = [
+    '/materials',
     '/portal',
     '/dashboard',
     '/inventory',
@@ -87,11 +88,20 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/portal', request.url));
   }
 
-  const managerOnlyRoutes = ['/users', '/audit-logs'];
+  const managerOnlyRoutes = ['/users', '/audit-logs', '/materials/users', '/materials/reports', '/materials/archive', '/materials/audit-logs'];
+  const warehouseOrManagerRoutes = ['/materials/inventory', '/materials/store-admin'];
 
   if (
     managerOnlyRoutes.some((route) => pathname.startsWith(route)) &&
     userRole !== 'manager'
+  ) {
+    return NextResponse.redirect(new URL('/portal?error=unauthorized', request.url));
+  }
+
+  if (
+    warehouseOrManagerRoutes.some((route) => pathname.startsWith(route)) &&
+    userRole !== 'manager' &&
+    userRole !== 'warehouse'
   ) {
     return NextResponse.redirect(new URL('/portal?error=unauthorized', request.url));
   }

@@ -4,12 +4,19 @@ import { RequestService } from '@/services/request.service';
 import { resolveSessionUser } from '@/lib/auth/session';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await resolveSessionUser(request);
     const { id } = await params;
-    return NextResponse.json(await RequestService.getById(id));
+    const materialRequest = await RequestService.getById(id);
+
+    if (session.role === Role.USER && materialRequest.requesterId !== session.id) {
+      return NextResponse.json({ error: 'غير مصرح بالاطلاع على هذا الطلب' }, { status: 403 });
+    }
+
+    return NextResponse.json(materialRequest);
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'تعذر جلب الطلب' }, { status: 500 });
   }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Role, Status } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { ReturnService } from '@/services/return.service';
+import { resolveSessionUser as resolveVerifiedSessionUser } from '@/lib/auth/session';
 
 function mapRole(role: string): Role {
   const normalized = String(role || '').trim().toLowerCase();
@@ -94,7 +95,7 @@ async function resolveSessionUser(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await resolveSessionUser(request);
+    const session = await resolveVerifiedSessionUser(request);
     const searchParams = request.nextUrl.searchParams;
     const pageRaw = parseInt(searchParams.get('page') || '1', 10);
     const limitRaw = parseInt(searchParams.get('limit') || '10', 10);
@@ -124,7 +125,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await resolveSessionUser(request);
+    const session = await resolveVerifiedSessionUser(request);
     const body = await request.json();
 
     const custodyId = String(body?.custodyId || '').trim();
@@ -184,7 +185,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await resolveSessionUser(request);
+    const session = await resolveVerifiedSessionUser(request);
     const body = await request.json();
 
     if (body.action === 'approve') {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { resolveSessionUser as resolveVerifiedSessionUser } from '@/lib/auth/session';
 
 function mapRole(role: string): Role {
   const normalized = String(role || '').trim().toLowerCase();
@@ -79,7 +80,7 @@ function resolveSystemEntities(system?: string | null) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await resolveSessionUser(request);
+    const session = await resolveVerifiedSessionUser(request);
     const searchParams = request.nextUrl.searchParams;
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 500);
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
     const systemEntities = resolveSystemEntities(system);
 
     const where =
-      session.activeRole === Role.MANAGER
+      session.role === Role.MANAGER
         ? {}
         : {
             userId: session.id,

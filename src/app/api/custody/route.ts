@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Status, Role, CustodyStatus, ItemType } from '@prisma/client';
 import { CustodyService } from '@/services/custody.service';
+import { resolveSessionUser as resolveVerifiedSessionUser } from '@/lib/auth/session';
 
 function mapRole(role: string): Role {
   const normalized = String(role || '').trim().toLowerCase();
@@ -104,7 +105,7 @@ function serializeCustodyRecord(record: any) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await resolveSessionUser(request);
+    const session = await resolveVerifiedSessionUser(request);
     const pageParam = request.nextUrl.searchParams.get('page');
     const limitParam = request.nextUrl.searchParams.get('limit');
     const status = request.nextUrl.searchParams.get('status');

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Role, Status, RequestStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { RequestService } from '@/services/request.service';
+import { resolveSessionUser as resolveVerifiedSessionUser } from '@/lib/auth/session';
 
 function mapRole(role: string): Role {
   const normalized = String(role || '').trim().toLowerCase();
@@ -84,7 +85,7 @@ async function resolveSessionUser(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await resolveSessionUser(request);
+    const session = await resolveVerifiedSessionUser(request);
     const searchParams = request.nextUrl.searchParams;
     const pageRaw = parseInt(searchParams.get('page') || '1', 10);
     const page = Math.max(1, Number.isFinite(pageRaw) ? pageRaw : 1);
@@ -116,7 +117,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await resolveSessionUser(request);
+    const session = await resolveVerifiedSessionUser(request);
     const body = await request.json();
 
     const items = Array.isArray(body?.items)
