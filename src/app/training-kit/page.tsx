@@ -514,13 +514,6 @@ function RoomsView({
                   إلى
                   <input type="date" value={selection.endDate} min={selection.startDate || form.startDate || undefined} max={form.endDate || undefined} onChange={(event) => updateSelection(room.id, { endDate: event.target.value })} className="mt-0.5 h-7 w-full rounded-[8px] border border-[#cfded9] px-2 text-[11px]" />
                 </label>
-                <label className="col-span-2 text-[10px] text-[#53635f]">
-                  ترتيب القاعة
-                  <select value={selection.layout} onChange={(event) => updateSelection(room.id, { layout: event.target.value })} className="mt-0.5 h-7 w-full rounded-[8px] border border-[#cfded9] bg-white px-2 text-[11px]">
-                    <option value="">بدون تفضيل محدد</option>
-                    {room.layoutOptions.map((layout) => <option key={layout} value={layout}>{layout}</option>)}
-                  </select>
-                </label>
               </div>
             </div>
           ))}
