@@ -118,7 +118,7 @@ async function ensureStoreSeed() {
       seededOnDemandRows.map((item) =>
         prisma.storeCatalogItem.update({
           where: { id: item.id },
-          data: { category: onDemandCategory(item.title), isVisible: true },
+          data: { category: onDemandCategory(item.title) },
         })
       )
     );
@@ -271,8 +271,9 @@ export async function getPublicCatalog() {
     where: { isVisible: true },
     include: {
       items: {
+        where: { catalogItem: { isVisible: true } },
         include: {
-        catalogItem: { include: { inventoryItem: true } },
+          catalogItem: { include: { inventoryItem: true } },
         },
       },
     },
@@ -301,8 +302,52 @@ export async function getPublicCatalog() {
 
 export async function getStoreAdminCatalog() {
   await ensureStoreSeed();
-  const data = await getPublicCatalog();
-  return data;
+  const catalog = await prisma.storeCatalogItem.findMany({
+    include: {
+      inventoryItem: true,
+      alternativesFrom: {
+        include: {
+          alternative: { include: { inventoryItem: true } },
+        },
+      },
+    },
+    orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+  });
+  const reservationMap = await activeReservationsByInventory(
+    catalog.map((item) => item.inventoryItemId).filter(Boolean) as string[]
+  );
+
+  const items = catalog.map((item) => mapCatalogItem(item, reservationMap));
+  const categories = Array.from(new Set(items.map((item) => item.category))).sort((a, b) => a.localeCompare(b, 'ar'));
+  const bundles = await prisma.storeBundle.findMany({
+    include: {
+      items: {
+        include: {
+          catalogItem: { include: { inventoryItem: true } },
+        },
+      },
+    },
+    orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+  });
+
+  return {
+    categories,
+    items,
+    bundles: bundles.map((bundle) => ({
+      id: bundle.id,
+      title: bundle.title,
+      description: bundle.description,
+      imageUrl: bundle.imageUrl,
+      isVisible: bundle.isVisible,
+      items: bundle.items.map((row) => ({
+        catalogItemId: row.catalogItemId,
+        quantity: row.quantity,
+        quantityMode: row.quantityMode,
+        title: row.catalogItem.title,
+        imageUrl: row.catalogItem.imageUrl || row.catalogItem.inventoryItem?.imageUrl || null,
+      })),
+    })),
+  };
 }
 
 export async function updateCatalogItem(id: string, data: any) {
