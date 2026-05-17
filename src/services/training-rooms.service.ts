@@ -45,11 +45,23 @@ function normalizeDate(value: unknown) {
   return date && !Number.isNaN(date.getTime()) ? date : null;
 }
 
-function publicImageUrl(value?: string | null) {
+function publicRoomImageUrl(id: string) {
+  return `/api/training-rooms/image?id=${encodeURIComponent(id)}`;
+}
+
+function parseImageDataUrl(value?: string | null) {
   const imageUrl = normalizeText(value);
   if (!imageUrl) return null;
-  if (imageUrl.startsWith('data:image/') && imageUrl.length > 12000) return null;
-  return imageUrl;
+  if (/^https?:\/\//i.test(imageUrl) || imageUrl.startsWith('/')) {
+    return { redirectUrl: imageUrl, contentType: null, bytes: null };
+  }
+  const match = imageUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!match) return null;
+  return {
+    redirectUrl: null,
+    contentType: match[1],
+    bytes: Buffer.from(match[2], 'base64'),
+  };
 }
 
 export function canManageRooms(session: Pick<SessionUser, 'role' | 'canManageTrainerNeeds'>) {
@@ -157,7 +169,7 @@ function mapRoom(room: any, bookedMap: Map<string, number>, options: { publicPay
     description: room.description,
     equipment: room.equipment || [],
     layoutOptions: room.layoutOptions || [],
-    imageUrl: options.publicPayload ? publicImageUrl(room.imageUrl) : room.imageUrl,
+    imageUrl: options.publicPayload ? publicRoomImageUrl(room.id) : room.imageUrl,
     isVisible: room.isVisible,
     sortOrder: room.sortOrder,
     internalNotes: room.internalNotes,
@@ -190,6 +202,16 @@ export async function getRoomsAdminCatalog() {
   const bookedMap = await roomAvailabilityMap(new Date(), new Date());
   const rooms = await prisma.trainingRoom.findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] });
   return { rooms: rooms.map((room) => mapRoom(room, bookedMap)) };
+}
+
+export async function getPublicRoomImage(id: string) {
+  const roomId = normalizeText(id);
+  if (!roomId) return null;
+  const room = await prisma.trainingRoom.findFirst({
+    where: { id: roomId, isVisible: true },
+    select: { imageUrl: true },
+  });
+  return parseImageDataUrl(room?.imageUrl);
 }
 
 export async function updateTrainingRoom(id: string, data: any) {
