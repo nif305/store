@@ -235,7 +235,13 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('[dashboard-summary] failed', error);
     const message = error?.message || 'Unable to load dashboard summary.';
-    const statusCode = message.includes('Unable to resolve current user') || message.includes('not active') ? 401 : 500;
+    const statusCode =
+      message.includes('Unable to resolve current user') ||
+      message.includes('تعذر التحقق من المستخدم') ||
+      message.includes('not active') ||
+      message.includes('غير نشط')
+        ? 401
+        : 500;
     return NextResponse.json(
       { error: message },
       {

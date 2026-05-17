@@ -41,6 +41,7 @@ type Need = {
   } | null;
   items: NeedItem[];
   createdAt: string;
+  updatedAt?: string;
 };
 
 type RoomItem = { id: string; name: string; type: string; capacity: number; isAvailable?: boolean };
@@ -92,6 +93,7 @@ export default function TrainerNeedsPage() {
   const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [draftRows, setDraftRows] = useState<DraftRow[]>([]);
+  const [draftTraineeCount, setDraftTraineeCount] = useState(0);
   const [addCatalogItemId, setAddCatalogItemId] = useState('');
   const [selectedId, setSelectedId] = useState('');
   const [openedId, setOpenedId] = useState('');
@@ -134,6 +136,39 @@ export default function TrainerNeedsPage() {
     }
     return { requested, convertible, shortage };
   }, [catalog, draftRows, opened]);
+
+  const decisionSummary = useMemo(() => {
+    const hasRoomRequest = !!opened?.roomBooking;
+    const roomApproved = opened?.roomBooking?.status === 'APPROVED' && !!opened.roomBooking?.approvedRoom;
+    const needsTraineeCount = draftTraineeCount <= 0;
+    const noItems = draftRows.length === 0;
+    const noConvertibleItems = draftRows.length > 0 && draftStats.convertible === 0;
+    const hasShortage = draftStats.shortage > 0;
+    const readyForWarehouse = !noItems && draftStats.convertible > 0 && !needsTraineeCount && (!hasRoomRequest || roomApproved);
+
+    return {
+      readyForWarehouse,
+      status: readyForWarehouse ? 'جاهز للتحويل للمخزن' : 'يحتاج استكمال قبل التحويل',
+      materialDecision: noItems
+        ? 'لا توجد مواد في الطلب'
+        : noConvertibleItems
+          ? 'لا توجد كميات متوفرة قابلة للتحويل'
+          : hasShortage
+            ? `يحول المتوفر (${draftStats.convertible}) ويبقى النقص (${draftStats.shortage}) للمتابعة`
+            : `كل الكميات المطلوبة متوفرة للتحويل (${draftStats.convertible})`,
+      roomDecision: !hasRoomRequest
+        ? 'لم يطلب المدرب قاعة'
+        : roomApproved
+          ? `القاعة المعتمدة: ${opened?.roomBooking?.approvedRoom?.name}`
+          : 'طلب القاعة يحتاج اعتماد أو اختيار بديل',
+      traineeDecision: needsTraineeCount
+        ? 'عدد المتدربين غير محدد؛ حدده لإضافة الأقلام والنوت والملفات تلقائيا'
+        : `عدد المتدربين المعتمد: ${draftTraineeCount}`,
+      returnDecision: opened?.endDate
+        ? `تاريخ إرجاع المواد المسترجعة سيكون ${formatDate(opened.endDate)} عند التحويل للمخزن`
+        : 'لا يوجد تاريخ نهاية دورة؛ المواد المسترجعة ستحتاج تاريخ إرجاع قبل الصرف',
+    };
+  }, [draftRows.length, draftStats.convertible, draftStats.shortage, draftTraineeCount, opened]);
 
   async function load() {
     setError('');
@@ -191,8 +226,9 @@ export default function TrainerNeedsPage() {
           coordinatorNote: item.coordinatorNote || '',
         }))
     );
+    setDraftTraineeCount(opened.traineeCount || 0);
     setSelectedRoomId(opened.roomBooking?.approvedRoom?.id || opened.roomBooking?.requestedRoom?.id || '');
-  }, [opened?.id]);
+  }, [opened?.id, opened?.updatedAt]);
 
   function openNeed(id: string) {
     setSelectedId(id);
@@ -421,12 +457,48 @@ export default function TrainerNeedsPage() {
                 </a>
               ) : null}
 
+              {!isLocked ? (
+                <div className="rounded-[8px] border border-[#dce6e3] bg-[#fbfcfc] p-4">
+                  <label className="block max-w-sm text-[13px] text-[#536866]">
+                    عدد المتدربين المعتمد من المنسق
+                    <input
+                      type="number"
+                      min={0}
+                      value={draftTraineeCount}
+                      onChange={(event) => setDraftTraineeCount(Math.max(0, Number(event.target.value || 0)))}
+                      className="mt-2 h-11 w-full rounded-[8px] border border-[#dce6e3] bg-white px-3 text-[14px] outline-none"
+                    />
+                  </label>
+                  <div className="mt-2 text-[12px] leading-6 text-[#71817f]">
+                    عند حفظ الطلب سيتم إضافة الأقلام والنوت والملفات تلقائيا بنفس عدد المتدربين إذا لم تكن موجودة في البنود.
+                  </div>
+                </div>
+              ) : null}
+
               <div className="grid gap-3 md:grid-cols-4">
                 <InfoCard label="إجمالي الكميات المطلوبة" value={draftStats.requested} />
                 <InfoCard label="يمكن تحويله للمخزن الآن" value={draftStats.convertible} tone="green" />
                 <InfoCard label="غير متوفر أو يحتاج توفير" value={draftStats.shortage} tone="amber" />
                 <InfoCard label="بنود الطلب" value={draftRows.length} />
               </div>
+
+              <section className={`rounded-[8px] border p-4 ${decisionSummary.readyForWarehouse ? 'border-[#cfe3d7] bg-[#f3fbf6]' : 'border-[#eadfbd] bg-[#fffaf0]'}`}>
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <div className="text-[12px] font-bold text-[#2A6364]">ملخص قرار المنسق</div>
+                    <h3 className="mt-1 text-[18px] font-extrabold text-[#223738]">{decisionSummary.status}</h3>
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-[12px] font-bold ${decisionSummary.readyForWarehouse ? 'bg-white text-[#1e6b4c]' : 'bg-white text-[#8a6a37]'}`}>
+                    {decisionSummary.readyForWarehouse ? 'جاهز' : 'يحتاج إجراء'}
+                  </span>
+                </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <DecisionLine label="قرار المواد" value={decisionSummary.materialDecision} />
+                  <DecisionLine label="قرار القاعة" value={decisionSummary.roomDecision} />
+                  <DecisionLine label="عدد المتدربين" value={decisionSummary.traineeDecision} />
+                  <DecisionLine label="إرجاع المواد المسترجعة" value={decisionSummary.returnDecision} />
+                </div>
+              </section>
 
               <div className="rounded-[8px] border border-[#dce6e3] bg-[#fbfcfc] p-4 text-[13px] leading-7 text-[#536866]">
                 الكميات المتوفرة فقط تتحول إلى طلب مواد للمخزن. المواد غير المتوفرة لا يتم تحويلها للصرف؛ تبقى واضحة للمنسق كمطلوب يحتاج توفير أو حذف أو استبدال قبل الاعتماد. إذا كانت مادة غير منطقية احذفها من الجدول ثم احفظ تعديل الطلب.
@@ -565,8 +637,8 @@ export default function TrainerNeedsPage() {
 
               <div className="flex flex-col gap-3 lg:flex-row lg:justify-between">
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <ActionButton label="حفظ تعديلات البنود" busy={busy === `${opened.id}:update-order`} disabled={isLocked || draftRows.length === 0} onClick={() => action(opened.id, 'update-order', { items: draftRows })} />
-                  <ActionButton label="اعتماد الطلب وتحويل المتوفر للمخزن" busy={busy === `${opened.id}:convert`} disabled={isLocked || draftRows.length === 0 || draftStats.convertible === 0} onClick={() => action(opened.id, 'convert', { items: draftRows })} />
+                  <ActionButton label="حفظ تعديلات الطلب" busy={busy === `${opened.id}:update-order`} disabled={isLocked || draftRows.length === 0} onClick={() => action(opened.id, 'update-order', { traineeCount: draftTraineeCount, items: draftRows })} />
+                  <ActionButton label="اعتماد الطلب وتحويل المتوفر للمخزن" busy={busy === `${opened.id}:convert`} disabled={isLocked || draftRows.length === 0 || draftStats.convertible === 0} onClick={() => action(opened.id, 'convert', { traineeCount: draftTraineeCount, items: draftRows })} />
                 </div>
                 <button
                   type="button"
@@ -610,6 +682,15 @@ function InfoCard({ label, value, tone = 'default' }: { label: string; value: nu
     <div className="rounded-[8px] border border-[#dce6e3] bg-white p-4">
       <div className="text-[12px] text-[#71817f]">{label}</div>
       <div className={`mt-2 text-[26px] font-extrabold ${color}`}>{value}</div>
+    </div>
+  );
+}
+
+function DecisionLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[8px] border border-white/80 bg-white px-3 py-3">
+      <div className="text-[11px] font-bold text-[#71817f]">{label}</div>
+      <div className="mt-1 text-[13px] leading-6 text-[#223738]">{value}</div>
     </div>
   );
 }

@@ -45,12 +45,21 @@ function normalizeDate(value: unknown) {
   return date && !Number.isNaN(date.getTime()) ? date : null;
 }
 
+function publicImageUrl(value?: string | null) {
+  const imageUrl = normalizeText(value);
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith('data:image/') && imageUrl.length > 12000) return null;
+  return imageUrl;
+}
+
 export function canManageRooms(session: Pick<SessionUser, 'role' | 'canManageTrainerNeeds'>) {
-  return session.role === Role.MANAGER || session.role === Role.WAREHOUSE || !!session.canManageTrainerNeeds;
+  const roles = (session as Partial<Pick<SessionUser, 'roles'>>).roles || [];
+  return session.role === Role.MANAGER || session.role === Role.WAREHOUSE || roles.includes(Role.MANAGER) || roles.includes(Role.WAREHOUSE) || !!session.canManageTrainerNeeds;
 }
 
 export function canAdminRooms(session: Pick<SessionUser, 'role'>) {
-  return session.role === Role.MANAGER || session.role === Role.WAREHOUSE;
+  const roles = (session as Partial<Pick<SessionUser, 'roles'>>).roles || [];
+  return session.role === Role.MANAGER || session.role === Role.WAREHOUSE || roles.includes(Role.MANAGER) || roles.includes(Role.WAREHOUSE);
 }
 
 export async function ensureTrainingRoomsSeed() {
@@ -90,7 +99,55 @@ export async function roomAvailabilityMap(startDate?: Date | null, endDate?: Dat
   return map;
 }
 
-function mapRoom(room: any, bookedMap: Map<string, number>) {
+type RoomAvailabilityRequest = {
+  roomId: string;
+  startDate: Date;
+  endDate: Date;
+};
+
+function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
+  return aStart <= bEnd && aEnd >= bStart;
+}
+
+export async function findApprovedRoomConflicts(selections: RoomAvailabilityRequest[], excludeTrainerNeedId?: string) {
+  const validSelections = selections.filter((selection) => selection.roomId && selection.startDate && selection.endDate);
+  if (!validSelections.length) return [];
+
+  const roomIds = Array.from(new Set(validSelections.map((selection) => selection.roomId)));
+  const minStart = new Date(Math.min(...validSelections.map((selection) => selection.startDate.getTime())));
+  const maxEnd = new Date(Math.max(...validSelections.map((selection) => selection.endDate.getTime())));
+
+  const bookings = await prisma.trainingRoomBooking.findMany({
+    where: {
+      status: TrainingRoomBookingStatus.APPROVED,
+      approvedRoomId: { in: roomIds },
+      startDate: { lte: maxEnd },
+      endDate: { gte: minStart },
+      ...(excludeTrainerNeedId ? { trainerNeedId: { not: excludeTrainerNeedId } } : {}),
+    },
+    include: {
+      approvedRoom: { select: { id: true, name: true } },
+      trainerNeed: { select: { id: true, code: true, courseName: true } },
+    },
+  });
+
+  return bookings.filter((booking) =>
+    validSelections.some((selection) =>
+      selection.roomId === booking.approvedRoomId &&
+      overlaps(selection.startDate, selection.endDate, booking.startDate, booking.endDate)
+    )
+  );
+}
+
+export async function assertRoomsAvailable(selections: RoomAvailabilityRequest[], excludeTrainerNeedId?: string) {
+  const conflicts = await findApprovedRoomConflicts(selections, excludeTrainerNeedId);
+  if (!conflicts.length) return;
+  const roomName = conflicts[0].approvedRoom?.name || 'القاعة المحددة';
+  const courseName = conflicts[0].trainerNeed?.courseName || conflicts[0].trainerNeed?.code || 'دورة أخرى';
+  throw new Error(`${roomName} محجوزة في نفس الفترة لدورة ${courseName}. اختر قاعة بديلة أو عدل التواريخ.`);
+}
+
+function mapRoom(room: any, bookedMap: Map<string, number>, options: { publicPayload?: boolean } = {}) {
   return {
     id: room.id,
     name: room.name,
@@ -100,7 +157,7 @@ function mapRoom(room: any, bookedMap: Map<string, number>) {
     description: room.description,
     equipment: room.equipment || [],
     layoutOptions: room.layoutOptions || [],
-    imageUrl: room.imageUrl,
+    imageUrl: options.publicPayload ? publicImageUrl(room.imageUrl) : room.imageUrl,
     isVisible: room.isVisible,
     sortOrder: room.sortOrder,
     internalNotes: room.internalNotes,
@@ -119,7 +176,7 @@ export async function getPublicRooms(params: { startDate?: unknown; endDate?: un
     orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
   });
   const mapped = rooms.map((room) => ({
-    ...mapRoom(room, bookedMap),
+    ...mapRoom(room, bookedMap, { publicPayload: true }),
     capacityFit: traineeCount ? room.capacity >= traineeCount : true,
   }));
   return {
@@ -194,10 +251,7 @@ export async function approveRoomBooking(needId: string, roomId: string, session
   if (!room) throw new Error('القاعة غير موجودة');
   const startDate = need.startDate;
   const endDate = need.endDate || need.startDate;
-  const booked = await roomAvailabilityMap(startDate, endDate);
-  if ((booked.get(roomId) || 0) > 0 && need.roomBooking?.approvedRoomId !== roomId) {
-    throw new Error('القاعة محجوزة في نفس تاريخ الدورة. اختر قاعة بديلة.');
-  }
+  await assertRoomsAvailable([{ roomId, startDate, endDate }], needId);
 
   return prisma.trainingRoomBooking.upsert({
     where: { trainerNeedId: needId },

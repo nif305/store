@@ -101,6 +101,18 @@ export default function TrainingKitPage() {
     loadRooms().catch(() => undefined);
   }, [form.startDate, form.endDate, form.traineeCount]);
 
+  useEffect(() => {
+    const starts = roomSelections.map((selection) => selection.startDate).filter(Boolean).sort();
+    const ends = roomSelections.map((selection) => selection.endDate || selection.startDate).filter(Boolean).sort();
+    if (!starts.length || !ends.length) return;
+    const nextStartDate = starts[0];
+    const nextEndDate = ends[ends.length - 1];
+    setForm((prev) => {
+      if (prev.startDate === nextStartDate && prev.endDate === nextEndDate) return prev;
+      return { ...prev, startDate: nextStartDate, endDate: nextEndDate };
+    });
+  }, [roomSelections]);
+
   const traineeCount = Math.max(0, Number(form.traineeCount || 0));
   const cartRows = useMemo(
     () =>
@@ -146,16 +158,11 @@ export default function TrainingKitPage() {
   }
 
   function addBundle(bundle: Bundle) {
-    const missingTrainees = bundle.items.some((item) => item.quantityMode === 'PER_TRAINEE') && traineeCount <= 0;
-    if (missingTrainees) {
-      setError('أدخل عدد المتدربين قبل إضافة بكج يعتمد على عدد المشاركين.');
-      setView('orders');
-      return;
-    }
     setError('');
     setCart((prev) => {
       const next = { ...prev };
       for (const row of bundle.items) {
+        if (row.quantityMode === 'PER_TRAINEE' && traineeCount <= 0) continue;
         const qty = row.quantityMode === 'PER_TRAINEE' ? row.quantity * traineeCount : row.quantity;
         next[row.catalogItemId] = (next[row.catalogItemId] || 0) + qty;
       }
@@ -640,7 +647,7 @@ function OrdersView({
           <Input label="اسم الدورة" value={form.courseName} onChange={(value) => setForm((prev) => ({ ...prev, courseName: value }))} />
           <Input label="تاريخ بداية الدورة" type="date" value={form.startDate} onChange={(value) => setForm((prev) => ({ ...prev, startDate: value }))} />
           <Input label="تاريخ نهاية الدورة" type="date" value={form.endDate} onChange={(value) => setForm((prev) => ({ ...prev, endDate: value }))} />
-          <Input label="عدد المتدربين" type="number" value={form.traineeCount} onChange={(value) => setForm((prev) => ({ ...prev, traineeCount: value }))} />
+          <Input label="عدد المتدربين (اختياري)" type="number" value={form.traineeCount} required={false} onChange={(value) => setForm((prev) => ({ ...prev, traineeCount: value }))} />
         </div>
         <div className="mt-4 rounded-[10px] border border-[#e8ddbf] bg-[#fbf6ea] px-4 py-3 text-[13px] leading-6 text-[#6f5a2f]">
           تاريخ نهاية الدورة يستخدم كتاريخ إرجاع متوقع للمواد المسترجعة عند تحويل الاحتياج إلى طلب مواد.
@@ -769,11 +776,11 @@ function NavButton({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-function Input({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (value: string) => void; type?: string }) {
+function Input({ label, value, onChange, type = 'text', required = true }: { label: string; value: string; onChange: (value: string) => void; type?: string; required?: boolean }) {
   return (
     <label className="block">
       <span className="mb-1 block text-[12px] text-[#53635f]">{label}</span>
-      <input required type={type} value={value} onChange={(event) => onChange(event.target.value)} className="h-11 w-full rounded-[8px] border border-[#cfded9] bg-white px-3 outline-none transition focus:border-[#8aa6a1] focus:shadow-[0_0_0_3px_rgba(138,166,161,0.14)]" />
+      <input required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className="h-11 w-full rounded-[8px] border border-[#cfded9] bg-white px-3 outline-none transition focus:border-[#8aa6a1] focus:shadow-[0_0_0_3px_rgba(138,166,161,0.14)]" />
     </label>
   );
 }

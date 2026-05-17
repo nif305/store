@@ -17,7 +17,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       data: needs,
       assignees,
-      viewer: { id: session.id, role: session.role },
+      viewer: {
+        id: session.id,
+        role: session.roles.some((role) => String(role) === 'MANAGER')
+          ? 'MANAGER'
+          : session.roles.some((role) => String(role) === 'WAREHOUSE')
+            ? 'WAREHOUSE'
+            : session.role,
+      },
     });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'تعذر جلب احتياجات المدربين' }, { status: 401 });

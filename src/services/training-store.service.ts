@@ -10,7 +10,7 @@ import {
 import { prisma } from '@/lib/prisma';
 import { RequestService } from '@/services/request.service';
 import type { SessionUser } from '@/lib/auth/session';
-import { ensureTrainingRoomsSeed } from '@/services/training-rooms.service';
+import { assertRoomsAvailable, ensureTrainingRoomsSeed } from '@/services/training-rooms.service';
 
 const ON_DEMAND_NOTE = 'غير متوفر في المخزن، سيتم محاولة توفيره بناء على الطلب.';
 
@@ -39,6 +39,12 @@ const ON_DEMAND_ITEMS = [
 
 const PER_TRAINEE_KEYWORDS = ['قلم', 'أقلام', 'نوت', 'دفتر', 'دفاتر', 'فولدر', 'ملف'];
 const EXCLUDED_DEFAULT_BUNDLE_KEYWORDS = ['شهادة', 'شهادات', 'غلاف', 'أغلفة'];
+const DEFAULT_PER_TRAINEE_GROUPS = [
+  ['قلم رصاص', 'أقلام', 'اقلام', 'قلم'],
+  ['نوته', 'نوت', 'دفتر'],
+  ['ملفات', 'فولدر', 'ملف'],
+];
+const PUBLIC_DATA_IMAGE_MAX_LENGTH = 12000;
 
 function normalizeText(value: unknown) {
   return String(value || '').trim();
@@ -55,8 +61,64 @@ function onDemandCategory(title: string) {
     : 'مواد عند الطلب';
 }
 
+function publicImageUrl(value?: string | null) {
+  const imageUrl = normalizeText(value);
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith('data:image/') && imageUrl.length > PUBLIC_DATA_IMAGE_MAX_LENGTH) return null;
+  return imageUrl;
+}
+
 export function canManageTrainerNeeds(session: Pick<SessionUser, 'role' | 'canManageTrainerNeeds'>) {
-  return session.role === Role.MANAGER || session.role === Role.WAREHOUSE || !!session.canManageTrainerNeeds;
+  const roles = (session as Partial<Pick<SessionUser, 'roles'>>).roles || [];
+  return session.role === Role.MANAGER || session.role === Role.WAREHOUSE || roles.includes(Role.MANAGER) || roles.includes(Role.WAREHOUSE) || !!session.canManageTrainerNeeds;
+}
+
+function scoreDefaultPerTraineeTitle(title: string, group: string[]) {
+  const normalized = title.trim();
+  const exactIndex = group.findIndex((word) => normalized === word);
+  if (exactIndex >= 0) return exactIndex;
+  const containsIndex = group.findIndex((word) => normalized.includes(word));
+  return containsIndex >= 0 ? 100 + containsIndex : 999;
+}
+
+async function getDefaultPerTraineeCatalogItems() {
+  const words = Array.from(new Set(DEFAULT_PER_TRAINEE_GROUPS.flat()));
+  const catalog = await prisma.storeCatalogItem.findMany({
+    where: {
+      isVisible: true,
+      isOnDemand: false,
+      OR: words.map((word) => ({ title: { contains: word, mode: 'insensitive' as const } })),
+    },
+    include: { inventoryItem: true },
+    orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+  });
+
+  return DEFAULT_PER_TRAINEE_GROUPS
+    .map((group) =>
+      catalog
+        .filter((item) => group.some((word) => item.title.includes(word)))
+        .sort((a, b) => scoreDefaultPerTraineeTitle(a.title, group) - scoreDefaultPerTraineeTitle(b.title, group))[0]
+    )
+    .filter(Boolean) as typeof catalog;
+}
+
+async function appendDefaultPerTraineeRows(rows: { catalogItemId: string; quantity: number; coordinatorNote?: string }[], traineeCount: number) {
+  if (traineeCount <= 0) return rows;
+  const defaults = await getDefaultPerTraineeCatalogItems();
+  const next = [...rows];
+  for (const item of defaults) {
+    const existing = next.find((row) => row.catalogItemId === item.id);
+    if (existing) {
+      existing.quantity = Math.max(existing.quantity, traineeCount);
+    } else {
+      next.push({
+        catalogItemId: item.id,
+        quantity: traineeCount,
+        coordinatorNote: 'أضيف تلقائيا حسب عدد المتدربين.',
+      });
+    }
+  }
+  return next;
 }
 
 async function ensureStoreSeed() {
@@ -65,7 +127,7 @@ async function ensureStoreSeed() {
   });
 
   const existingCatalog = await prisma.storeCatalogItem.findMany({
-    select: { id: true, inventoryItemId: true, title: true, isOnDemand: true },
+    select: { id: true, inventoryItemId: true, title: true, description: true, category: true, isOnDemand: true },
   });
   const catalogByInventory = new Set(existingCatalog.map((item) => item.inventoryItemId).filter(Boolean));
   const onDemandTitles = new Set(existingCatalog.filter((item) => item.isOnDemand).map((item) => item.title));
@@ -90,10 +152,19 @@ async function ensureStoreSeed() {
   const existingInventoryRows = existingCatalog.filter((item) => item.inventoryItemId);
   if (existingInventoryRows.length) {
     const inventoryById = new Map(inventoryItems.map((item) => [item.id, item]));
-    await Promise.all(
-      existingInventoryRows.map((row) => {
+    const rowsNeedingSync = existingInventoryRows.filter((row) => {
         const inventory = inventoryById.get(row.inventoryItemId!);
-        if (!inventory) return null;
+        if (!inventory) return false;
+        return (
+          row.title !== inventory.name ||
+          (row.description || null) !== (inventory.description || null) ||
+          row.category !== (inventory.category || 'مواد تدريبية')
+        );
+      });
+    if (rowsNeedingSync.length) {
+      await Promise.all(
+        rowsNeedingSync.map((row) => {
+          const inventory = inventoryById.get(row.inventoryItemId!)!;
         return prisma.storeCatalogItem.update({
           where: { id: row.id },
           data: {
@@ -102,8 +173,9 @@ async function ensureStoreSeed() {
             category: inventory.category || 'مواد تدريبية',
           },
         });
-      }).filter(Boolean) as Promise<unknown>[]
-    );
+        })
+      );
+    }
   }
 
   const missingOnDemand = ON_DEMAND_ITEMS.filter((title) => !onDemandTitles.has(title));
@@ -115,9 +187,10 @@ async function ensureStoreSeed() {
       data: { isVisible: false },
     });
   }
-  if (seededOnDemandRows.length) {
+  const seededOnDemandRowsNeedingSync = seededOnDemandRows.filter((item) => item.category !== onDemandCategory(item.title));
+  if (seededOnDemandRowsNeedingSync.length) {
     await Promise.all(
-      seededOnDemandRows.map((item) =>
+      seededOnDemandRowsNeedingSync.map((item) =>
         prisma.storeCatalogItem.update({
           where: { id: item.id },
           data: { category: onDemandCategory(item.title) },
@@ -141,13 +214,22 @@ async function ensureStoreSeed() {
   }
 
   const bundleCount = await prisma.storeBundle.count();
-  await prisma.storeBundleItem.deleteMany({
+  const excludedBundleItemCount = await prisma.storeBundleItem.count({
     where: {
       catalogItem: {
         OR: EXCLUDED_DEFAULT_BUNDLE_KEYWORDS.map((word) => ({ title: { contains: word, mode: 'insensitive' as const } })),
       },
     },
   });
+  if (excludedBundleItemCount > 0) {
+    await prisma.storeBundleItem.deleteMany({
+      where: {
+        catalogItem: {
+          OR: EXCLUDED_DEFAULT_BUNDLE_KEYWORDS.map((word) => ({ title: { contains: word, mode: 'insensitive' as const } })),
+        },
+      },
+    });
+  }
   if (bundleCount === 0) {
     const visibleItems = await prisma.storeCatalogItem.findMany({
       where: { isVisible: true, isOnDemand: false },
@@ -225,11 +307,12 @@ async function activeReservationsByInventory(inventoryIds?: string[]) {
   return new Map(rows.map((row) => [row.inventoryItemId, row._sum.quantity || 0]));
 }
 
-function mapCatalogItem(item: any, reservationMap: Map<string, number>) {
+function mapCatalogItem(item: any, reservationMap: Map<string, number>, options: { publicPayload?: boolean } = {}) {
   const inventory = item.inventoryItem;
   const stockQty = inventory?.availableQty || 0;
   const temporarilyReservedQty = inventory?.id ? reservationMap.get(inventory.id) || 0 : 0;
   const freeAfterReservations = Math.max(stockQty - temporarilyReservedQty, 0);
+  const rawImageUrl = item.imageUrl || inventory?.imageUrl || null;
 
   return {
     id: item.id,
@@ -237,7 +320,7 @@ function mapCatalogItem(item: any, reservationMap: Map<string, number>) {
     title: item.title,
     description: item.description,
     category: item.category,
-    imageUrl: item.imageUrl || inventory?.imageUrl || null,
+    imageUrl: options.publicPayload ? publicImageUrl(rawImageUrl) : rawImageUrl,
     isVisible: item.isVisible,
     isOnDemand: item.isOnDemand,
     onDemandNote: item.onDemandNote || (item.isOnDemand ? ON_DEMAND_NOTE : null),
@@ -251,7 +334,7 @@ function mapCatalogItem(item: any, reservationMap: Map<string, number>) {
       id: alt.id,
       note: alt.note,
       requiresTrainerApproval: alt.requiresTrainerApproval,
-      item: alt.alternative ? mapCatalogItem({ ...alt.alternative, alternativesFrom: [] }, reservationMap) : null,
+      item: alt.alternative ? mapCatalogItem({ ...alt.alternative, alternativesFrom: [] }, reservationMap, options) : null,
     })),
   };
 }
@@ -260,29 +343,44 @@ export async function getPublicCatalog() {
   await ensureStoreSeed();
   const catalog = await prisma.storeCatalogItem.findMany({
     where: { isVisible: true },
-    include: {
-      inventoryItem: true,
-      alternativesFrom: {
-        include: {
-          alternative: { include: { inventoryItem: true } },
-        },
-      },
+    select: {
+      id: true,
+      inventoryItemId: true,
+      title: true,
+      description: true,
+      category: true,
+      isVisible: true,
+      isOnDemand: true,
+      onDemandNote: true,
+      sortOrder: true,
     },
     orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
   });
+  const inventoryRows = await prisma.inventoryItem.findMany({
+    where: { id: { in: catalog.map((item) => item.inventoryItemId).filter(Boolean) as string[] } },
+    select: { id: true, availableQty: true, unit: true },
+  });
+  const inventoryById = new Map(inventoryRows.map((item) => [item.id, item]));
   const reservationMap = await activeReservationsByInventory(
     catalog.map((item) => item.inventoryItemId).filter(Boolean) as string[]
   );
 
-  const items = catalog.map((item) => mapCatalogItem(item, reservationMap));
+  const items = catalog.map((item) => mapCatalogItem({ ...item, inventoryItem: item.inventoryItemId ? inventoryById.get(item.inventoryItemId) : null }, reservationMap, { publicPayload: true }));
   const categories = Array.from(new Set(items.map((item) => item.category))).sort((a, b) => a.localeCompare(b, 'ar'));
   const bundles = await prisma.storeBundle.findMany({
     where: { isVisible: true },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      isVisible: true,
       items: {
         where: { catalogItem: { isVisible: true } },
-        include: {
-          catalogItem: { include: { inventoryItem: true } },
+        select: {
+          catalogItemId: true,
+          quantity: true,
+          quantityMode: true,
+          catalogItem: { select: { title: true } },
         },
       },
     },
@@ -296,14 +394,14 @@ export async function getPublicCatalog() {
       id: bundle.id,
       title: bundle.title,
       description: bundle.description,
-      imageUrl: bundle.imageUrl,
+      imageUrl: null,
       isVisible: bundle.isVisible,
       items: bundle.items.map((row) => ({
         catalogItemId: row.catalogItemId,
         quantity: row.quantity,
         quantityMode: row.quantityMode,
         title: row.catalogItem.title,
-        imageUrl: row.catalogItem.imageUrl || row.catalogItem.inventoryItem?.imageUrl || null,
+        imageUrl: null,
       })),
     })),
   };
@@ -414,16 +512,17 @@ export async function createTrainerNeed(data: any) {
         .filter((row: any) => row.roomId)
     : [];
   const primaryRoomId = roomSelections[0]?.roomId || requestedRoomId;
-  const rows = Array.isArray(data.items)
+  let rows = Array.isArray(data.items)
     ? data.items
         .map((item: any) => ({ catalogItemId: normalizeText(item.catalogItemId), quantity: normalizeQty(item.quantity) }))
         .filter((item: any) => item.catalogItemId && item.quantity > 0)
     : [];
 
-  if (!trainerName || !courseName || !startDate || Number.isNaN(startDate.getTime()) || !endDate || Number.isNaN(endDate.getTime()) || traineeCount <= 0) {
+  if (!trainerName || !courseName || !startDate || Number.isNaN(startDate.getTime()) || !endDate || Number.isNaN(endDate.getTime())) {
     throw new Error('بيانات الدورة الأساسية غير مكتملة');
   }
   if (!rows.length) throw new Error('يجب اختيار مادة واحدة على الأقل');
+  rows = await appendDefaultPerTraineeRows(rows, traineeCount);
 
   const catalog = await prisma.storeCatalogItem.findMany({
     where: { id: { in: rows.map((item: any) => item.catalogItemId) }, isVisible: true },
@@ -440,6 +539,15 @@ export async function createTrainerNeed(data: any) {
     });
     if (availableRooms.length !== requestedRoomIds.length) throw new Error('توجد قاعة محددة غير متاحة');
     requestedRoom = availableRooms[0] || null;
+    const roomAvailabilitySelections = (roomSelections.length
+      ? roomSelections
+      : [{ roomId: primaryRoomId, layout: requestedLayout, startDate: startDate.toISOString(), endDate: (endDate || startDate).toISOString() }]
+    ).map((row: any) => ({
+      roomId: row.roomId,
+      startDate: row.startDate ? new Date(row.startDate) : startDate,
+      endDate: row.endDate ? new Date(row.endDate) : (endDate || startDate),
+    }));
+    await assertRoomsAvailable(roomAvailabilitySelections);
   }
 
   const count = await prisma.trainerNeed.count();
@@ -578,8 +686,9 @@ async function mapNeed(need: any) {
   };
 }
 
-export async function listTrainerNeeds(session?: Pick<SessionUser, 'id' | 'role'>) {
-  const canSeeAll = !session || session.role === Role.MANAGER || session.role === Role.WAREHOUSE;
+export async function listTrainerNeeds(session?: Pick<SessionUser, 'id' | 'role'> & Partial<Pick<SessionUser, 'roles'>>) {
+  const roles = session?.roles || [];
+  const canSeeAll = !session || session.role === Role.MANAGER || session.role === Role.WAREHOUSE || roles.includes(Role.MANAGER) || roles.includes(Role.WAREHOUSE);
   const needs = await prisma.trainerNeed.findMany({
     where: canSeeAll
       ? undefined
@@ -633,7 +742,8 @@ export async function updateTrainerNeedOrder(id: string, data: any) {
     throw new Error('لا يمكن تعديل الطلب بعد تحويله إلى طلب مواد');
   }
 
-  const rows = Array.isArray(data.items)
+  const nextTraineeCount = data.traineeCount === undefined ? need.traineeCount : normalizeQty(data.traineeCount);
+  let rows = Array.isArray(data.items)
     ? data.items
         .map((item: any) => ({
           catalogItemId: normalizeText(item.catalogItemId),
@@ -644,6 +754,7 @@ export async function updateTrainerNeedOrder(id: string, data: any) {
     : [];
 
   if (!rows.length) throw new Error('يجب أن يحتوي الطلب على مادة واحدة على الأقل');
+  rows = await appendDefaultPerTraineeRows(rows, nextTraineeCount);
 
   const catalogIds: string[] = Array.from(new Set(rows.map((item: any) => String(item.catalogItemId))));
   const catalog: any[] = await prisma.storeCatalogItem.findMany({
@@ -691,6 +802,7 @@ export async function updateTrainerNeedOrder(id: string, data: any) {
     await tx.trainerNeed.update({
       where: { id },
       data: {
+        traineeCount: nextTraineeCount,
         status: TrainerNeedStatus.IN_REVIEW,
         readinessScore: 0,
         decisionNote: normalizeText(data.decisionNote) || need.decisionNote,
