@@ -222,15 +222,15 @@ export default function StoreAdminPage() {
                   <Field label="الفئة" value={selected.category} onChange={(value) => updateSelected({ category: value })} disabled={selectedFromInventory} />
                   {selectedFromInventory ? (
                     <div className="rounded-[8px] border border-[#dce6e3] bg-[#f7faf9] px-3 py-2 text-[12px] leading-6 text-[#536866] md:col-span-2">
-                      هذه المادة مرتبطة بمخزون المواد. الاسم والفئة والصورة والكمية تدار من صفحة مخزون المواد، وهنا يتم التحكم في الظهور والبكجات فقط.
+                      هذه المادة مرتبطة بمخزون المواد. الاسم والفئة والكمية تدار من صفحة مخزون المواد. عند رفع صورة هنا سيتم حفظها في مخزون المواد نفسه حتى تبقى مصدرا واحدا.
                     </div>
                   ) : null}
                   <label className="block md:col-span-2">
                     <span className="mb-1 block text-[12px] font-bold text-[#536866]">رفع صورة مباشرة</span>
-                    <input type="file" accept="image/*" disabled={selectedFromInventory} onChange={async (event) => {
+                    <input type="file" accept="image/*" onChange={async (event) => {
                       const file = event.target.files?.[0];
                       if (file) updateSelected({ imageUrl: await fileToDataUrl(file) });
-                    }} className="w-full rounded-[8px] border border-[#dce6e3] p-2 text-[13px] disabled:bg-[#f4f6f6] disabled:text-[#74817f]" />
+                    }} className="w-full rounded-[8px] border border-[#dce6e3] p-2 text-[13px]" />
                   </label>
                   <Field label="ملاحظة عند الطلب" value={selected.onDemandNote || ''} onChange={(value) => updateSelected({ onDemandNote: value })} />
                   <label className="flex items-center gap-2 rounded-[8px] border border-[#dce6e3] px-3 py-3 text-[13px] font-bold">

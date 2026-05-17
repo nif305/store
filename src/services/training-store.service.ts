@@ -312,15 +312,16 @@ function inventoryToStoreCatalogData(item: {
   category?: string | null;
   imageUrl?: string | null;
   sortOrder?: number | null;
-}) {
-  return {
+}): any {
+  const data: Record<string, unknown> = {
     title: item.name,
     description: item.description || null,
     category: item.category || 'مواد تدريبية',
-    imageUrl: item.imageUrl || null,
     isOnDemand: false,
     sortOrder: item.sortOrder || 0,
   };
+  if (item.imageUrl) data.imageUrl = item.imageUrl;
+  return data;
 }
 
 export async function syncInventoryItemWithStore(inventoryItemId: string) {
@@ -570,6 +571,16 @@ export async function updateCatalogItem(id: string, data: any) {
   if (!existing) throw new Error('المادة غير موجودة');
 
   if (existing.inventoryItemId && !existing.isOnDemand) {
+    const hasImageUpdate = data.imageUrl !== undefined || data.imageDataUrl !== undefined;
+    if (hasImageUpdate) {
+      const imageUrl = normalizeText(data.imageUrl || data.imageDataUrl) || null;
+      await prisma.inventoryItem.update({
+        where: { id: existing.inventoryItemId },
+        data: { imageUrl },
+      });
+      await syncInventoryItemWithStore(existing.inventoryItemId);
+    }
+
     return prisma.storeCatalogItem.update({
       where: { id },
       data: {
