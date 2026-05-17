@@ -168,10 +168,12 @@ export default function InventoryPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'items' | 'summary' | 'bundles' | 'alerts'>('items');
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [summaryItems, setSummaryItems] = useState<InventoryItem[]>([]);
   const [storeItems, setStoreItems] = useState<StoreItem[]>([]);
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [selectedBundleId, setSelectedBundleId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -235,6 +237,25 @@ export default function InventoryPage() {
     }
   }, []);
 
+  const fetchSummaryItems = useCallback(async () => {
+    setSummaryLoading(true);
+    try {
+      const params = new URLSearchParams({ page: '1', limit: '500' });
+      if (search) params.set('search', search);
+      if (statusFilter) params.set('status', statusFilter);
+      if (typeFilter) params.set('type', typeFilter);
+      if (categoryFilter) params.set('category', categoryFilter);
+      const response = await fetch(`/api/inventory?${params.toString()}`, { cache: 'no-store' });
+      const data: InventoryApiResponse = await response.json();
+      if (!response.ok) throw new Error((data as any)?.error || 'تعذر تحميل ملخص المواد');
+      setSummaryItems(Array.isArray(data.data) ? data.data : []);
+    } catch {
+      setSummaryItems([]);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [search, statusFilter, typeFilter, categoryFilter]);
+
   useEffect(() => {
     fetchInventory();
   }, [fetchInventory]);
@@ -242,6 +263,10 @@ export default function InventoryPage() {
   useEffect(() => {
     if (canModify) fetchBundles();
   }, [canModify, fetchBundles]);
+
+  useEffect(() => {
+    if (activeTab === 'summary') fetchSummaryItems();
+  }, [activeTab, fetchSummaryItems]);
 
   const openCreateModal = () => {
     setSelectedItem(null);
@@ -423,12 +448,12 @@ export default function InventoryPage() {
       {error ? <div className="rounded-[8px] border border-[#eed9df] bg-[#fff7f8] px-4 py-3 text-[13px] text-[#7a3147]">{error}</div> : null}
 
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="إجمالي المواد" value={stats.totalItems} onClick={clearFilters} />
-        <StatCard label="ظاهرة للمدرب" value={stats.visibleInStoreCount} onClick={() => setActiveTab('items')} />
-        <StatCard label="بدون صور" value={stats.missingImagesCount} onClick={() => setActiveTab('alerts')} />
-        <StatCard label="منخفضة" value={stats.lowStockCount} onClick={() => { setStatusFilter('LOW_STOCK'); setActiveTab('items'); }} />
-        <StatCard label="عهد نشطة" value={stats.usedCount} onClick={() => setActiveTab('summary')} />
-        <Card className={statCardClass}><div className="text-[12px] text-slate-500">القيمة التقديرية</div><div className="mt-2 text-[18px] text-[#203634]">{formatCurrency(stats.totalEstimatedValue)}</div></Card>
+        <StatCard icon="M" label="إجمالي المواد" value={stats.totalItems} tone="teal" onClick={() => { clearFilters(); setActiveTab('items'); }} />
+        <StatCard icon="V" label="ظاهرة للمدرب" value={stats.visibleInStoreCount} tone="green" onClick={() => { clearFilters(); setActiveTab('items'); }} />
+        <StatCard icon="P" label="بدون صور" value={stats.missingImagesCount} tone="amber" onClick={() => setActiveTab('alerts')} />
+        <StatCard icon="L" label="منخفضة" value={stats.lowStockCount} tone="rose" onClick={() => { setStatusFilter('LOW_STOCK'); setActiveTab('items'); }} />
+        <StatCard icon="C" label="عهد نشطة" value={stats.usedCount} tone="blue" onClick={() => setActiveTab('summary')} />
+        <Card className={`${statCardClass} border-[#d8c59c] bg-[#fffaf0]`}><div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ead8aa] text-sm text-[#6f5625]">R</span><div><div className="text-[12px] text-slate-500">القيمة التقديرية</div><div className="mt-1 text-[18px] text-[#203634]">{formatCurrency(stats.totalEstimatedValue)}</div></div></div></Card>
       </div>
 
       <Card className="rounded-[14px] border border-[#dce6e3] bg-white p-3">
@@ -477,16 +502,21 @@ export default function InventoryPage() {
       ) : null}
 
       {activeTab === 'summary' ? (
-        <InventoryTable
-          items={items}
-          loading={loading}
-          canModify={false}
-          showImages={false}
-          compact
-          onEdit={openEditModal}
-          onDelete={handleDelete}
-          onVisibility={saveItemVisibility}
-        />
+        <div className="space-y-3">
+          <div className="rounded-[12px] border border-[#dce6e3] bg-[#f8fbfb] px-4 py-3 text-sm text-[#536866]">
+            يظهر الملخص جميع المواد المطابقة للفلاتر الحالية بدون صور لتسهيل الحصر والجرد السريع. عدد المواد: {formatNumber(summaryItems.length)}
+          </div>
+          <InventoryTable
+            items={summaryItems}
+            loading={summaryLoading}
+            canModify={false}
+            showImages={false}
+            compact
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+            onVisibility={saveItemVisibility}
+          />
+        </div>
       ) : null}
 
       {activeTab === 'alerts' ? (
@@ -515,7 +545,7 @@ export default function InventoryPage() {
         />
       ) : null}
 
-      {activeTab !== 'bundles' ? (
+      {activeTab !== 'bundles' && activeTab !== 'summary' ? (
         <Pagination
           page={pagination.page}
           totalPages={pagination.totalPages}
@@ -583,11 +613,24 @@ export default function InventoryPage() {
   );
 }
 
-function StatCard({ label, value, onClick }: { label: string; value: number; onClick?: () => void }) {
+const statTones: Record<string, string> = {
+  teal: 'border-[#c9dfdc] bg-[#f4fbfa] text-[#2A6364]',
+  green: 'border-[#cce6d7] bg-[#f3fbf6] text-[#2f6f4f]',
+  amber: 'border-[#ead8aa] bg-[#fffaf0] text-[#80622a]',
+  rose: 'border-[#efd0d8] bg-[#fff7f8] text-[#8a3650]',
+  blue: 'border-[#cfddea] bg-[#f5f9fd] text-[#365f82]',
+};
+
+function StatCard({ icon, label, value, tone, onClick }: { icon: string; label: string; value: number; tone: string; onClick?: () => void }) {
   return (
-    <Card className={statCardClass} onClick={onClick}>
-      <div className="text-[12px] text-slate-500">{label}</div>
-      <div className="mt-2 text-[24px] text-[#203634]">{formatNumber(value)}</div>
+    <Card className={`${statCardClass} ${statTones[tone] || statTones.teal}`} onClick={onClick}>
+      <div className="flex items-center gap-3">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-sm">{icon}</span>
+        <div>
+          <div className="text-[12px] text-slate-500">{label}</div>
+          <div className="mt-1 text-[24px] text-[#203634]">{formatNumber(value)}</div>
+        </div>
+      </div>
     </Card>
   );
 }
@@ -732,11 +775,21 @@ function BundlesPanel({
   onUpdateItem: (catalogItemId: string, patch: Partial<Bundle['items'][number]>) => void;
   onSave: (bundle: Bundle) => void;
 }) {
+  const [bundleSearch, setBundleSearch] = useState('');
+  const [newCatalogItemId, setNewCatalogItemId] = useState('');
   if (!selectedBundle) return <Card className="p-8 text-center text-sm text-slate-500">لا توجد بكجات</Card>;
+  const selectedIds = new Set(selectedBundle.items.map((item) => item.catalogItemId));
+  const filteredChoices = catalogChoices
+    .filter((item) => !selectedIds.has(item.id))
+    .filter((item) => item.title.includes(bundleSearch) || String(item.inventoryItemId || '').includes(bundleSearch))
+    .slice(0, 30);
   return (
     <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
-      <Card className="rounded-[14px] border border-[#dce6e3] bg-white p-4">
-        <div className="mb-3 text-sm text-slate-500">البكجات المقترحة</div>
+      <Card className="rounded-[14px] border border-[#dce6e3] bg-[#fbfdfc] p-4">
+        <div className="mb-3 flex items-center gap-2 text-sm text-slate-600">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8f2f1] text-[#2A6364]">B</span>
+          البكجات المقترحة
+        </div>
         <div className="space-y-2">
           {bundles.map((bundle) => (
             <button key={bundle.id} type="button" onClick={() => onSelect(bundle.id)} className={`w-full rounded-[10px] border p-3 text-right ${selectedBundle.id === bundle.id ? 'border-[#2A6364] bg-[#eef6f5]' : 'border-slate-200 bg-white'}`}>
@@ -751,28 +804,59 @@ function BundlesPanel({
           <Input label="اسم البكج" value={selectedBundle.title} onChange={(event) => onUpdate({ title: event.target.value })} />
           <Input label="الوصف" value={selectedBundle.description || ''} onChange={(event) => onUpdate({ description: event.target.value })} />
         </div>
-        <div className="mt-5 grid gap-3 lg:grid-cols-2">
-          {catalogChoices.map((item) => {
-            const current = selectedBundle.items.find((row) => row.catalogItemId === item.id);
-            return (
-              <div key={item.id} className="rounded-[10px] border border-slate-200 p-3">
-                <label className="flex items-center gap-2 text-sm text-slate-800">
-                  <input type="checkbox" checked={!!current} onChange={(event) => onSetItem(item.id, event.target.checked)} />
-                  {item.title}
-                </label>
-                {current ? (
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <input type="number" min={1} value={current.quantity} onChange={(event) => onUpdateItem(item.id, { quantity: Number(event.target.value) })} className="h-10 rounded-[8px] border border-slate-200 px-2" />
-                    <select value={current.quantityMode || 'FIXED'} onChange={(event) => onUpdateItem(item.id, { quantityMode: event.target.value as any })} className="h-10 rounded-[8px] border border-slate-200 px-2 text-[12px]">
+
+        <div className="mt-5 rounded-[12px] border border-[#dce6e3] bg-[#f8fbfb] p-4">
+          <div className="mb-3 text-sm text-[#536866]">إضافة مادة للبكج</div>
+          <div className="grid gap-2 md:grid-cols-[1fr_240px_auto]">
+            <Input placeholder="ابحث عن مادة" value={bundleSearch} onChange={(event) => setBundleSearch(event.target.value)} />
+            <select value={newCatalogItemId} onChange={(event) => setNewCatalogItemId(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm">
+              <option value="">اختر مادة</option>
+              {filteredChoices.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+            </select>
+            <Button
+              type="button"
+              className="bg-[#2A6364] text-white hover:bg-[#214f50]"
+              disabled={!newCatalogItemId}
+              onClick={() => {
+                onSetItem(newCatalogItemId, true);
+                setNewCatalogItemId('');
+                setBundleSearch('');
+              }}
+            >
+              إضافة
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-5 overflow-hidden rounded-[12px] border border-slate-200">
+          <table className="w-full text-right">
+            <thead className="bg-[#f4f8f8]">
+              <tr>
+                <th className="p-3 text-sm text-primary">مواد البكج الحالية</th>
+                <th className="p-3 text-sm text-primary">الكمية</th>
+                <th className="p-3 text-sm text-primary">طريقة الاحتساب</th>
+                <th className="p-3 text-sm text-primary">إجراء</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedBundle.items.map((item) => (
+                <tr key={item.catalogItemId} className="border-t border-slate-100">
+                  <td className="p-3 text-sm text-slate-800">{item.title || catalogChoices.find((choice) => choice.id === item.catalogItemId)?.title}</td>
+                  <td className="p-3"><input type="number" min={1} value={item.quantity} onChange={(event) => onUpdateItem(item.catalogItemId, { quantity: Number(event.target.value) })} className="h-10 w-24 rounded-[8px] border border-slate-200 px-2" /></td>
+                  <td className="p-3">
+                    <select value={item.quantityMode || 'FIXED'} onChange={(event) => onUpdateItem(item.catalogItemId, { quantityMode: event.target.value as any })} className="h-10 rounded-[8px] border border-slate-200 px-2 text-[12px]">
                       <option value="FIXED">كمية ثابتة</option>
                       <option value="PER_TRAINEE">حسب عدد المتدربين</option>
                     </select>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
+                  </td>
+                  <td className="p-3"><Button size="sm" variant="ghost" className="border border-red-200 text-red-600" onClick={() => onSetItem(item.catalogItemId, false)}>حذف</Button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!selectedBundle.items.length ? <div className="p-5 text-center text-sm text-slate-500">لا توجد مواد داخل هذا البكج</div> : null}
         </div>
+
         <Button className="mt-4 bg-[#2A6364] text-white hover:bg-[#214f50]" disabled={saving} onClick={() => onSave(selectedBundle)}>حفظ البكج</Button>
       </Card>
     </div>
