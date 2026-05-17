@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 type StoreItem = {
   id: string;
+  inventoryItemId?: string | null;
   title: string;
   description?: string | null;
   category: string;
@@ -35,6 +36,7 @@ export default function StoreAdminPage() {
 
   const selected = useMemo(() => items.find((item) => item.id === selectedId) || items[0], [items, selectedId]);
   const selectedBundle = useMemo(() => bundles.find((bundle) => bundle.id === selectedBundleId) || bundles[0], [bundles, selectedBundleId]);
+  const selectedFromInventory = !!selected?.inventoryItemId && !selected?.isOnDemand;
 
   async function load() {
     setError('');
@@ -216,14 +218,19 @@ export default function StoreAdminPage() {
               <div className="mt-4 grid gap-4 lg:grid-cols-[240px_1fr]">
                 <ImageBox title={selected.title} imageUrl={selected.imageUrl} />
                 <div className="grid gap-3 md:grid-cols-2">
-                  <Field label="اسم المادة" value={selected.title} onChange={(value) => updateSelected({ title: value })} disabled={!selected.isOnDemand} />
-                  <Field label="الفئة" value={selected.category} onChange={(value) => updateSelected({ category: value })} disabled={!selected.isOnDemand} />
+                  <Field label="اسم المادة" value={selected.title} onChange={(value) => updateSelected({ title: value })} disabled={selectedFromInventory} />
+                  <Field label="الفئة" value={selected.category} onChange={(value) => updateSelected({ category: value })} disabled={selectedFromInventory} />
+                  {selectedFromInventory ? (
+                    <div className="rounded-[8px] border border-[#dce6e3] bg-[#f7faf9] px-3 py-2 text-[12px] leading-6 text-[#536866] md:col-span-2">
+                      هذه المادة مرتبطة بمخزون المواد. الاسم والفئة والصورة والكمية تدار من صفحة مخزون المواد، وهنا يتم التحكم في الظهور والبكجات فقط.
+                    </div>
+                  ) : null}
                   <label className="block md:col-span-2">
                     <span className="mb-1 block text-[12px] font-bold text-[#536866]">رفع صورة مباشرة</span>
-                    <input type="file" accept="image/*" onChange={async (event) => {
+                    <input type="file" accept="image/*" disabled={selectedFromInventory} onChange={async (event) => {
                       const file = event.target.files?.[0];
                       if (file) updateSelected({ imageUrl: await fileToDataUrl(file) });
-                    }} className="w-full rounded-[8px] border border-[#dce6e3] p-2 text-[13px]" />
+                    }} className="w-full rounded-[8px] border border-[#dce6e3] p-2 text-[13px] disabled:bg-[#f4f6f6] disabled:text-[#74817f]" />
                   </label>
                   <Field label="ملاحظة عند الطلب" value={selected.onDemandNote || ''} onChange={(value) => updateSelected({ onDemandNote: value })} />
                   <label className="flex items-center gap-2 rounded-[8px] border border-[#dce6e3] px-3 py-3 text-[13px] font-bold">

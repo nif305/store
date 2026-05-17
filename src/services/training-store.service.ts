@@ -138,7 +138,7 @@ async function ensureStoreSeed() {
   });
 
   const existingCatalog = await prisma.storeCatalogItem.findMany({
-    select: { id: true, inventoryItemId: true, title: true, description: true, category: true, isOnDemand: true },
+    select: { id: true, inventoryItemId: true, title: true, description: true, category: true, imageUrl: true, isOnDemand: true },
   });
   const catalogByInventory = new Set(existingCatalog.map((item) => item.inventoryItemId).filter(Boolean));
   const onDemandTitles = new Set(existingCatalog.filter((item) => item.isOnDemand).map((item) => item.title));
@@ -303,6 +303,59 @@ async function ensureStoreSeed() {
       });
     }
   }
+}
+
+function inventoryToStoreCatalogData(item: {
+  id: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  imageUrl?: string | null;
+  sortOrder?: number | null;
+}) {
+  return {
+    title: item.name,
+    description: item.description || null,
+    category: item.category || 'مواد تدريبية',
+    imageUrl: item.imageUrl || null,
+    isOnDemand: false,
+    sortOrder: item.sortOrder || 0,
+  };
+}
+
+export async function syncInventoryItemWithStore(inventoryItemId: string) {
+  const item = await prisma.inventoryItem.findUnique({ where: { id: inventoryItemId } });
+  if (!item) return null;
+  const existing = await prisma.storeCatalogItem.findFirst({ where: { inventoryItemId: item.id } });
+  if (existing) {
+    return prisma.storeCatalogItem.update({
+      where: { id: existing.id },
+      data: {
+        ...inventoryToStoreCatalogData(item),
+        inventoryItemId: item.id,
+      },
+    });
+  }
+  return prisma.storeCatalogItem.create({
+    data: {
+      inventoryItemId: item.id,
+      ...inventoryToStoreCatalogData(item),
+      isVisible: true,
+    },
+  });
+}
+
+export async function hideInventoryItemFromStore(inventoryItemId: string) {
+  await prisma.storeCatalogItem.updateMany({
+    where: { inventoryItemId },
+    data: { isVisible: false },
+  });
+}
+
+export async function syncStoreCatalogWithInventory() {
+  await ensureStoreSeed();
+  const inventoryItems = await prisma.inventoryItem.findMany({ select: { id: true } });
+  await Promise.all(inventoryItems.map((item) => syncInventoryItemWithStore(item.id)));
 }
 
 async function activeReservationsByInventory(inventoryIds?: string[]) {
@@ -510,6 +563,23 @@ export async function getStoreAdminCatalog() {
 }
 
 export async function updateCatalogItem(id: string, data: any) {
+  const existing = await prisma.storeCatalogItem.findUnique({
+    where: { id },
+    select: { inventoryItemId: true, isOnDemand: true },
+  });
+  if (!existing) throw new Error('المادة غير موجودة');
+
+  if (existing.inventoryItemId && !existing.isOnDemand) {
+    return prisma.storeCatalogItem.update({
+      where: { id },
+      data: {
+        isVisible: typeof data.isVisible === 'boolean' ? data.isVisible : undefined,
+        onDemandNote: normalizeText(data.onDemandNote) || null,
+        sortOrder: Number.isFinite(Number(data.sortOrder)) ? Number(data.sortOrder) : undefined,
+      },
+    });
+  }
+
   return prisma.storeCatalogItem.update({
     where: { id },
     data: {

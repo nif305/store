@@ -5,6 +5,7 @@ import {
 } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getInventorySearchTerms } from '@/lib/inventoryLocalization';
+import { hideInventoryItemFromStore, syncInventoryItemWithStore } from '@/services/training-store.service';
 
 type InventoryFilters = {
   page?: number;
@@ -294,6 +295,8 @@ export const InventoryService = {
       },
     });
 
+    await syncInventoryItemWithStore(item.id);
+
     return item;
   },
 
@@ -426,6 +429,8 @@ export const InventoryService = {
       },
     });
 
+    await syncInventoryItemWithStore(updated.id);
+
     return updated;
   },
 
@@ -438,6 +443,7 @@ export const InventoryService = {
       throw new Error('لا يمكن حذف الصنف لوجود عهد نشطة مرتبطة به');
     }
 
+    await hideInventoryItemFromStore(id);
     await prisma.inventoryItem.delete({ where: { id } });
 
     await prisma.auditLog.create({
