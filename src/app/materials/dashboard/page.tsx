@@ -93,6 +93,12 @@ export default function MaterialsDashboardPage() {
       hint: ui('كل الطلبات بجميع حالاتها'),
       href: '/materials/requests',
       accent: 'from-[#123f45] to-[#5b7f81]',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 opacity-70" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+          <path d="M14 2v6h6M9 13h6M9 17h4" />
+        </svg>
+      ),
     },
     {
       title: ui('طلبات تحتاج صرفًا'),
@@ -100,6 +106,11 @@ export default function MaterialsDashboardPage() {
       hint: ui('قائمة التنفيذ اليومية للمستودع'),
       href: '/materials/requests',
       accent: 'from-[#0f5e61] to-[#41797a]',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 opacity-70" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />
+        </svg>
+      ),
     },
     {
       title: ui('طلبات مصروفة'),
@@ -107,6 +118,11 @@ export default function MaterialsDashboardPage() {
       hint: ui('طلبات تم تنفيذها أو صرفها'),
       href: '/materials/requests',
       accent: 'from-[#2e725f] to-[#78a08b]',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 opacity-70" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="9" />
+        </svg>
+      ),
     },
     {
       title: ui('إجمالي العهد'),
@@ -114,6 +130,11 @@ export default function MaterialsDashboardPage() {
       hint: ui('العهد النشطة والمعادة'),
       href: '/materials/custody',
       accent: 'from-[#1b4f68] to-[#5f8fa2]',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 opacity-70" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2 4 6v6c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6l-8-4z" />
+        </svg>
+      ),
     },
     {
       title: ui('طلبات الإرجاع'),
@@ -121,6 +142,11 @@ export default function MaterialsDashboardPage() {
       hint: ui('المفتوحة والمغلقة'),
       href: '/materials/returns',
       accent: 'from-[#8a6a37] to-[#c3a66f]',
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 opacity-70" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 9H5V5" /><path d="M5 9C6.8 6.6 9 5.5 12 5.5c4.7 0 8 3.3 8 8s-3.3 8-8 8c-3.3 0-5.8-1.3-7.5-4" />
+        </svg>
+      ),
     },
   ];
 
@@ -226,33 +252,60 @@ export default function MaterialsDashboardPage() {
         : { label: ui('جميع طلبات المواد'), href: '/materials/requests' };
 
   const workflow = [
-    { label: ui('إجمالي طلبات المواد'), value: materialRequestsTotal },
-    { label: ui('طلبات بانتظار الإجراء'), value: metrics?.pendingRequests ?? 0 },
-    { label: ui('طلبات مصروفة'), value: metrics?.issuedRequests ?? 0 },
-    { label: ui('طلبات معادة'), value: metrics?.returnedRequests ?? 0 },
-    { label: ui('طلبات مرفوضة'), value: metrics?.rejectedRequests ?? 0 },
-    { label: ui('عهد نشطة'), value: metrics?.activeCustody ?? 0 },
-    { label: ui('عهد معادة'), value: metrics?.returnedCustody ?? 0 },
+    { label: ui('إجمالي طلبات المواد'), value: materialRequestsTotal, color: '#2A6364', bg: '#eef5f4' },
+    { label: ui('طلبات بانتظار الإجراء'), value: metrics?.pendingRequests ?? 0, color: '#8a6a37', bg: '#f7f1e4' },
+    { label: ui('طلبات مصروفة'), value: metrics?.issuedRequests ?? 0, color: '#1e6b4c', bg: '#e8f5ef' },
+    { label: ui('طلبات معادة'), value: metrics?.returnedRequests ?? 0, color: '#2A6364', bg: '#eef5f4' },
+    { label: ui('طلبات مرفوضة'), value: metrics?.rejectedRequests ?? 0, color: '#7c1e3e', bg: '#f4e7eb' },
+    { label: ui('عهد نشطة'), value: metrics?.activeCustody ?? 0, color: '#1b4f68', bg: '#e7eff5' },
+    { label: ui('عهد معادة'), value: metrics?.returnedCustody ?? 0, color: '#2A6364', bg: '#eef5f4' },
   ];
   const workflowMax = Math.max(...workflow.map((item) => item.value), 1);
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[8px] border border-[#dce6e3] bg-white p-5 shadow-[0_16px_34px_-32px_rgba(15,23,42,0.2)]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="text-[12px] font-bold text-[#2A6364]">رابط المدربين</div>
-            <h2 className="mt-1 text-[22px] font-extrabold text-[#223738]">مساعد تجهيز الدورة</h2>
-            <p className="mt-2 max-w-[760px] text-[13px] leading-7 text-[#70807e]">
-              متجر تشغيلي لاختيار مستلزمات التدريب، ثم تنتقل الاحتياجات لقسم احتياجات المدربين للحجز الذكي والتحويل إلى طلب مواد.
-            </p>
+      <section className="overflow-hidden rounded-[20px] border border-[#dce6e3] bg-white shadow-[0_16px_34px_-32px_rgba(15,23,42,0.2)]">
+        <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-[#eef5f4] text-[#2A6364]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />
+                <path d="M6 12v5c3.5 3 8.5 3 12 0v-5" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="text-[12px] font-bold text-[#2A6364]">رابط المدربين</div>
+                <span className="rounded-full bg-[#eef5f4] px-2 py-0.5 text-[10px] font-bold text-[#2A6364]">متاح للجميع</span>
+              </div>
+              <h2 className="mt-1 text-[20px] font-extrabold text-[#223738]">مساعد تجهيز الدورة</h2>
+              <p className="mt-1.5 max-w-[700px] text-[13px] leading-7 text-[#70807e]">
+                متجر تشغيلي لاختيار مستلزمات التدريب، ثم تنتقل الاحتياجات لقسم احتياجات المدربين للحجز الذكي والتحويل إلى طلب مواد.
+              </p>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <a href="/training-kit" target="_blank" className="rounded-[8px] bg-[#2A6364] px-5 py-3 text-[14px] font-extrabold text-white">
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="/training-kit"
+              target="_blank"
+              className="inline-flex items-center gap-2 rounded-[12px] bg-[#2A6364] px-5 py-2.5 text-[14px] font-extrabold text-white transition hover:bg-[#1e5152]"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <path d="M15 3h6v6M10 14 21 3" />
+              </svg>
               فتح مساعد تجهيز الدورة
             </a>
             {user?.role === 'manager' || user?.role === 'warehouse' || user?.canManageTrainerNeeds ? (
-              <a href="/materials/trainer-needs" className="rounded-[8px] border border-[#2A6364] px-5 py-3 text-[14px] font-extrabold text-[#2A6364]">
+              <a
+                href="/materials/trainer-needs"
+                className="inline-flex items-center gap-2 rounded-[12px] border border-[#2A6364]/30 bg-[#eef5f4] px-5 py-2.5 text-[14px] font-extrabold text-[#2A6364] transition hover:border-[#2A6364]/60 hover:bg-[#e4f0ef]"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                  <rect x="9" y="3" width="6" height="4" rx="1" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
                 احتياجات المدربين
               </a>
             ) : null}
@@ -260,22 +313,63 @@ export default function MaterialsDashboardPage() {
         </div>
       </section>
       {canSeeRoomOperations ? (
-      <section className="grid gap-3 md:grid-cols-4">
-        <a href="/materials/rooms-schedule" className="rounded-[8px] border border-[#dce6e3] bg-white p-4 transition hover:border-[#2A6364]">
-          <div className="text-[12px] text-[#71817f]">القاعات المحجوزة اليوم</div>
-          <div className="mt-2 text-[28px] font-extrabold text-[#2A6364]">{metrics?.roomsBookedToday ?? 0}</div>
+      <section className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+        <a href="/materials/rooms-schedule" className="group rounded-[18px] border border-[#dce6e3] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[#2A6364]/40 hover:shadow-[0_8px_24px_-16px_rgba(42,99,100,0.25)]">
+          <div className="flex items-start justify-between gap-2">
+            <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#eef5f4] text-[#2A6364]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                <path d="M8 14h2v2H8z" /><path d="M14 14h2v2h-2z" />
+              </svg>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 text-[#b0bfbd] transition group-hover:text-[#2A6364]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
+          <div className="mt-3 text-[12px] text-[#71817f]">القاعات المحجوزة اليوم</div>
+          <div className="mt-1.5 text-[28px] font-extrabold text-[#2A6364]">{metrics?.roomsBookedToday ?? 0}</div>
         </a>
-        <a href="/materials/rooms-schedule" className="rounded-[8px] border border-[#dce6e3] bg-white p-4 transition hover:border-[#2A6364]">
-          <div className="text-[12px] text-[#71817f]">القاعات المتاحة اليوم</div>
-          <div className="mt-2 text-[28px] font-extrabold text-[#1e6b4c]">{metrics?.roomsAvailableToday ?? 0}</div>
+        <a href="/materials/rooms-schedule" className="group rounded-[18px] border border-[#dce6e3] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[#1e6b4c]/40 hover:shadow-[0_8px_24px_-16px_rgba(30,107,76,0.25)]">
+          <div className="flex items-start justify-between gap-2">
+            <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#e8f5ef] text-[#1e6b4c]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="9" />
+              </svg>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 text-[#b0bfbd] transition group-hover:text-[#1e6b4c]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
+          <div className="mt-3 text-[12px] text-[#71817f]">القاعات المتاحة اليوم</div>
+          <div className="mt-1.5 text-[28px] font-extrabold text-[#1e6b4c]">{metrics?.roomsAvailableToday ?? 0}</div>
         </a>
-        <a href="/materials/rooms-schedule" className="rounded-[8px] border border-[#dce6e3] bg-white p-4 transition hover:border-[#2A6364]">
-          <div className="text-[12px] text-[#71817f]">طلبات قاعات بانتظار الاعتماد</div>
-          <div className="mt-2 text-[28px] font-extrabold text-[#8a6a37]">{metrics?.pendingRoomBookings ?? 0}</div>
+        <a href="/materials/rooms-schedule" className="group rounded-[18px] border border-[#dce6e3] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[#8a6a37]/40 hover:shadow-[0_8px_24px_-16px_rgba(138,106,55,0.25)]">
+          <div className="flex items-start justify-between gap-2">
+            <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#f7f1e4] text-[#8a6a37]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />
+              </svg>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 text-[#b0bfbd] transition group-hover:text-[#8a6a37]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
+          <div className="mt-3 text-[12px] text-[#71817f]">طلبات قاعات بانتظار الاعتماد</div>
+          <div className="mt-1.5 text-[28px] font-extrabold text-[#8a6a37]">{metrics?.pendingRoomBookings ?? 0}</div>
         </a>
-        <a href="/materials/rooms-admin" className="rounded-[8px] border border-[#dce6e3] bg-white p-4 transition hover:border-[#2A6364]">
-          <div className="text-[12px] text-[#71817f]">إجمالي القاعات</div>
-          <div className="mt-2 text-[28px] font-extrabold text-[#223738]">{metrics?.totalTrainingRooms ?? 0}</div>
+        <a href="/materials/rooms-admin" className="group rounded-[18px] border border-[#dce6e3] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[#223738]/30 hover:shadow-[0_8px_24px_-16px_rgba(34,55,56,0.2)]">
+          <div className="flex items-start justify-between gap-2">
+            <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#f0f3f3] text-[#223738]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
+              </svg>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 text-[#b0bfbd] transition group-hover:text-[#223738]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
+          <div className="mt-3 text-[12px] text-[#71817f]">إجمالي القاعات</div>
+          <div className="mt-1.5 text-[28px] font-extrabold text-[#223738]">{metrics?.totalTrainingRooms ?? 0}</div>
         </a>
       </section>
       ) : null}
@@ -342,20 +436,22 @@ export default function MaterialsDashboardPage() {
             </div>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {actionCards.map((card) => (
               <a
                 key={card.title}
                 href={card.href}
-                className={`rounded-[22px] bg-gradient-to-l ${card.accent} px-4 py-4 text-white shadow-[0_16px_32px_-30px_rgba(15,23,42,0.28)] transition hover:-translate-y-0.5`}
+                className={`group rounded-[20px] bg-gradient-to-l ${card.accent} px-4 py-3.5 text-white shadow-[0_14px_28px_-26px_rgba(15,23,42,0.3)] transition hover:-translate-y-0.5`}
               >
-                <div className="text-[12px] text-white/72">{ui('أولوية تنفيذ')}</div>
-                <div className="mt-2 flex items-end justify-between gap-4">
-                  <div>
-                    <div className="text-[19px] font-extrabold">{card.title}</div>
-                    <div className="mt-1.5 text-[12px] text-white/82">{card.hint}</div>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {card.icon}
+                    <div className="min-w-0">
+                      <div className="text-[15px] font-extrabold leading-tight truncate">{card.title}</div>
+                      <div className="mt-0.5 text-[11px] text-white/75 truncate">{card.hint}</div>
+                    </div>
                   </div>
-                  <div className="text-[30px] font-extrabold leading-none">{card.value}</div>
+                  <div className="shrink-0 text-[28px] font-extrabold leading-none">{card.value}</div>
                 </div>
               </a>
             ))}
@@ -405,17 +501,28 @@ export default function MaterialsDashboardPage() {
             </span>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {workflow.map((item) => (
-              <div key={item.label} className="space-y-2">
-                <div className="flex items-center justify-between text-[14px]">
-                  <span className="font-semibold text-[#2a4444]">{item.label}</span>
-                  <span className="text-[#6f8080]">{item.value}</span>
+              <div key={item.label} className="space-y-1.5">
+                <div className="flex items-center justify-between gap-3 text-[13px]">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="font-semibold text-[#2a4444]">{item.label}</span>
+                  </div>
+                  <span
+                    className="rounded-full px-2.5 py-0.5 text-[12px] font-bold"
+                    style={{ backgroundColor: item.bg, color: item.color }}
+                  >
+                    {item.value}
+                  </span>
                 </div>
-                <div className="h-3 rounded-full bg-[#edf3f2]">
+                <div className="h-2 overflow-hidden rounded-full bg-[#edf3f2]">
                   <div
-                    className="h-3 rounded-full bg-[#0f5e61]"
-                    style={{ width: `${(item.value / workflowMax) * 100}%` }}
+                    className="h-2 rounded-full transition-all duration-700"
+                    style={{
+                      width: `${(item.value / workflowMax) * 100}%`,
+                      backgroundColor: item.color,
+                    }}
                   />
                 </div>
               </div>
@@ -427,10 +534,15 @@ export default function MaterialsDashboardPage() {
               <a
                 key={card.title}
                 href={card.href}
-                className="rounded-[18px] border border-[#dde6e4] bg-[#fbfcfc] px-4 py-4 transition hover:-translate-y-0.5 hover:border-[#cfe0dc] hover:bg-white"
+                className="group flex items-center gap-3 rounded-[18px] border border-[#dde6e4] bg-[#fbfcfc] px-4 py-4 transition hover:-translate-y-0.5 hover:border-[#cfe0dc] hover:bg-white"
               >
-                <div className="text-[16px] font-extrabold text-[#223738]">{card.title}</div>
-                <div className="mt-1.5 text-[12px] leading-6 text-[#70807e]">{card.hint}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[15px] font-extrabold text-[#223738]">{card.title}</div>
+                  <div className="mt-1 text-[12px] leading-5 text-[#70807e]">{card.hint}</div>
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-[#b0bfbd] transition group-hover:text-[#2A6364]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
               </a>
             ))}
           </div>
