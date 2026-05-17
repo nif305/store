@@ -103,10 +103,10 @@ export default function TrainingKitPage() {
 
   useEffect(() => {
     const starts = roomSelections.map((selection) => selection.startDate).filter(Boolean).sort();
-    const ends = roomSelections.map((selection) => selection.endDate || selection.startDate).filter(Boolean).sort();
-    if (!starts.length || !ends.length) return;
+    const ends = roomSelections.map((selection) => selection.endDate).filter(Boolean).sort();
+    if (!starts.length && !ends.length) return;
     const nextStartDate = starts[0];
-    const nextEndDate = ends[ends.length - 1];
+    const nextEndDate = ends[ends.length - 1] || '';
     setForm((prev) => {
       if (prev.startDate === nextStartDate && prev.endDate === nextEndDate) return prev;
       return { ...prev, startDate: nextStartDate, endDate: nextEndDate };
@@ -410,7 +410,7 @@ function RoomsView({
   const selectionRows = roomSelections
     .map((selection) => ({ selection, room: rooms.find((room) => room.id === selection.roomId) }))
     .filter((row) => row.room) as { selection: RoomSelection; room: TrainingRoom }[];
-  const dateReady = !!form.startDate && !!form.endDate;
+  const incompleteSelections = roomSelections.some((selection) => !selection.startDate || !selection.endDate);
 
   function selectRoom(room: TrainingRoom) {
     if (!room.isAvailable) return;
@@ -423,14 +423,19 @@ function RoomsView({
           roomId: room.id,
           layout: room.layoutOptions[0] || '',
           startDate: form.startDate,
-          endDate: form.endDate || form.startDate,
+          endDate: form.endDate,
         },
       ];
     });
   }
 
   function updateSelection(roomId: string, patch: Partial<RoomSelection>) {
-    setRoomSelections((prev) => prev.map((selection) => (selection.roomId === roomId ? { ...selection, ...patch } : selection)));
+    setRoomSelections((prev) => prev.map((selection) => {
+      if (selection.roomId !== roomId) return selection;
+      const next = { ...selection, ...patch };
+      if (patch.startDate && next.endDate && next.endDate < patch.startDate) next.endDate = '';
+      return next;
+    }));
   }
 
   const selectedRoomId = '';
@@ -454,9 +459,9 @@ function RoomsView({
             ))}
           </div>
         </div>
-        {!dateReady ? (
+        {incompleteSelections ? (
           <div className="mb-4 rounded-[10px] border border-[#e8ddbf] bg-[#fff9ec] px-4 py-3 text-[13px] leading-6 text-[#7f6b43]">
-            أدخل تاريخ بداية ونهاية الدورة في صفحة الطلبات حتى تظهر الإتاحة حسب أيام الدورة بدقة.
+            حدد تاريخ بداية ونهاية لكل قاعة مختارة، وسيتم تحديث تواريخ الدورة تلقائيا في صفحة الطلبات.
           </div>
         ) : null}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -515,11 +520,11 @@ function RoomsView({
               <div className="mt-1 grid grid-cols-2 gap-1">
                 <label className="text-[10px] text-[#53635f]">
                   من
-                  <input type="date" value={selection.startDate} min={form.startDate || undefined} max={form.endDate || undefined} onChange={(event) => updateSelection(room.id, { startDate: event.target.value })} className="mt-0.5 h-7 w-full rounded-[8px] border border-[#cfded9] px-2 text-[11px]" />
+                  <input type="date" value={selection.startDate} onChange={(event) => updateSelection(room.id, { startDate: event.target.value })} className="mt-0.5 h-7 w-full rounded-[8px] border border-[#cfded9] px-2 text-[11px]" />
                 </label>
                 <label className="text-[10px] text-[#53635f]">
                   إلى
-                  <input type="date" value={selection.endDate} min={selection.startDate || form.startDate || undefined} max={form.endDate || undefined} onChange={(event) => updateSelection(room.id, { endDate: event.target.value })} className="mt-0.5 h-7 w-full rounded-[8px] border border-[#cfded9] px-2 text-[11px]" />
+                  <input type="date" value={selection.endDate} min={selection.startDate || undefined} onChange={(event) => updateSelection(room.id, { endDate: event.target.value })} className="mt-0.5 h-7 w-full rounded-[8px] border border-[#cfded9] px-2 text-[11px]" />
                 </label>
               </div>
             </div>
