@@ -71,8 +71,9 @@ export default function TrainingKitPage() {
   const [error, setError] = useState('');
 
   async function loadCatalog() {
-    const response = await fetch('/api/training-store/catalog', { cache: 'no-store' });
+    const response = await fetch(`/api/training-store/catalog?t=${Date.now()}`, { cache: 'no-store' });
     const json = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(json?.error || 'تعذر تحميل مواد المتجر');
     setItems(Array.isArray(json.items) ? json.items : []);
     setBundles(Array.isArray(json.bundles) ? json.bundles : []);
   }
