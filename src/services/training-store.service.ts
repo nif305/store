@@ -44,7 +44,6 @@ const DEFAULT_PER_TRAINEE_GROUPS = [
   ['نوته', 'نوت', 'دفتر'],
   ['ملفات', 'فولدر', 'ملف'],
 ];
-const PUBLIC_DATA_IMAGE_MAX_LENGTH = 12000;
 const TRAINER_NEEDS_DEFAULT_LIMIT = 5;
 const TRAINER_NEEDS_MAX_LIMIT = 10;
 
@@ -74,11 +73,8 @@ function onDemandCategory(title: string) {
     : 'مواد عند الطلب';
 }
 
-function publicImageUrl(value?: string | null) {
-  const imageUrl = normalizeText(value);
-  if (!imageUrl) return null;
-  if (imageUrl.startsWith('data:image/') && imageUrl.length > PUBLIC_DATA_IMAGE_MAX_LENGTH) return null;
-  return imageUrl;
+function publicStoreImageUrl(type: 'item' | 'bundle', id: string) {
+  return `/api/training-store/image?type=${type}&id=${encodeURIComponent(id)}`;
 }
 
 export function canManageTrainerNeeds(session: Pick<SessionUser, 'role' | 'canManageTrainerNeeds'>) {
@@ -333,7 +329,7 @@ function mapCatalogItem(item: any, reservationMap: Map<string, number>, options:
     title: item.title,
     description: item.description,
     category: item.category,
-    imageUrl: options.publicPayload ? publicImageUrl(rawImageUrl) : rawImageUrl,
+    imageUrl: options.publicPayload ? publicStoreImageUrl('item', item.id) : rawImageUrl,
     isVisible: item.isVisible,
     isOnDemand: item.isOnDemand,
     onDemandNote: item.onDemandNote || (item.isOnDemand ? ON_DEMAND_NOTE : null),
@@ -407,17 +403,55 @@ export async function getPublicCatalog() {
       id: bundle.id,
       title: bundle.title,
       description: bundle.description,
-      imageUrl: null,
+      imageUrl: publicStoreImageUrl('bundle', bundle.id),
       isVisible: bundle.isVisible,
       items: bundle.items.map((row) => ({
         catalogItemId: row.catalogItemId,
         quantity: row.quantity,
         quantityMode: row.quantityMode,
         title: row.catalogItem.title,
-        imageUrl: null,
+        imageUrl: publicStoreImageUrl('item', row.catalogItemId),
       })),
     })),
   };
+}
+
+function parseImageDataUrl(value?: string | null) {
+  const imageUrl = normalizeText(value);
+  if (!imageUrl) return null;
+  if (/^https?:\/\//i.test(imageUrl) || imageUrl.startsWith('/')) {
+    return { redirectUrl: imageUrl, contentType: null, bytes: null };
+  }
+  const match = imageUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!match) return null;
+  return {
+    redirectUrl: null,
+    contentType: match[1],
+    bytes: Buffer.from(match[2], 'base64'),
+  };
+}
+
+export async function getPublicStoreImage(type: string, id: string) {
+  const normalizedType = normalizeText(type);
+  const normalizedId = normalizeText(id);
+  if (!normalizedId) return null;
+
+  if (normalizedType === 'bundle') {
+    const bundle = await prisma.storeBundle.findFirst({
+      where: { id: normalizedId, isVisible: true },
+      select: { imageUrl: true },
+    });
+    return parseImageDataUrl(bundle?.imageUrl);
+  }
+
+  const item = await prisma.storeCatalogItem.findFirst({
+    where: { id: normalizedId, isVisible: true },
+    select: {
+      imageUrl: true,
+      inventoryItem: { select: { imageUrl: true } },
+    },
+  });
+  return parseImageDataUrl(item?.imageUrl || item?.inventoryItem?.imageUrl);
 }
 
 export async function getStoreAdminCatalog() {

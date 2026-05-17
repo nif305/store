@@ -719,10 +719,15 @@ function CheckoutBar({ count, uniqueCount, onCheckout }: { count: number; unique
 }
 
 function ProductImage({ title, imageUrl, ratio }: { title: string; imageUrl?: string | null; ratio: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    setFailed(false);
+  }, [imageUrl]);
+
   return (
     <div className={`${ratio} overflow-hidden bg-[#eef4f2]`}>
-      {imageUrl ? (
-        <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
+      {imageUrl && !failed ? (
+        <img src={imageUrl} alt={title} loading="lazy" onError={() => setFailed(true)} className="h-full w-full object-cover" />
       ) : (
         <div className="flex h-full w-full items-center justify-center border-b border-[#dfe8e5] bg-[linear-gradient(135deg,#f8fbfa_0%,#eef4f2_55%,#f7f1e4_100%)] px-4 text-center text-[13px] leading-7 text-[#7b8885]">
           <span className="rounded-full border border-[#d4dfdc] bg-white/80 px-4 py-2">صورة المادة</span>
