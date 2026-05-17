@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       ...(category ? { category } : {}),
     };
 
-    const [result, stats, categoryRows, allItems] = await Promise.all([
+    const [result, stats, categoryRows, activeCustodyCount, visibleInStoreCount, imageRows] = await Promise.all([
       InventoryService.getAll({
         page,
         limit,
@@ -87,41 +87,33 @@ export async function GET(request: NextRequest) {
       } as any),
       InventoryService.getStats(),
       prisma.inventoryItem.findMany({
-        where: baseWhere,
         select: { category: true },
         distinct: ['category'],
         orderBy: { category: 'asc' },
       }),
+      prisma.custodyRecord.count({
+        where: { status: { in: ['ACTIVE', 'OVERDUE', 'RETURN_REQUESTED'] } },
+      }),
+      prisma.inventoryItem.count({
+        where: {
+          storeCatalogItems: { some: { isOnDemand: false, isVisible: true } },
+        },
+      }),
       prisma.inventoryItem.findMany({
-        where: baseWhere,
         select: {
-          id: true,
-          type: true,
-          status: true,
-          quantity: true,
-          availableQty: true,
+          imageUrl: true,
+          storeCatalogItems: {
+            where: { isOnDemand: false },
+            select: { imageUrl: true },
+          },
         },
       }),
     ]);
 
-    const returnableCount = allItems.filter((item) => item.type === ItemType.RETURNABLE).length;
-    const consumableCount = allItems.filter((item) => item.type === ItemType.CONSUMABLE).length;
-    const availableCount = allItems.filter((item) => item.status !== ItemStatus.OUT_OF_STOCK).length;
-    const usedCount = allItems.filter((item) => item.availableQty < item.quantity).length;
-    const [visibleInStoreCount, missingImagesCount] = await Promise.all([
-      prisma.inventoryItem.count({
-        where: {
-          ...baseWhere,
-          storeCatalogItems: { some: { isOnDemand: false, isVisible: true } },
-        },
-      }),
-      prisma.inventoryItem.count({
-        where: {
-          ...baseWhere,
-          OR: [{ imageUrl: null }, { imageUrl: '' }],
-        },
-      }),
-    ]);
+    const hasImage = (value?: string | null) => !!String(value || '').trim();
+    const missingImagesCount = imageRows.filter(
+      (item) => !hasImage(item.imageUrl) && !item.storeCatalogItems.some((row) => hasImage(row.imageUrl))
+    ).length;
 
     return NextResponse.json({
       ...result,
@@ -132,10 +124,10 @@ export async function GET(request: NextRequest) {
         lowStockCount: stats.lowStock,
         outOfStockCount: stats.outOfStock,
         totalEstimatedValue: stats.totalValue,
-        returnableCount,
-        consumableCount,
-        availableCount,
-        usedCount,
+        returnableCount: stats.returnableCount,
+        consumableCount: stats.consumableCount,
+        availableCount: stats.available,
+        usedCount: activeCustodyCount,
         visibleInStoreCount,
         missingImagesCount,
       },

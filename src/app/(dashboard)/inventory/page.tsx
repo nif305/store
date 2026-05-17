@@ -174,6 +174,7 @@ export default function InventoryPage() {
   const [selectedBundleId, setSelectedBundleId] = useState('');
   const [loading, setLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [alertsLoading, setAlertsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -182,6 +183,7 @@ export default function InventoryPage() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
   const [stats, setStats] = useState(emptyStats);
+  const [alertItems, setAlertItems] = useState<InventoryItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 });
@@ -256,6 +258,24 @@ export default function InventoryPage() {
     }
   }, [search, statusFilter, typeFilter, categoryFilter]);
 
+  const fetchAlertItems = useCallback(async () => {
+    setAlertsLoading(true);
+    try {
+      const params = new URLSearchParams({ page: '1', limit: '500' });
+      if (search) params.set('search', search);
+      if (typeFilter) params.set('type', typeFilter);
+      if (categoryFilter) params.set('category', categoryFilter);
+      const response = await fetch(`/api/inventory?${params.toString()}`, { cache: 'no-store' });
+      const data: InventoryApiResponse = await response.json();
+      if (!response.ok) throw new Error((data as any)?.error || 'تعذر تحميل تنبيهات المخزون');
+      setAlertItems(Array.isArray(data.data) ? data.data : []);
+    } catch {
+      setAlertItems([]);
+    } finally {
+      setAlertsLoading(false);
+    }
+  }, [search, typeFilter, categoryFilter]);
+
   useEffect(() => {
     fetchInventory();
   }, [fetchInventory]);
@@ -267,6 +287,10 @@ export default function InventoryPage() {
   useEffect(() => {
     if (activeTab === 'summary') fetchSummaryItems();
   }, [activeTab, fetchSummaryItems]);
+
+  useEffect(() => {
+    if (activeTab === 'alerts') fetchAlertItems();
+  }, [activeTab, fetchAlertItems]);
 
   const openCreateModal = () => {
     setSelectedItem(null);
@@ -426,8 +450,8 @@ export default function InventoryPage() {
   };
 
   const alerts = useMemo(
-    () => items.filter((item) => item.status !== 'AVAILABLE' || !getItemImage(item) || !(getStoreMeta(item)?.isVisible ?? true)),
-    [items],
+    () => alertItems.filter((item) => item.status !== 'AVAILABLE' || !getItemImage(item) || !(getStoreMeta(item)?.isVisible ?? true)),
+    [alertItems],
   );
 
   return (
@@ -448,12 +472,12 @@ export default function InventoryPage() {
       {error ? <div className="rounded-[8px] border border-[#eed9df] bg-[#fff7f8] px-4 py-3 text-[13px] text-[#7a3147]">{error}</div> : null}
 
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard icon="M" label="إجمالي المواد" value={stats.totalItems} tone="teal" onClick={() => { clearFilters(); setActiveTab('items'); }} />
-        <StatCard icon="V" label="ظاهرة للمدرب" value={stats.visibleInStoreCount} tone="green" onClick={() => { clearFilters(); setActiveTab('items'); }} />
-        <StatCard icon="P" label="بدون صور" value={stats.missingImagesCount} tone="amber" onClick={() => setActiveTab('alerts')} />
-        <StatCard icon="L" label="منخفضة" value={stats.lowStockCount} tone="rose" onClick={() => { setStatusFilter('LOW_STOCK'); setActiveTab('items'); }} />
-        <StatCard icon="C" label="عهد نشطة" value={stats.usedCount} tone="blue" onClick={() => setActiveTab('summary')} />
-        <Card className={`${statCardClass} border-[#d8c59c] bg-[#fffaf0]`}><div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ead8aa] text-sm text-[#6f5625]">R</span><div><div className="text-[12px] text-slate-500">القيمة التقديرية</div><div className="mt-1 text-[18px] text-[#203634]">{formatCurrency(stats.totalEstimatedValue)}</div></div></div></Card>
+        <StatCard label="إجمالي المواد" value={stats.totalItems} tone="teal" onClick={() => { clearFilters(); setActiveTab('items'); }} />
+        <StatCard label="مواد نشطة" value={stats.availableCount} tone="green" onClick={() => { setStatusFilter('AVAILABLE'); setActiveTab('items'); }} />
+        <StatCard label="مواد منخفضة" value={stats.lowStockCount} tone="amber" onClick={() => { setStatusFilter('LOW_STOCK'); setActiveTab('items'); }} />
+        <StatCard label="مواد نفدت" value={stats.outOfStockCount} tone="rose" onClick={() => { setStatusFilter('OUT_OF_STOCK'); setActiveTab('items'); }} />
+        <StatCard label="بدون صور" value={stats.missingImagesCount} tone="blue" onClick={() => setActiveTab('alerts')} />
+        <Card className={`${statCardClass} border-[#d8c59c] bg-[#fffaf0]`}><div className="text-[12px] text-slate-500">القيمة التقديرية</div><div className="mt-2 text-[18px] text-[#203634]">{formatCurrency(stats.totalEstimatedValue)}</div></Card>
       </div>
 
       <Card className="rounded-[14px] border border-[#dce6e3] bg-white p-3">
@@ -522,7 +546,7 @@ export default function InventoryPage() {
       {activeTab === 'alerts' ? (
         <InventoryTable
           items={alerts}
-          loading={loading}
+          loading={alertsLoading}
           canModify={canModify}
           showImages
           onEdit={openEditModal}
@@ -621,16 +645,11 @@ const statTones: Record<string, string> = {
   blue: 'border-[#cfddea] bg-[#f5f9fd] text-[#365f82]',
 };
 
-function StatCard({ icon, label, value, tone, onClick }: { icon: string; label: string; value: number; tone: string; onClick?: () => void }) {
+function StatCard({ label, value, tone, onClick }: { label: string; value: number; tone: string; onClick?: () => void }) {
   return (
     <Card className={`${statCardClass} ${statTones[tone] || statTones.teal}`} onClick={onClick}>
-      <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-sm">{icon}</span>
-        <div>
-          <div className="text-[12px] text-slate-500">{label}</div>
-          <div className="mt-1 text-[24px] text-[#203634]">{formatNumber(value)}</div>
-        </div>
-      </div>
+      <div className="text-[12px] text-slate-500">{label}</div>
+      <div className="mt-2 text-[24px] text-[#203634]">{formatNumber(value)}</div>
     </Card>
   );
 }
