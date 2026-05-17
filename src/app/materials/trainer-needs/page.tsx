@@ -57,6 +57,8 @@ type CatalogItem = {
 };
 type DraftRow = { catalogItemId: string; title: string; requestedQty: number; coordinatorNote?: string };
 type RequestBucket = 'pending' | 'active' | 'done';
+type BucketCounts = Record<RequestBucket, number>;
+type PaginationState = { page: number; limit: 5 | 10; total: number; totalPages: number };
 
 const statusLabel: Record<string, string> = {
   NEW: 'جديد',
@@ -102,20 +104,14 @@ export default function TrainerNeedsPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [bucket, setBucket] = useState<RequestBucket>('pending');
+  const [bucketCounts, setBucketCounts] = useState<BucketCounts>({ pending: 0, active: 0, done: 0 });
+  const [pagination, setPagination] = useState<PaginationState>({ page: 1, limit: 5, total: 0, totalPages: 1 });
   const [viewer, setViewer] = useState<Viewer | null>(null);
 
   const selected = useMemo(() => needs.find((need) => need.id === selectedId) || needs[0], [needs, selectedId]);
   const opened = useMemo(() => needs.find((need) => need.id === openedId) || null, [needs, openedId]);
   const isLocked = opened?.status === 'CONVERTED_TO_REQUEST' || !!opened?.linkedRequest;
-  const bucketCounts = useMemo(() => ({
-    pending: needs.filter((need) => requestBucket(need.status, need.assignedToId) === 'pending').length,
-    active: needs.filter((need) => requestBucket(need.status, need.assignedToId) === 'active').length,
-    done: needs.filter((need) => requestBucket(need.status, need.assignedToId) === 'done').length,
-  }), [needs]);
-  const filteredNeeds = useMemo(
-    () => needs.filter((need) => requestBucket(need.status, need.assignedToId) === bucket),
-    [bucket, needs]
-  );
+  const filteredNeeds = needs;
 
   const draftStats = useMemo(() => {
     let requested = 0;
@@ -170,18 +166,35 @@ export default function TrainerNeedsPage() {
     };
   }, [draftRows.length, draftStats.convertible, draftStats.shortage, draftTraineeCount, opened]);
 
-  async function load() {
+  async function load(page = pagination.page, selectedBucket = bucket, limit = pagination.limit) {
     setError('');
     setLoading(true);
     try {
+      const query = new URLSearchParams({
+        bucket: selectedBucket,
+        page: String(page),
+        limit: String(limit),
+      });
       const [needsResponse, catalogResponse] = await Promise.all([
-        fetch('/api/trainer-needs', { cache: 'no-store', credentials: 'include' }),
+        fetch(`/api/trainer-needs?${query.toString()}`, { cache: 'no-store', credentials: 'include' }),
         fetch('/api/training-store/catalog', { cache: 'no-store' }),
       ]);
       const needsJson = await needsResponse.json().catch(() => ({}));
       const catalogJson = await catalogResponse.json().catch(() => ({}));
       if (!needsResponse.ok) throw new Error(needsJson?.error || 'تعذر جلب طلبات المدربين');
-      const nextNeeds = Array.isArray(needsJson.data) ? needsJson.data : [];
+      let nextNeeds = Array.isArray(needsJson.data) ? needsJson.data : [];
+      const paginationJson = needsJson.pagination || {};
+      setBucketCounts({
+        pending: Number(needsJson.counts?.pending || 0),
+        active: Number(needsJson.counts?.active || 0),
+        done: Number(needsJson.counts?.done || 0),
+      });
+      setPagination({
+        page: Number(paginationJson.page || page),
+        limit: Number(paginationJson.limit || limit) === 10 ? 10 : 5,
+        total: Number(paginationJson.total || nextNeeds.length),
+        totalPages: Math.max(1, Number(paginationJson.totalPages || 1)),
+      });
       setNeeds(nextNeeds);
       setAssignees(Array.isArray(needsJson.assignees) ? needsJson.assignees : []);
       setViewer(needsJson.viewer || null);
@@ -192,6 +205,14 @@ export default function TrainerNeedsPage() {
 
       const params = new URLSearchParams(window.location.search);
       const openId = params.get('open');
+      if (openId && !nextNeeds.some((need: Need) => need.id === openId)) {
+        const openResponse = await fetch(`/api/trainer-needs/${openId}`, { cache: 'no-store', credentials: 'include' });
+        const openJson = await openResponse.json().catch(() => ({}));
+        if (openResponse.ok && openJson.data) {
+          nextNeeds = [openJson.data, ...nextNeeds.filter((need: Need) => need.id !== openId)];
+          setNeeds(nextNeeds);
+        }
+      }
       if (openId && nextNeeds.some((need: Need) => need.id === openId)) {
         const openedNeed = nextNeeds.find((need: Need) => need.id === openId);
         setSelectedId(openId);
@@ -208,8 +229,8 @@ export default function TrainerNeedsPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    load(pagination.page, bucket, pagination.limit);
+  }, [bucket, pagination.page, pagination.limit]);
 
   useEffect(() => {
     if (!opened) {
@@ -288,6 +309,9 @@ export default function TrainerNeedsPage() {
       if (actionName === 'update-order') setNotice('تم حفظ تعديلات البنود.');
       if (actionName === 'convert') setNotice('تم اعتماد الطلب وتحويل الكميات المتوفرة إلى طلب مواد للمخزن.');
       if (actionName === 'cancel') setNotice('تم إلغاء الطلب وفك أي حجز مؤقت مرتبط به.');
+      if (['assign', 'convert', 'cancel'].includes(actionName)) {
+        await load(pagination.page, bucket, pagination.limit);
+      }
     } catch (err: any) {
       setError(err?.message || 'تعذر تنفيذ الإجراء');
     } finally {
@@ -350,14 +374,17 @@ export default function TrainerNeedsPage() {
         <section className={opened ? 'hidden' : 'rounded-[8px] border border-[#dce6e3] bg-white p-4'}>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-extrabold">الطلبات الواردة</h2>
-            <button onClick={load} className="rounded-[8px] border border-[#dce6e3] px-3 py-1.5 text-[12px] font-bold">تحديث</button>
+            <button onClick={() => load(pagination.page, bucket, pagination.limit)} className="rounded-[8px] border border-[#dce6e3] px-3 py-1.5 text-[12px] font-bold">تحديث</button>
           </div>
           <div className="mb-4 grid grid-cols-3 gap-2">
             {(['pending', 'active', 'done'] as RequestBucket[]).map((key) => (
               <button
                 key={key}
                 type="button"
-                onClick={() => setBucket(key)}
+                onClick={() => {
+                  setBucket(key);
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
                 className={`rounded-[8px] border px-2 py-2 text-[12px] transition ${
                   bucket === key ? 'border-[#2A6364] bg-[#2A6364] text-white' : 'border-[#dce6e3] bg-white text-[#536866]'
                 }`}
@@ -418,6 +445,41 @@ export default function TrainerNeedsPage() {
               ))}
             </div>
           )}
+          {!loading && pagination.total > 0 ? (
+            <div className="mt-4 flex flex-col gap-3 rounded-[8px] border border-[#dce6e3] bg-[#fbfcfc] px-3 py-3 text-[12px] text-[#536866] sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                عرض {Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)} - {Math.min(pagination.page * pagination.limit, pagination.total)} من {pagination.total}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={pagination.limit}
+                  onChange={(event) => setPagination({ page: 1, limit: Number(event.target.value) === 10 ? 10 : 5, total: pagination.total, totalPages: pagination.totalPages })}
+                  className="h-9 rounded-[8px] border border-[#dce6e3] bg-white px-2 outline-none"
+                  aria-label="عدد الطلبات في الصفحة"
+                >
+                  <option value={5}>5 طلبات</option>
+                  <option value={10}>10 طلبات</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  disabled={pagination.page <= 1}
+                  className="h-9 rounded-[8px] border border-[#dce6e3] bg-white px-3 disabled:opacity-40"
+                >
+                  السابق
+                </button>
+                <span className="px-2">صفحة {pagination.page} من {pagination.totalPages}</span>
+                <button
+                  type="button"
+                  onClick={() => setPagination((prev) => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
+                  disabled={pagination.page >= pagination.totalPages}
+                  className="h-9 rounded-[8px] border border-[#dce6e3] bg-white px-3 disabled:opacity-40"
+                >
+                  التالي
+                </button>
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <section className={opened ? 'rounded-[8px] border border-[#dce6e3] bg-white p-5' : 'hidden'}>

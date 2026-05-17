@@ -13,9 +13,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'غير مصرح بالاطلاع على احتياجات المدربين' }, { status: 403 });
     }
 
-    const [needs, assignees] = await Promise.all([listTrainerNeeds(session), listTrainerNeedAssignees()]);
+    const { searchParams } = new URL(request.url);
+    const [needsResult, assignees] = await Promise.all([
+      listTrainerNeeds(session, {
+        bucket: searchParams.get('bucket'),
+        page: searchParams.get('page'),
+        limit: searchParams.get('limit'),
+      }),
+      listTrainerNeedAssignees(),
+    ]);
     return NextResponse.json({
-      data: needs,
+      data: needsResult.rows,
+      counts: needsResult.counts,
+      pagination: needsResult.pagination,
       assignees,
       viewer: {
         id: session.id,

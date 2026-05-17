@@ -45,6 +45,8 @@ const DEFAULT_PER_TRAINEE_GROUPS = [
   ['ملفات', 'فولدر', 'ملف'],
 ];
 const PUBLIC_DATA_IMAGE_MAX_LENGTH = 12000;
+const TRAINER_NEEDS_DEFAULT_LIMIT = 5;
+const TRAINER_NEEDS_MAX_LIMIT = 10;
 
 function normalizeText(value: unknown) {
   return String(value || '').trim();
@@ -53,6 +55,17 @@ function normalizeText(value: unknown) {
 function normalizeQty(value: unknown) {
   const qty = Math.floor(Number(value || 0));
   return Number.isFinite(qty) ? Math.max(0, qty) : 0;
+}
+
+function normalizePage(value: unknown) {
+  const page = Math.floor(Number(value || 1));
+  return Number.isFinite(page) && page > 0 ? page : 1;
+}
+
+function normalizeTrainerNeedsLimit(value: unknown) {
+  const limit = Math.floor(Number(value || TRAINER_NEEDS_DEFAULT_LIMIT));
+  if (!Number.isFinite(limit)) return TRAINER_NEEDS_DEFAULT_LIMIT;
+  return Math.min(Math.max(limit, TRAINER_NEEDS_DEFAULT_LIMIT), TRAINER_NEEDS_MAX_LIMIT);
 }
 
 function onDemandCategory(title: string) {
@@ -686,23 +699,65 @@ async function mapNeed(need: any) {
   };
 }
 
-export async function listTrainerNeeds(session?: Pick<SessionUser, 'id' | 'role'> & Partial<Pick<SessionUser, 'roles'>>) {
+function trainerNeedsBucketWhere(bucket: unknown) {
+  const doneStatuses = [TrainerNeedStatus.CONVERTED_TO_REQUEST, TrainerNeedStatus.CANCELLED];
+  if (bucket === 'done') return { status: { in: doneStatuses } };
+  if (bucket === 'active') {
+    return {
+      status: { notIn: [...doneStatuses, TrainerNeedStatus.NEW, TrainerNeedStatus.IN_REVIEW] },
+      assignedToId: { not: null },
+    };
+  }
+  return {
+    status: { notIn: doneStatuses },
+    OR: [{ assignedToId: null }, { status: { in: [TrainerNeedStatus.NEW, TrainerNeedStatus.IN_REVIEW] } }],
+  };
+}
+
+export async function listTrainerNeeds(
+  session?: Pick<SessionUser, 'id' | 'role'> & Partial<Pick<SessionUser, 'roles'>>,
+  options: { bucket?: string | null; page?: unknown; limit?: unknown } = {}
+) {
   const roles = session?.roles || [];
   const canSeeAll = !session || session.role === Role.MANAGER || session.role === Role.WAREHOUSE || roles.includes(Role.MANAGER) || roles.includes(Role.WAREHOUSE);
-  const needs = await prisma.trainerNeed.findMany({
-    where: canSeeAll
-      ? undefined
-      : {
-          OR: [
-            { assignedToId: null },
-            { assignedToId: session.id },
-          ],
-        },
-    include: includeNeed(),
-    orderBy: [{ createdAt: 'desc' }],
-    take: 100,
-  });
-  return Promise.all(needs.map(mapNeed));
+  const page = normalizePage(options.page);
+  const limit = normalizeTrainerNeedsLimit(options.limit);
+  const skip = (page - 1) * limit;
+  const visibilityWhere = canSeeAll
+    ? {}
+    : {
+        OR: [
+          { assignedToId: null },
+          { assignedToId: session.id },
+        ],
+      };
+  const bucket = options.bucket === 'active' || options.bucket === 'done' ? options.bucket : 'pending';
+  const where = { AND: [visibilityWhere, trainerNeedsBucketWhere(bucket)] };
+  const [needs, total, pending, active, done] = await Promise.all([
+    prisma.trainerNeed.findMany({
+      where,
+      include: includeNeed(),
+      orderBy: [{ createdAt: 'desc' }],
+      skip,
+      take: limit,
+    }),
+    prisma.trainerNeed.count({ where }),
+    prisma.trainerNeed.count({ where: { AND: [visibilityWhere, trainerNeedsBucketWhere('pending')] } }),
+    prisma.trainerNeed.count({ where: { AND: [visibilityWhere, trainerNeedsBucketWhere('active')] } }),
+    prisma.trainerNeed.count({ where: { AND: [visibilityWhere, trainerNeedsBucketWhere('done')] } }),
+  ]);
+  const rows = await Promise.all(needs.map(mapNeed));
+
+  return {
+    rows,
+    counts: { pending, active, done },
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    },
+  };
 }
 
 export async function getTrainerNeed(id: string) {
