@@ -703,6 +703,7 @@ async function issueRequest(requestId: string, actorId: string, notes?: string) 
       });
 
       if (isReturnable) {
+        const custodyNotes = [request.notes, notes?.trim()].filter(Boolean).join(' | ') || null;
         await tx.custodyRecord.create({
           data: {
             userId: request.requesterId,
@@ -712,7 +713,7 @@ async function issueRequest(requestId: string, actorId: string, notes?: string) 
             issueDate: new Date(),
             expectedReturn: parseExpectedReturn(reqItem.notes),
             status: CustodyStatus.ACTIVE,
-            notes: notes?.trim() || null,
+            notes: custodyNotes,
           },
         });
       }

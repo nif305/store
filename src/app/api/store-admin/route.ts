@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     if (!canManageStore(session.role)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     return NextResponse.json(await getStoreAdminCatalog());
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر جلب إدارة المتجر' }, { status: 401 });
+    return NextResponse.json({ error: error?.message || 'تعذر جلب إدارة المواد' }, { status: 401 });
   }
 }
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'نوع غير صالح' }, { status: 400 });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر حفظ بيانات المتجر' }, { status: 400 });
+    return NextResponse.json({ error: error?.message || 'تعذر حفظ بيانات المواد' }, { status: 400 });
   }
 }
 

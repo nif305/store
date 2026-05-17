@@ -40,7 +40,7 @@ const ON_DEMAND_ITEMS = [
 const PER_TRAINEE_KEYWORDS = ['قلم', 'أقلام', 'نوت', 'دفتر', 'دفاتر', 'فولدر', 'ملف'];
 const EXCLUDED_DEFAULT_BUNDLE_KEYWORDS = ['شهادة', 'شهادات', 'غلاف', 'أغلفة'];
 const DEFAULT_PER_TRAINEE_GROUPS = [
-  ['قلم رصاص', 'أقلام', 'اقلام', 'قلم'],
+  ['أقلام', 'اقلام', 'قلم رصاص', 'قلم'],
   ['نوته', 'نوت', 'دفتر'],
   ['ملفات', 'فولدر', 'ملف'],
 ];
@@ -49,6 +49,22 @@ const TRAINER_NEEDS_MAX_LIMIT = 10;
 
 function normalizeText(value: unknown) {
   return String(value || '').trim();
+}
+
+function latin1Mojibake(value: string) {
+  try {
+    return Buffer.from(value, 'utf8').toString('latin1');
+  } catch {
+    return value;
+  }
+}
+
+function searchTextVariants(value: string) {
+  return Array.from(new Set([value, latin1Mojibake(value)].map(normalizeText).filter(Boolean)));
+}
+
+function textIncludesVariant(value: string, word: string) {
+  return searchTextVariants(word).some((variant) => value.includes(variant));
 }
 
 function normalizeQty(value: unknown) {
@@ -86,14 +102,14 @@ export function canManageTrainerNeeds(session: Pick<SessionUser, 'role' | 'canMa
 
 function scoreDefaultPerTraineeTitle(title: string, group: string[]) {
   const normalized = title.trim();
-  const exactIndex = group.findIndex((word) => normalized === word);
+  const exactIndex = group.findIndex((word) => searchTextVariants(word).some((variant) => normalized === variant));
   if (exactIndex >= 0) return exactIndex;
-  const containsIndex = group.findIndex((word) => normalized.includes(word));
+  const containsIndex = group.findIndex((word) => textIncludesVariant(normalized, word));
   return containsIndex >= 0 ? 100 + containsIndex : 999;
 }
 
 async function getDefaultPerTraineeCatalogItems() {
-  const words = Array.from(new Set(DEFAULT_PER_TRAINEE_GROUPS.flat()));
+  const words = Array.from(new Set(DEFAULT_PER_TRAINEE_GROUPS.flat().flatMap(searchTextVariants)));
   const catalog = await prisma.storeCatalogItem.findMany({
     where: {
       isVisible: true,
@@ -107,7 +123,7 @@ async function getDefaultPerTraineeCatalogItems() {
   return DEFAULT_PER_TRAINEE_GROUPS
     .map((group) =>
       catalog
-        .filter((item) => group.some((word) => item.title.includes(word)))
+        .filter((item) => group.some((word) => textIncludesVariant(item.title, word)))
         .sort((a, b) => scoreDefaultPerTraineeTitle(a.title, group) - scoreDefaultPerTraineeTitle(b.title, group))[0]
     )
     .filter(Boolean) as typeof catalog;
@@ -1151,7 +1167,12 @@ export async function convertTrainerNeedToRequest(id: string, session: SessionUs
     requesterId: session.id,
     department: session.department,
     purpose: `تجهيز دورة: ${need.courseName} - المدرب: ${need.trainerName}`,
-    notes: `تم إنشاؤه من احتياج المدرب ${need.code}. الحجز الذكي لا يخصم المخزون؛ الخصم يتم عند الصرف من المخزن.`,
+    notes: [
+      `\u062a\u0645 \u0625\u0646\u0634\u0627\u0624\u0647 \u0645\u0646 \u0627\u062d\u062a\u064a\u0627\u062c \u0627\u0644\u0645\u062f\u0631\u0628 ${need.code}.`,
+      `\u0627\u0644\u0645\u062f\u0631\u0628 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0627\u0644\u0641\u0639\u0644\u064a \u0644\u0644\u0645\u0648\u0627\u062f: ${need.trainerName}.`,
+      `\u0627\u0644\u0645\u0646\u0633\u0642 \u0635\u0627\u062d\u0628 \u0627\u0644\u0639\u0647\u062f\u0629: ${session.fullName || session.email || session.id}.`,
+      '\u0627\u0644\u062d\u062c\u0632 \u0627\u0644\u0630\u0643\u064a \u0644\u0627 \u064a\u062e\u0635\u0645 \u0627\u0644\u0645\u062e\u0632\u0648\u0646\u061b \u0627\u0644\u062e\u0635\u0645 \u064a\u062a\u0645 \u0639\u0646\u062f \u0627\u0644\u0635\u0631\u0641 \u0645\u0646 \u0627\u0644\u0645\u062e\u0632\u0646.',
+    ].join(' '),
     items: requestItems.map((item: any) => ({
       ...item,
       expectedReturnDate: need.endDate ? need.endDate.toISOString().slice(0, 10) : null,

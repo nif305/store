@@ -127,7 +127,7 @@ export function getWorkspaceGroups(
           },
           {
             href: '/materials/store-admin',
-            label: 'إدارة المتجر',
+            label: 'إدارة المواد',
             roles: ['manager', 'warehouse'],
           },
           {

@@ -73,7 +73,7 @@ export default function TrainingKitPage() {
   async function loadCatalog() {
     const response = await fetch(`/api/training-store/catalog?t=${Date.now()}`, { cache: 'no-store' });
     const json = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(json?.error || 'تعذر تحميل مواد المتجر');
+    if (!response.ok) throw new Error(json?.error || 'تعذر تحميل مواد التدريب');
     setItems(Array.isArray(json.items) ? json.items : []);
     setBundles(Array.isArray(json.bundles) ? json.bundles : []);
   }
@@ -240,7 +240,7 @@ export default function TrainingKitPage() {
               </p>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <Stat label="مواد المتجر" value={stats.total} />
+              <Stat label="مواد التدريب" value={stats.total} />
               <Stat label="محجوز مؤقتا" value={stats.reserved} />
               <Stat label="في الطلبات" value={stats.cart} />
             </div>

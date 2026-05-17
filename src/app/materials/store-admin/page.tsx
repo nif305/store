@@ -43,7 +43,7 @@ export default function StoreAdminPage() {
     const response = await fetch('/api/store-admin', { cache: 'no-store', credentials: 'include' });
     const json = await response.json().catch(() => ({}));
     if (!response.ok) {
-      setError(json?.error || 'تعذر تحميل إدارة المتجر');
+      setError(json?.error || 'تعذر تحميل إدارة المواد');
       return;
     }
     setItems(Array.isArray(json.items) ? json.items : []);
@@ -190,9 +190,9 @@ export default function StoreAdminPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="text-[12px] font-bold text-[#2A6364]">إعدادات تشغيلية</div>
-            <h1 className="mt-1 text-[24px] font-extrabold text-[#223738]">إدارة المتجر</h1>
+            <h1 className="mt-1 text-[24px] font-extrabold text-[#223738]">إدارة المواد</h1>
           </div>
-          <a href="/training-kit" target="_blank" className="rounded-[8px] bg-[#2A6364] px-4 py-2.5 text-[13px] font-extrabold text-white">معاينة المتجر</a>
+          <a href="/training-kit" target="_blank" className="rounded-[8px] bg-[#2A6364] px-4 py-2.5 text-[13px] font-extrabold text-white">معاينة صفحة الطلب</a>
         </div>
       </section>
 
@@ -200,7 +200,7 @@ export default function StoreAdminPage() {
 
       <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
         <section className="rounded-[8px] border border-[#dce6e3] bg-white p-4">
-          <div className="mb-3 font-extrabold">مواد المتجر</div>
+          <div className="mb-3 font-extrabold">مواد الإدارة</div>
           <div className="max-h-[calc(100vh-260px)] space-y-2 overflow-y-auto">
             {items.map((item) => (
               <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={`w-full rounded-[8px] border p-3 text-right ${selected?.id === item.id ? 'border-[#2A6364] bg-[#eef6f5]' : 'border-[#dce6e3] bg-white'}`}>
@@ -235,7 +235,7 @@ export default function StoreAdminPage() {
                   <Field label="ملاحظة عند الطلب" value={selected.onDemandNote || ''} onChange={(value) => updateSelected({ onDemandNote: value })} />
                   <label className="flex items-center gap-2 rounded-[8px] border border-[#dce6e3] px-3 py-3 text-[13px] font-bold">
                     <input type="checkbox" checked={selected.isVisible} onChange={(event) => updateSelected({ isVisible: event.target.checked })} />
-                    ظاهر في المتجر
+                    ظاهر للمدرب
                   </label>
                 </div>
               </div>
