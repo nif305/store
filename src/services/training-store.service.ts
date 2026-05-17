@@ -73,8 +73,10 @@ function onDemandCategory(title: string) {
     : 'مواد عند الطلب';
 }
 
-function publicStoreImageUrl(type: 'item' | 'bundle', id: string) {
-  return `/api/training-store/image?type=${type}&id=${encodeURIComponent(id)}`;
+function publicStoreImageUrl(type: 'item' | 'bundle', id: string, version?: Date | string | null) {
+  const params = new URLSearchParams({ type, id });
+  if (version) params.set('v', new Date(version).getTime().toString());
+  return `/api/training-store/image?${params.toString()}`;
 }
 
 export function canManageTrainerNeeds(session: Pick<SessionUser, 'role' | 'canManageTrainerNeeds'>) {
@@ -322,6 +324,7 @@ function mapCatalogItem(item: any, reservationMap: Map<string, number>, options:
   const temporarilyReservedQty = inventory?.id ? reservationMap.get(inventory.id) || 0 : 0;
   const freeAfterReservations = Math.max(stockQty - temporarilyReservedQty, 0);
   const rawImageUrl = item.imageUrl || inventory?.imageUrl || null;
+  const imageVersion = item.imageUrl ? item.updatedAt : inventory?.updatedAt || item.updatedAt;
 
   return {
     id: item.id,
@@ -329,7 +332,7 @@ function mapCatalogItem(item: any, reservationMap: Map<string, number>, options:
     title: item.title,
     description: item.description,
     category: item.category,
-    imageUrl: options.publicPayload ? publicStoreImageUrl('item', item.id) : rawImageUrl,
+    imageUrl: options.publicPayload ? publicStoreImageUrl('item', item.id, imageVersion) : rawImageUrl,
     isVisible: item.isVisible,
     isOnDemand: item.isOnDemand,
     onDemandNote: item.onDemandNote || (item.isOnDemand ? ON_DEMAND_NOTE : null),
@@ -358,6 +361,7 @@ export async function getPublicCatalog() {
       title: true,
       description: true,
       category: true,
+      updatedAt: true,
       isVisible: true,
       isOnDemand: true,
       onDemandNote: true,
@@ -367,7 +371,7 @@ export async function getPublicCatalog() {
   });
   const inventoryRows = await prisma.inventoryItem.findMany({
     where: { id: { in: catalog.map((item) => item.inventoryItemId).filter(Boolean) as string[] } },
-    select: { id: true, availableQty: true, unit: true },
+    select: { id: true, availableQty: true, unit: true, updatedAt: true },
   });
   const inventoryById = new Map(inventoryRows.map((item) => [item.id, item]));
   const reservationMap = await activeReservationsByInventory(
@@ -382,6 +386,7 @@ export async function getPublicCatalog() {
       id: true,
       title: true,
       description: true,
+      updatedAt: true,
       isVisible: true,
       items: {
         where: { catalogItem: { isVisible: true } },
@@ -389,7 +394,7 @@ export async function getPublicCatalog() {
           catalogItemId: true,
           quantity: true,
           quantityMode: true,
-          catalogItem: { select: { title: true } },
+          catalogItem: { select: { title: true, updatedAt: true } },
         },
       },
     },
@@ -403,14 +408,14 @@ export async function getPublicCatalog() {
       id: bundle.id,
       title: bundle.title,
       description: bundle.description,
-      imageUrl: publicStoreImageUrl('bundle', bundle.id),
+      imageUrl: publicStoreImageUrl('bundle', bundle.id, bundle.updatedAt),
       isVisible: bundle.isVisible,
       items: bundle.items.map((row) => ({
         catalogItemId: row.catalogItemId,
         quantity: row.quantity,
         quantityMode: row.quantityMode,
         title: row.catalogItem.title,
-        imageUrl: publicStoreImageUrl('item', row.catalogItemId),
+        imageUrl: publicStoreImageUrl('item', row.catalogItemId, row.catalogItem.updatedAt),
       })),
     })),
   };

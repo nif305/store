@@ -45,8 +45,10 @@ function normalizeDate(value: unknown) {
   return date && !Number.isNaN(date.getTime()) ? date : null;
 }
 
-function publicRoomImageUrl(id: string) {
-  return `/api/training-rooms/image?id=${encodeURIComponent(id)}`;
+function publicRoomImageUrl(id: string, version?: Date | string | null) {
+  const params = new URLSearchParams({ id });
+  if (version) params.set('v', new Date(version).getTime().toString());
+  return `/api/training-rooms/image?${params.toString()}`;
 }
 
 function parseImageDataUrl(value?: string | null) {
@@ -169,7 +171,7 @@ function mapRoom(room: any, bookedMap: Map<string, number>, options: { publicPay
     description: room.description,
     equipment: room.equipment || [],
     layoutOptions: room.layoutOptions || [],
-    imageUrl: options.publicPayload ? publicRoomImageUrl(room.id) : room.imageUrl,
+    imageUrl: options.publicPayload ? publicRoomImageUrl(room.id, room.updatedAt) : room.imageUrl,
     isVisible: room.isVisible,
     sortOrder: room.sortOrder,
     internalNotes: room.internalNotes,

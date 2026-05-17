@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   return new NextResponse(image.bytes, {
     headers: {
       'Content-Type': image.contentType || 'image/png',
-      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      'Cache-Control': 'no-cache, max-age=0, must-revalidate',
     },
   });
 }
