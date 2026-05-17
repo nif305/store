@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '12', 10);
     const search = (searchParams.get('search') || '').trim();
+    const category = (searchParams.get('category') || '').trim();
     const status = normalizeStatus(searchParams.get('status'));
     const type = normalizeType(searchParams.get('type'));
     const searchTerms = getInventorySearchTerms(search);
@@ -71,6 +72,7 @@ export async function GET(request: NextRequest) {
         : {}),
       ...(status ? { status } : {}),
       ...(type ? { type } : {}),
+      ...(category ? { category } : {}),
     };
 
     const [result, stats, categoryRows, allItems] = await Promise.all([
@@ -78,6 +80,7 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         search,
+        category,
         status,
         type,
         requestMode,
@@ -105,6 +108,20 @@ export async function GET(request: NextRequest) {
     const consumableCount = allItems.filter((item) => item.type === ItemType.CONSUMABLE).length;
     const availableCount = allItems.filter((item) => item.status !== ItemStatus.OUT_OF_STOCK).length;
     const usedCount = allItems.filter((item) => item.availableQty < item.quantity).length;
+    const [visibleInStoreCount, missingImagesCount] = await Promise.all([
+      prisma.inventoryItem.count({
+        where: {
+          ...baseWhere,
+          storeCatalogItems: { some: { isOnDemand: false, isVisible: true } },
+        },
+      }),
+      prisma.inventoryItem.count({
+        where: {
+          ...baseWhere,
+          OR: [{ imageUrl: null }, { imageUrl: '' }],
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       ...result,
@@ -119,6 +136,8 @@ export async function GET(request: NextRequest) {
         consumableCount,
         availableCount,
         usedCount,
+        visibleInStoreCount,
+        missingImagesCount,
       },
     });
   } catch (error: any) {

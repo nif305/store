@@ -126,11 +126,6 @@ export function getWorkspaceGroups(
             roles: ['manager', 'warehouse'],
           },
           {
-            href: '/materials/store-admin',
-            label: 'إدارة المواد',
-            roles: ['manager', 'warehouse'],
-          },
-          {
             href: '/materials/rooms-admin',
             label: 'إدارة القاعات',
             roles: ['manager', 'warehouse'],

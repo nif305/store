@@ -36,6 +36,9 @@ type InventoryPayload = {
   nextMaintenanceDueAt?: string | Date | null;
   financialTracking?: boolean;
   sortOrder?: number;
+  showInStore?: boolean;
+  storeOnDemandNote?: string | null;
+  storeSortOrder?: number;
 };
 
 function normalizeNumber(value: unknown, fallback = 0) {
@@ -344,6 +347,25 @@ export const InventoryService = {
         skip,
         take: limit,
         orderBy: [{ sortOrder: 'asc' }, { updatedAt: 'desc' }],
+        include: {
+          storeCatalogItems: {
+            where: { isOnDemand: false },
+            take: 1,
+            orderBy: { updatedAt: 'desc' },
+            select: {
+              id: true,
+              isVisible: true,
+              imageUrl: true,
+              onDemandNote: true,
+              sortOrder: true,
+            },
+          },
+          _count: {
+            select: {
+              custodyRecords: { where: { status: { in: ['ACTIVE', 'OVERDUE', 'RETURN_REQUESTED'] } } },
+            },
+          },
+        },
       }),
       prisma.inventoryItem.count({ where }),
     ]);
@@ -429,7 +451,28 @@ export const InventoryService = {
       },
     });
 
-    await syncInventoryItemWithStore(updated.id);
+    const linkedCatalog = await syncInventoryItemWithStore(updated.id);
+    if (
+      linkedCatalog &&
+      (data.showInStore !== undefined ||
+        data.storeOnDemandNote !== undefined ||
+        data.storeSortOrder !== undefined)
+    ) {
+      await prisma.storeCatalogItem.update({
+        where: { id: linkedCatalog.id },
+        data: {
+          isVisible: data.showInStore,
+          onDemandNote:
+            data.storeOnDemandNote !== undefined
+              ? data.storeOnDemandNote?.trim() || null
+              : undefined,
+          sortOrder:
+            data.storeSortOrder !== undefined
+              ? normalizeNumber(data.storeSortOrder, 0)
+              : undefined,
+        },
+      });
+    }
 
     return updated;
   },
