@@ -3,6 +3,20 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+/* ══════════════════════════════════════════
+   COLOR PALETTE
+   Primary  : #2A6364
+   Gold     : #C7B08C
+   Bg       : #F9F9F9
+   Burgundy : #73384B
+   Blue     : #2E6F8E
+   Green    : #4F8F7A
+   Brown    : #6B5A4A
+   LightGray: #DADBD9
+   MidGray  : #B5BDBE
+   DarkGray : #5A5A5A
+══════════════════════════════════════════ */
+
 /* ─── Types ─── */
 type StoreItem = {
   id: string; title: string; description?: string | null;
@@ -33,219 +47,147 @@ type SubmittedOrder = {
   submittedAt: string;
 };
 
-/* ─── Category SVG illustrations ─── */
-function CategoryIllustration({ category, className = 'h-16 w-16' }: { category: string; className?: string }) {
+/* ─── Category SVG fallback illustrations ─── */
+function CategoryIllustration({ category, size = 48 }: { category: string; size?: number }) {
   const c = category || '';
-  // Pen / stationery
-  if (/قلم|أقلام|قرطاسية/.test(c)) return (
-    <svg viewBox="0 0 80 80" className={className} fill="none">
-      <rect width="80" height="80" rx="20" fill="#eef5f4" />
-      <path d="M52 20l8 8L32 56H24v-8L52 20z" stroke="#2A6364" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M45 27l8 8" stroke="#2A6364" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M24 48l4 4" stroke="#2A6364" strokeWidth="2" strokeLinecap="round" />
-      <rect x="22" y="60" width="36" height="4" rx="2" fill="#d0b284" opacity=".6" />
-    </svg>
-  );
-  // Notebook / notepad
-  if (/نوت|دفتر|كتاب|مذكرة/.test(c)) return (
-    <svg viewBox="0 0 80 80" className={className} fill="none">
-      <rect width="80" height="80" rx="20" fill="#eef5f4" />
-      <rect x="22" y="14" width="36" height="52" rx="4" fill="#fff" stroke="#2A6364" strokeWidth="2" />
-      <rect x="16" y="20" width="8" height="40" rx="2" fill="#d0b284" opacity=".5" />
-      <path d="M30 28h20M30 36h20M30 44h14" stroke="#2A6364" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="20" cy="26" r="2" fill="#2A6364" opacity=".4" />
-      <circle cx="20" cy="34" r="2" fill="#2A6364" opacity=".4" />
-      <circle cx="20" cy="42" r="2" fill="#2A6364" opacity=".4" />
-    </svg>
-  );
-  // Folder / files
-  if (/ملف|فولدر|مجلد|حافظة/.test(c)) return (
-    <svg viewBox="0 0 80 80" className={className} fill="none">
-      <rect width="80" height="80" rx="20" fill="#eef5f4" />
-      <path d="M14 30a4 4 0 0 1 4-4h16l6 6h22a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V30z" fill="#d0b284" opacity=".35" stroke="#8a6a37" strokeWidth="2" />
-      <path d="M14 38h52" stroke="#8a6a37" strokeWidth="1.5" strokeDasharray="4 3" />
-      <path d="M26 50h28M26 44h18" stroke="#8a6a37" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-  // Certificate / badge
-  if (/شهادة|شهادات|جائزة/.test(c)) return (
-    <svg viewBox="0 0 80 80" className={className} fill="none">
-      <rect width="80" height="80" rx="20" fill="#eef5f4" />
-      <rect x="16" y="16" width="48" height="36" rx="4" fill="#fff" stroke="#2A6364" strokeWidth="2" />
-      <path d="M28 28h24M28 36h16" stroke="#2A6364" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="40" cy="60" r="10" fill="#d0b284" opacity=".6" stroke="#8a6a37" strokeWidth="2" />
-      <path d="M36 60l3 3 6-6" stroke="#8a6a37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M38 50v-2M42 50v-2" stroke="#8a6a37" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-  // Laptop / tech devices
-  if (/لابتوب|حاسب|جهاز|تقني|USB|HDMI|محول|شاحن/.test(c)) return (
-    <svg viewBox="0 0 80 80" className={className} fill="none">
-      <rect width="80" height="80" rx="20" fill="#e7eff5" />
-      <rect x="16" y="20" width="48" height="32" rx="4" fill="#fff" stroke="#1b4f68" strokeWidth="2" />
-      <rect x="22" y="26" width="36" height="20" rx="2" fill="#e7eff5" />
-      <path d="M10 52h60l-4 8H14l-4-8z" fill="#fff" stroke="#1b4f68" strokeWidth="2" />
-      <circle cx="40" cy="56" r="2" fill="#1b4f68" opacity=".4" />
-      <path d="M32 36l4 4 8-8" stroke="#1b4f68" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-  // Microphone / audio
-  if (/ميكروفون|مكبر|صوت/.test(c)) return (
-    <svg viewBox="0 0 80 80" className={className} fill="none">
-      <rect width="80" height="80" rx="20" fill="#eef5f4" />
-      <rect x="32" y="14" width="16" height="28" rx="8" fill="#fff" stroke="#2A6364" strokeWidth="2" />
-      <path d="M24 38a16 16 0 0 0 32 0" stroke="#2A6364" strokeWidth="2" strokeLinecap="round" />
-      <path d="M40 54v10M32 64h16" stroke="#2A6364" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-  // Projector / display
-  if (/بروجكتر|شاشة|عرض/.test(c)) return (
-    <svg viewBox="0 0 80 80" className={className} fill="none">
-      <rect width="80" height="80" rx="20" fill="#eef5f4" />
-      <rect x="12" y="26" width="56" height="34" rx="4" fill="#fff" stroke="#2A6364" strokeWidth="2" />
-      <rect x="20" y="32" width="40" height="22" rx="2" fill="#eef5f4" />
-      <circle cx="58" cy="24" r="6" fill="#2A6364" opacity=".2" stroke="#2A6364" strokeWidth="1.5" />
-      <path d="M40 60v8M32 68h16" stroke="#2A6364" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-  // Marker / board
-  if (/سبورة|لوح|لوحة|ماركر/.test(c)) return (
-    <svg viewBox="0 0 80 80" className={className} fill="none">
-      <rect width="80" height="80" rx="20" fill="#eef5f4" />
-      <rect x="12" y="16" width="56" height="38" rx="4" fill="#fff" stroke="#2A6364" strokeWidth="2" />
-      <path d="M24 38l8-12 8 8 6-6 8 10" stroke="#2A6364" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M32 54l4 10h8l4-10" stroke="#2A6364" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-  // On-demand / special order
-  if (/عند الطلب|طلب/.test(c)) return (
-    <svg viewBox="0 0 80 80" className={className} fill="none">
-      <rect width="80" height="80" rx="20" fill="#f7f1e4" />
-      <circle cx="40" cy="36" r="16" fill="#fff" stroke="#8a6a37" strokeWidth="2" />
-      <path d="M40 26v12l6 6" stroke="#8a6a37" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M26 58h28" stroke="#8a6a37" strokeWidth="2" strokeLinecap="round" strokeDasharray="4 3" />
-    </svg>
-  );
-  // Default / general training materials
-  return (
-    <svg viewBox="0 0 80 80" className={className} fill="none">
-      <rect width="80" height="80" rx="20" fill="#eef5f4" />
-      <path d="M22 26a4 4 0 0 1 4-4h28l10 10v26a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V26z" fill="#fff" stroke="#2A6364" strokeWidth="2" />
-      <path d="M54 22v10h10" stroke="#2A6364" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M30 36h20M30 44h14M30 52h10" stroke="#2A6364" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
+  const color = /قلم|قرطاسية/.test(c) ? '#4F8F7A' :
+    /نوت|دفتر/.test(c) ? '#2A6364' :
+    /ملف|فولدر/.test(c) ? '#C7B08C' :
+    /شهادة/.test(c) ? '#6B5A4A' :
+    /لابتوب|حاسب|جهاز|تقني/.test(c) ? '#2E6F8E' :
+    /ميكروفون|مكبر/.test(c) ? '#4F8F7A' :
+    /سبورة|لوح/.test(c) ? '#73384B' : '#2A6364';
 
-/* ─── Room type illustration ─── */
-function RoomIllustration({ type, className = 'h-full w-full' }: { type: string; className?: string }) {
-  const bg = /معمل/.test(type) ? '#e7eff5' : /مسرح|كبرى/.test(type) ? '#f4e7eb' : /ورشة/.test(type) ? '#f7f1e4' : '#eef5f4';
-  const stroke = /معمل/.test(type) ? '#1b4f68' : /مسرح|كبرى/.test(type) ? '#7c1e3e' : /ورشة/.test(type) ? '#8a6a37' : '#2A6364';
   return (
-    <svg viewBox="0 0 320 180" className={className} fill="none" preserveAspectRatio="xMidYMid slice">
-      <rect width="320" height="180" fill={bg} />
-      <rect x="20" y="20" width="280" height="140" rx="8" fill="white" opacity=".5" />
-      {/معمل/.test(type) ? (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+      <rect width="48" height="48" rx="10" fill={color} fillOpacity=".1" />
+      {/قلم|قرطاسية/.test(c) ? (
+        <path d="M32 12l4 4L18 34H14v-4L32 12z" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/>
+      ) : /نوت|دفتر/.test(c) ? (
         <>
-          {[0,1,2,3,4].map((i) => [0,1,2,3].map((j) => (
-            <rect key={`${i}${j}`} x={36+i*50} y={36+j*32} width="30" height="20" rx="3" fill={stroke} opacity=".15" stroke={stroke} strokeWidth="1" />
-          )))}
-          <rect x="80" y="148" width="160" height="8" rx="2" fill={stroke} opacity=".2" />
+          <rect x="13" y="8" width="22" height="32" rx="2" stroke={color} strokeWidth="1.5" />
+          <path d="M18 16h12M18 22h12M18 28h8" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
         </>
-      ) : /مسرح|كبرى/.test(type) ? (
+      ) : /ملف|فولدر/.test(c) ? (
+        <path d="M8 18a2 2 0 0 1 2-2h10l4 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V18z" stroke={color} strokeWidth="1.5" />
+      ) : /لابتوب|حاسب|تقني/.test(c) ? (
         <>
-          {[0,1,2,3,4,5].map((row) => [0,1,2,3,4,5,6].map((col) => (
-            <rect key={`${row}${col}`} x={28+col*40} y={24+row*22} width="30" height="14" rx="3" fill={stroke} opacity=".12" />
-          )))}
-          <rect x="100" y="152" width="120" height="16" rx="4" fill={stroke} opacity=".25" />
+          <rect x="8" y="10" width="32" height="22" rx="2" stroke={color} strokeWidth="1.5" />
+          <path d="M4 32h40l-2 6H6l-2-6z" stroke={color} strokeWidth="1.5" />
         </>
-      ) : /ورشة/.test(type) ? (
+      ) : /سبورة|لوح/.test(c) ? (
         <>
-          {[0,1,2,3].map((i) => (
-            <g key={i} transform={`translate(${36+i*66}, 50)`}>
-              <rect width="50" height="50" rx="25" fill={stroke} opacity=".1" stroke={stroke} strokeWidth="1.5" />
-              {[0,1,2,3].map((j) => (
-                <rect key={j} x={20+Math.cos(j*Math.PI/2)*16} y={20+Math.sin(j*Math.PI/2)*16} width="10" height="6" rx="2" fill={stroke} opacity=".2" />
-              ))}
-            </g>
-          ))}
+          <rect x="6" y="8" width="36" height="26" rx="2" stroke={color} strokeWidth="1.5" />
+          <path d="M14 24l5-8 5 5 4-4 6 7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </>
       ) : (
         <>
-          {[0,1,2,3,4].map((row) => (
-            <g key={row}>
-              <rect x="30" y={28+row*26} width="260" height="18" rx="3" fill={stroke} opacity=".08" />
-              {[0,1,2,3,4,5,6,7].map((col) => (
-                <rect key={col} x={34+col*32} y={30+row*26} width="24" height="14" rx="2" fill={stroke} opacity=".12" />
-              ))}
-            </g>
-          ))}
-          <rect x="130" y="158" width="60" height="10" rx="3" fill={stroke} opacity=".25" />
+          <path d="M14 16a2 2 0 0 1 2-2h16l8 8v18a2 2 0 0 1-2 2H16a2 2 0 0 1-2-2V16z" stroke={color} strokeWidth="1.5" />
+          <path d="M32 14v10h10" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M18 26h12M18 32h8" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
         </>
       )}
     </svg>
   );
 }
 
-/* ─── Step indicator ─── */
-const STEPS = [
-  { key: 'home', label: 'المواد', icon: (
-    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-      <path d="m3.3 7 8.7 5 8.7-5M12 22V12" />
+/* ─── Room illustration ─── */
+function RoomIllustration({ type }: { type: string }) {
+  const color = /معمل/.test(type) ? '#2E6F8E' : /مسرح|كبرى/.test(type) ? '#73384B' : /ورشة/.test(type) ? '#C7B08C' : '#2A6364';
+  return (
+    <svg viewBox="0 0 320 180" className="h-full w-full" fill="none" preserveAspectRatio="xMidYMid slice">
+      <rect width="320" height="180" fill={color} fillOpacity=".08" />
+      <rect x="20" y="20" width="280" height="140" rx="8" fill="white" opacity=".4" />
+      {[0,1,2,3].map((r) => [0,1,2,3,4,5,6].map((c) => (
+        <rect key={`${r}${c}`} x={28+c*40} y={28+r*34} width="28" height="20" rx="3" fill={color} opacity=".12" />
+      )))}
+      <rect x="110" y="152" width="100" height="12" rx="4" fill={color} opacity=".25" />
     </svg>
-  )},
-  { key: 'rooms', label: 'القاعة', icon: (
-    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
-    </svg>
-  )},
-  { key: 'orders', label: 'المراجعة', icon: (
-    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-      <rect x="9" y="3" width="6" height="4" rx="1" /><path d="M9 12l2 2 4-4" />
-    </svg>
-  )},
-];
-
-function stepIndex(view: View) {
-  if (view === 'home' || view === 'bundles') return 0;
-  if (view === 'rooms') return 1;
-  if (view === 'orders') return 2;
-  return 3;
+  );
 }
 
+/* ─── Step bar ─── */
+const STEPS = [
+  { key: 'home', label: 'المواد' },
+  { key: 'rooms', label: 'القاعة' },
+  { key: 'orders', label: 'المراجعة' },
+];
+function stepIdx(v: View) { if (v === 'home' || v === 'bundles') return 0; if (v === 'rooms') return 1; if (v === 'orders') return 2; return 3; }
+
 function StepBar({ view }: { view: View }) {
-  const current = stepIndex(view);
   if (view === 'success') return null;
+  const cur = stepIdx(view);
   return (
-    <div className="flex items-center justify-center gap-0 py-3">
-      {STEPS.map((step, i) => {
-        const done = i < current;
-        const active = i === current;
-        return (
-          <div key={step.key} className="flex items-center">
-            <div className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
-              active ? 'bg-[#2A6364] text-white shadow-[0_4px_14px_rgba(42,99,100,0.3)]'
-              : done ? 'bg-[#eef5f4] text-[#2A6364]'
-              : 'bg-[#f4f7f6] text-[#9aacaa]'
-            }`}>
-              {done ? (
-                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-              ) : step.icon}
-              <span>{step.label}</span>
-            </div>
-            {i < STEPS.length - 1 && (
-              <div className={`mx-1 h-[2px] w-8 rounded-full transition ${i < current ? 'bg-[#2A6364]' : 'bg-[#dce6e3]'}`} />
-            )}
+    <div className="flex items-center justify-center gap-0 border-t border-[#DADBD9] bg-white px-4 py-2.5">
+      {STEPS.map((step, i) => (
+        <div key={step.key} className="flex items-center">
+          <div className={`flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[12px] font-semibold transition-all ${
+            i === cur ? 'bg-[#2A6364] text-white' : i < cur ? 'text-[#4F8F7A]' : 'text-[#B5BDBE]'
+          }`}>
+            {i < cur && <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 4L6 11l-3-3" /></svg>}
+            {step.label}
           </div>
-        );
-      })}
+          {i < STEPS.length - 1 && <div className={`mx-1 h-px w-6 ${i < cur ? 'bg-[#2A6364]' : 'bg-[#DADBD9]'}`} />}
+        </div>
+      ))}
     </div>
   );
 }
 
-/* ─── Main page ─── */
+/* ─── Suggested Items Modal ─── */
+function SuggestedModal({ items, onClose, onSave }: {
+  items: SuggestedItem[];
+  onClose: () => void;
+  onSave: (items: SuggestedItem[]) => void;
+}) {
+  const [local, setLocal] = useState<SuggestedItem[]>(items.length ? items : [{ title: '', quantity: '1', note: '' }]);
+  function add() { setLocal((p) => [...p, { title: '', quantity: '1', note: '' }]); }
+  function update(i: number, patch: Partial<SuggestedItem>) { setLocal((p) => p.map((s, idx) => idx === i ? { ...s, ...patch } : s)); }
+  function remove(i: number) { setLocal((p) => p.filter((_, idx) => idx !== i)); }
+  function save() { onSave(local.filter((s) => s.title.trim())); }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir="rtl">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg rounded-t-[24px] bg-white p-5 shadow-2xl sm:rounded-[20px]">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-[17px] font-extrabold text-[#2A6364]">مواد مقترحة</h3>
+            <p className="mt-0.5 text-[11px] text-[#B5BDBE]">مواد غير متوفرة في المتجر — سيراجعها المنسق</p>
+          </div>
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F9F9F9] text-[#5A5A5A] hover:bg-[#DADBD9]">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div className="mt-4 max-h-[50vh] space-y-2 overflow-y-auto">
+          {local.map((s, i) => (
+            <div key={i} className="grid grid-cols-[1fr_70px_auto] gap-2">
+              <input value={s.title} onChange={(e) => update(i, { title: e.target.value })} placeholder="اسم المادة"
+                className="h-9 rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-3 text-[13px] outline-none placeholder:text-[#B5BDBE] focus:border-[#2A6364]/40 focus:bg-white" />
+              <input type="number" min="1" value={s.quantity} onChange={(e) => update(i, { quantity: e.target.value })} placeholder="الكمية"
+                className="h-9 rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-2 text-center text-[13px] outline-none focus:border-[#2A6364]/40 focus:bg-white" />
+              <button onClick={() => remove(i)} className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-[#DADBD9] text-[#73384B] hover:bg-[#fff0f3]">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+              </button>
+            </div>
+          ))}
+        </div>
+        <button onClick={add} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-[#DADBD9] py-2 text-[12px] text-[#B5BDBE] hover:border-[#C7B08C] hover:text-[#6B5A4A]">
+          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+          إضافة مادة
+        </button>
+        <div className="mt-4 flex gap-2">
+          <button onClick={onClose} className="flex-1 rounded-[10px] border border-[#DADBD9] py-2.5 text-[13px] font-semibold text-[#5A5A5A] hover:bg-[#F9F9F9]">إلغاء</button>
+          <button onClick={save} className="flex-1 rounded-[10px] bg-[#2A6364] py-2.5 text-[13px] font-bold text-white hover:bg-[#1e5152]">حفظ المقترحات</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   MAIN PAGE
+═══════════════════════════════════════ */
 export default function TrainingKitPage() {
   const [items, setItems] = useState<StoreItem[]>([]);
   const [bundles, setBundles] = useState<Bundle[]>([]);
@@ -262,6 +204,7 @@ export default function TrainingKitPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState<SubmittedOrder | null>(null);
   const [error, setError] = useState('');
+  const [showSuggestedModal, setShowSuggestedModal] = useState(false);
 
   async function loadCatalog() {
     const res = await fetch(`/api/training-store/catalog?t=${Date.now()}`, { cache: 'no-store' });
@@ -283,9 +226,7 @@ export default function TrainingKitPage() {
 
   useEffect(() => {
     let mounted = true;
-    loadCatalog()
-      .catch(() => mounted && setError('تعذر تحميل المواد'))
-      .finally(() => mounted && setLoading(false));
+    loadCatalog().catch(() => mounted && setError('تعذر تحميل المواد')).finally(() => mounted && setLoading(false));
     return () => { mounted = false; };
   }, []);
 
@@ -295,38 +236,34 @@ export default function TrainingKitPage() {
     const starts = roomSelections.map((s) => s.startDate).filter(Boolean).sort();
     const ends = roomSelections.map((s) => s.endDate).filter(Boolean).sort();
     if (!starts.length && !ends.length) return;
-    const nextStart = starts[0];
-    const nextEnd = ends[ends.length - 1] || '';
     setForm((prev) => {
-      if (prev.startDate === nextStart && prev.endDate === nextEnd) return prev;
-      return { ...prev, startDate: nextStart, endDate: nextEnd };
+      const ns = starts[0]; const ne = ends[ends.length - 1] || '';
+      if (prev.startDate === ns && prev.endDate === ne) return prev;
+      return { ...prev, startDate: ns, endDate: ne };
     });
   }, [roomSelections]);
 
   const traineeCount = Math.max(0, Number(form.traineeCount || 0));
-  const cartRows = useMemo(
-    () => Object.entries(cart)
-      .map(([id, quantity]) => ({ item: items.find((r) => r.id === id), quantity }))
-      .filter((r) => r.item && r.quantity > 0) as { item: StoreItem; quantity: number }[],
-    [cart, items]
-  );
+  const cartRows = useMemo(() => Object.entries(cart)
+    .map(([id, qty]) => ({ item: items.find((r) => r.id === id), quantity: qty }))
+    .filter((r) => r.item && r.quantity > 0) as { item: StoreItem; quantity: number }[], [cart, items]);
+
   const categories = useMemo(() => ['الكل', ...Array.from(new Set(items.map((i) => i.category)))], [items]);
   const roomTypes = useMemo(() => ['الكل', ...Array.from(new Set(rooms.map((r) => r.type)))], [rooms]);
-  const selectedRooms = useMemo(
-    () => roomSelections.map((s) => ({ selection: s, room: rooms.find((r) => r.id === s.roomId) || null }))
-      .filter((r) => r.room) as { selection: RoomSelection; room: TrainingRoom }[],
-    [rooms, roomSelections]
-  );
+  const selectedRooms = useMemo(() =>
+    roomSelections.map((s) => ({ selection: s, room: rooms.find((r) => r.id === s.roomId) || null }))
+      .filter((r) => r.room) as { selection: RoomSelection; room: TrainingRoom }[], [rooms, roomSelections]);
   const visibleRooms = useMemo(() => rooms.filter((r) => roomType === 'الكل' || r.type === roomType), [rooms, roomType]);
   const visibleItems = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return items.filter((item) => {
-      const catMatch = category === 'الكل' || item.category === category;
-      const searchMatch = !needle || item.title.toLowerCase().includes(needle) || item.category.toLowerCase().includes(needle);
-      return catMatch && searchMatch;
+      const catOk = category === 'الكل' || item.category === category;
+      const searchOk = !needle || item.title.toLowerCase().includes(needle) || item.category.toLowerCase().includes(needle);
+      return catOk && searchOk;
     });
   }, [items, category, query]);
   const cartCount = cartRows.reduce((s, r) => s + r.quantity, 0);
+  const validSuggested = suggestedItems.filter((s) => s.title.trim() && Number(s.quantity) > 0);
 
   function setQty(id: string, qty: number) {
     setCart((prev) => { const next = { ...prev }; if (qty <= 0) delete next[id]; else next[id] = Math.floor(qty); return next; });
@@ -357,40 +294,25 @@ export default function TrainingKitPage() {
         body: JSON.stringify({
           ...form, traineeCount,
           items: cartRows.map((r) => ({ catalogItemId: r.item.id, quantity: r.quantity })),
-          suggestedItems: suggestedItems.filter((s) => s.title.trim() && Number(s.quantity) > 0).map((s) => ({ title: s.title.trim(), quantity: Number(s.quantity), note: s.note.trim() || undefined })),
+          suggestedItems: validSuggested.map((s) => ({ title: s.title.trim(), quantity: Number(s.quantity), note: s.note.trim() || undefined })),
           roomId: roomSelections[0]?.roomId || null,
           requestedLayout: roomSelections[0]?.layout || '',
-          roomSelections: roomSelections.map((s) => ({
-            ...s,
-            startDate: s.startDate || form.startDate,
-            endDate: s.endDate || form.endDate || form.startDate,
-          })),
+          roomSelections: roomSelections.map((s) => ({ ...s, startDate: s.startDate || form.startDate, endDate: s.endDate || form.endDate || form.startDate })),
         }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.error || 'تعذر إرسال الطلبات');
-      // Build submitted order summary
       setSubmittedOrder({
         code: json?.data?.code || '',
-        trainerName: form.trainerName,
-        courseName: form.courseName,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        traineeCount,
+        trainerName: form.trainerName, courseName: form.courseName,
+        startDate: form.startDate, endDate: form.endDate, traineeCount,
         items: cartRows.map((r) => ({ title: r.item.title, quantity: r.quantity, unit: r.item.unit, category: r.item.category })),
-        suggestedItems: suggestedItems.filter((s) => s.title.trim() && Number(s.quantity) > 0),
-        rooms: selectedRooms.map(({ selection, room }) => ({
-          name: room.name, type: room.type,
-          startDate: selection.startDate || form.startDate,
-          endDate: selection.endDate || form.endDate,
-        })),
+        suggestedItems: validSuggested,
+        rooms: selectedRooms.map(({ selection, room }) => ({ name: room.name, type: room.type, startDate: selection.startDate || form.startDate, endDate: selection.endDate || form.endDate })),
         submittedAt: new Date().toLocaleString('ar-SA'),
       });
-      setCart({});
-      setRoomSelections([]);
-      setSuggestedItems([]);
-      await loadCatalog();
-      await loadRooms();
+      setCart({}); setRoomSelections([]); setSuggestedItems([]);
+      await loadCatalog(); await loadRooms();
       setView('success');
     } catch (err: any) {
       setError(err?.message || 'تعذر إرسال الطلبات');
@@ -400,204 +322,231 @@ export default function TrainingKitPage() {
   }
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[linear-gradient(180deg,#eef4f2_0%,#fafcfb_42%,#eef3f1_100%)] text-[#223738]">
-      {/* Print styles */}
-      <style>{`@media print { .no-print { display: none !important; } .print-only { display: block !important; } body { background: white; } }`}</style>
+    <main dir="rtl" className="min-h-screen bg-[#F9F9F9] text-[#2A2A2A]">
+      <style>{`@media print { .no-print { display:none!important; } }`}</style>
 
-      {/* Header */}
-      <header className="no-print sticky top-0 z-30 border-b border-[#dce6e3] bg-white/92 shadow-[0_4px_20px_rgba(34,55,56,0.07)] backdrop-blur">
-        <div className="mx-auto flex max-w-[1480px] flex-col gap-1 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/nauss-gold-logo.png" alt="جامعة نايف العربية للعلوم الأمنية" className="h-11 w-auto object-contain" />
-            <div>
-              <div className="text-[14px] font-semibold text-[#223738]">جامعة نايف العربية للعلوم الأمنية</div>
-              <div className="text-[11px] text-[#6f7f7d]">وكالة التدريب — مساعد تجهيز الدورة</div>
-            </div>
+      {/* ─── Header ─── */}
+      <header className="no-print sticky top-0 z-30 border-b border-[#DADBD9] bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+        <div className="mx-auto flex max-w-[1480px] items-center gap-3 px-4 py-3">
+          {/* Logo */}
+          <img src="/nauss-gold-logo.png" alt="جامعة نايف" className="h-10 w-auto object-contain" />
+          <div className="flex-1 min-w-0">
+            <div className="truncate text-[13px] font-bold text-[#2A6364]">جامعة نايف العربية للعلوم الأمنية</div>
+            <div className="text-[10px] text-[#B5BDBE]">مساعد تجهيز الدورة — وكالة التدريب</div>
           </div>
-          <nav className="flex flex-wrap items-center gap-2">
-            {view !== 'success' && (
-              <>
-                <NavBtn active={view === 'home'} onClick={() => setView('home')} icon={
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-                    <path d="m3.3 7 8.7 5 8.7-5M12 22V12" />
-                  </svg>
-                }>المواد</NavBtn>
-                <NavBtn active={view === 'bundles'} onClick={() => setView('bundles')} icon={
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18M16 10a4 4 0 0 1-8 0" />
-                  </svg>
-                }>البكجات</NavBtn>
-                <NavBtn active={view === 'rooms'} onClick={() => setView('rooms')} icon={
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
-                  </svg>
-                }>القاعات</NavBtn>
-                <NavBtn active={view === 'orders'} onClick={() => setView('orders')} icon={
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                  </svg>
-                } badge={cartCount > 0 ? cartCount : undefined}>الطلبات</NavBtn>
-              </>
-            )}
-            <Link href="/login" className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#dce6e3] bg-white px-3 py-2 text-[12px] font-semibold text-[#2A6364] transition hover:border-[#2A6364]/40 hover:bg-[#eef5f4]">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
-              </svg>
-              تسجيل الدخول
-            </Link>
-          </nav>
+
+          {/* Nav */}
+          {view !== 'success' && (
+            <nav className="flex items-center gap-1.5">
+              <NavBtn active={view === 'home'} onClick={() => setView('home')}>المواد</NavBtn>
+              <NavBtn active={view === 'bundles'} onClick={() => setView('bundles')}>البكجات</NavBtn>
+              <NavBtn active={view === 'rooms'} onClick={() => setView('rooms')}>القاعات</NavBtn>
+              <NavBtn active={view === 'orders'} onClick={() => setView('orders')} badge={cartCount > 0 ? cartCount : undefined}>طلباتي</NavBtn>
+              {/* Suggested items button */}
+              <button onClick={() => setShowSuggestedModal(true)}
+                className="relative flex items-center gap-1.5 rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-3 py-2 text-[12px] font-semibold text-[#6B5A4A] transition hover:border-[#C7B08C] hover:bg-[#fdf8f0]">
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
+                مقترحة
+                {validSuggested.length > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#C7B08C] text-[9px] font-bold text-white">{validSuggested.length}</span>
+                )}
+              </button>
+            </nav>
+          )}
+          <Link href="/login" className="no-print flex items-center gap-1.5 rounded-[8px] border border-[#DADBD9] bg-white px-3 py-2 text-[12px] font-semibold text-[#5A5A5A] hover:border-[#2A6364]/30 hover:text-[#2A6364]">
+            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></svg>
+            دخول
+          </Link>
         </div>
         <StepBar view={view} />
       </header>
 
-      <div className={`mx-auto max-w-[1480px] px-4 py-5 ${view !== 'orders' && view !== 'success' && cartCount > 0 ? 'pb-28' : ''}`}>
-        {/* Hero banner */}
-        {view !== 'success' && (
-          <section className="no-print mb-5 overflow-hidden rounded-[20px] border border-[#dce6e3] border-t-[#c8a55e] bg-white shadow-[0_16px_40px_rgba(34,55,56,0.08)]">
-            <div className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#d9c99f] bg-[#fbf6ea] px-3 py-1 text-[12px] font-semibold text-[#6f5a2f]">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" /><path d="M6 12v5c3.5 3 8.5 3 12 0v-5" />
-                  </svg>
-                  مساعد تجهيز الدورة
-                </div>
-                <h1 className="mt-2.5 text-[26px] font-extrabold leading-tight text-[#1a3535]">اختيار مستلزمات التدريب</h1>
-                <p className="mt-1.5 max-w-[680px] text-[13px] leading-7 text-[#6d7b78]">
-                  اختر المواد المطلوبة، حدد القاعة المناسبة، ثم أرسل الاحتياج. يتولى المنسق المراجعة والحجز الذكي تلقائياً.
-                </p>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <StatChip label="مواد متاحة" value={items.length} color="#2A6364" />
-                <StatChip label="محجوز مؤقتاً" value={items.reduce((s, i) => s + i.temporarilyReservedQty, 0)} color="#8a6a37" />
-                <StatChip label="في طلباتك" value={cartCount} color="#1b4f68" />
-              </div>
-            </div>
-          </section>
-        )}
+      {/* Suggested modal */}
+      {showSuggestedModal && (
+        <SuggestedModal
+          items={suggestedItems}
+          onClose={() => setShowSuggestedModal(false)}
+          onSave={(items) => { setSuggestedItems(items); setShowSuggestedModal(false); }}
+        />
+      )}
 
+      {/* ─── Content ─── */}
+      <div className="mx-auto max-w-[1480px] px-4 py-4">
         {error && (
-          <div className="no-print mb-4 flex items-start gap-3 rounded-[14px] border border-[#ecd0d8] bg-[#fff7f8] px-4 py-3">
-            <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-[#7c1e3e]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
-            </svg>
-            <p className="text-[13px] text-[#7c1e3e]">{error}</p>
+          <div className="no-print mb-3 flex items-center gap-2 rounded-[10px] border border-[#73384B]/20 bg-[#fff5f7] px-4 py-2.5 text-[13px] text-[#73384B]">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
+            {error}
           </div>
         )}
 
-        {view === 'home' && (
-          <HomeView loading={loading} items={visibleItems} categories={categories} category={category}
-            query={query} cart={cart} setCategory={setCategory} setQuery={setQuery} setQty={setQty} />
-        )}
-        {view === 'bundles' && (
-          <BundlesView bundles={bundles} traineeCount={traineeCount} onAdd={addBundle} />
-        )}
-        {view === 'rooms' && (
-          <RoomsView rooms={visibleRooms} roomTypes={roomTypes} roomType={roomType}
-            roomSelections={roomSelections} form={form}
-            setRoomType={setRoomType} setRoomSelections={setRoomSelections}
-            goOrders={() => setView('orders')} />
-        )}
-        {view === 'orders' && (
-          <OrdersView form={form} setForm={setForm} cartRows={cartRows} selectedRooms={selectedRooms}
-            suggestedItems={suggestedItems} setSuggestedItems={setSuggestedItems}
-            setQty={setQty} submitting={submitting} onSubmit={submitNeed}
-            goHome={() => setView('home')} goRooms={() => setView('rooms')} />
-        )}
-        {view === 'success' && submittedOrder && (
-          <SuccessView order={submittedOrder} onReset={() => { setForm({ trainerName: '', courseName: '', startDate: '', endDate: '', traineeCount: '' }); setSubmittedOrder(null); setView('home'); }} />
-        )}
+        {view === 'home' && <HomeView loading={loading} items={visibleItems} categories={categories} category={category} query={query} cart={cart} setCategory={setCategory} setQuery={setQuery} setQty={setQty} />}
+        {view === 'bundles' && <BundlesView bundles={bundles} traineeCount={traineeCount} onAdd={addBundle} />}
+        {view === 'rooms' && <RoomsView rooms={visibleRooms} roomTypes={roomTypes} roomType={roomType} roomSelections={roomSelections} form={form} setRoomType={setRoomType} setRoomSelections={setRoomSelections} goOrders={() => setView('orders')} />}
+        {view === 'orders' && <OrdersView form={form} setForm={setForm} cartRows={cartRows} selectedRooms={selectedRooms} suggestedItems={validSuggested} setQty={setQty} submitting={submitting} onSubmit={submitNeed} goHome={() => setView('home')} goRooms={() => setView('rooms')} onOpenSuggested={() => setShowSuggestedModal(true)} />}
+        {view === 'success' && submittedOrder && <SuccessView order={submittedOrder} onReset={() => { setForm({ trainerName: '', courseName: '', startDate: '', endDate: '', traineeCount: '' }); setSubmittedOrder(null); setView('home'); }} />}
       </div>
 
-      <footer className="no-print border-t border-[#dce6e3] bg-white px-4 py-4 text-center text-[12px] text-[#8a9a98]">
-        حقوق النشر — إدارة عمليات التدريب، وكالة التدريب 2026
+      <footer className="no-print mt-8 border-t border-[#DADBD9] py-4 text-center text-[11px] text-[#B5BDBE]">
+        وكالة التدريب — جامعة نايف العربية للعلوم الأمنية © 2026
       </footer>
 
+      {/* Checkout float bar */}
       {view !== 'orders' && view !== 'success' && cartCount > 0 && (
-        <CheckoutBar count={cartCount} uniqueCount={cartRows.length} onCheckout={() => setView('rooms')} />
+        <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-[#DADBD9] bg-white/95 px-4 py-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur">
+          <div className="mx-auto flex max-w-[600px] items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2A6364] text-[13px] font-bold text-white">{cartCount}</span>
+              <div><div className="text-[13px] font-bold text-[#2A2A2A]">{cartCount} مادة في الطلب</div><div className="text-[11px] text-[#B5BDBE]">{cartRows.length} صنف</div></div>
+            </div>
+            <button onClick={() => setView('rooms')} className="flex items-center gap-2 rounded-[10px] bg-[#2A6364] px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_14px_rgba(42,99,100,0.3)] hover:bg-[#1e5152]">
+              اختيار القاعة
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+            </button>
+          </div>
+        </div>
       )}
     </main>
   );
 }
 
-/* ─── Home / Materials view ─── */
+/* ═══════════════════════════════════════
+   HOME VIEW — Materials Grid
+═══════════════════════════════════════ */
 function HomeView({ loading, items, categories, category, query, cart, setCategory, setQuery, setQty }: {
   loading: boolean; items: StoreItem[]; categories: string[]; category: string; query: string;
   cart: Cart; setCategory: (v: string) => void; setQuery: (v: string) => void; setQty: (id: string, qty: number) => void;
 }) {
   return (
-    <section className="rounded-[20px] border border-[#dce6e3] bg-white shadow-[0_12px_32px_rgba(34,55,56,0.06)]">
-      <div className="flex flex-col gap-3 border-b border-[#edf2f1] p-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative">
-          <svg viewBox="0 0 24 24" fill="none" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aacaa]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-          </svg>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="بحث عن مادة أو فئة..."
-            className="h-10 w-full rounded-[10px] border border-[#dce6e3] bg-[#f8fbfb] pr-9 pl-4 text-[13px] outline-none transition placeholder:text-[#9aacaa] focus:border-[#2A6364]/50 focus:bg-white lg:w-[300px]" />
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {categories.map((cat) => (
-            <button key={cat} type="button" onClick={() => setCategory(cat)}
-              className={`shrink-0 rounded-full border px-4 py-1.5 text-[12px] font-semibold transition ${
-                category === cat ? 'border-[#2A6364]/30 bg-[#2A6364] text-white shadow-[0_4px_12px_rgba(42,99,100,0.25)]' : 'border-[#dce6e3] bg-white text-[#4a5e5d] hover:border-[#b8cbc6] hover:bg-[#f4f9f8]'
-              }`}>{cat}</button>
-          ))}
-        </div>
+    <div className="space-y-3">
+      {/* Search — full row */}
+      <div className="relative">
+        <svg viewBox="0 0 24 24" fill="none" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B5BDBE]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+        </svg>
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="بحث عن مادة أو فئة..."
+          className="h-10 w-full rounded-[10px] border border-[#DADBD9] bg-white pr-10 pl-4 text-[13px] outline-none placeholder:text-[#B5BDBE] focus:border-[#2A6364]/50 focus:shadow-[0_0_0_3px_rgba(42,99,100,0.08)]" />
       </div>
+
+      {/* Category chips — full row */}
+      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        {categories.map((cat) => (
+          <button key={cat} type="button" onClick={() => setCategory(cat)}
+            className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition ${
+              category === cat
+                ? 'border-[#2A6364] bg-[#2A6364] text-white'
+                : 'border-[#DADBD9] bg-white text-[#5A5A5A] hover:border-[#2A6364]/30 hover:text-[#2A6364]'
+            }`}>{cat}</button>
+        ))}
+      </div>
+
+      {/* Grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-20">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#dce6e3] border-t-[#2A6364]" />
-          <p className="text-[13px] text-[#6d7b78]">جاري تحميل المواد...</p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {[1,2,3,4,5,6,7,8,9,10].map((i) => <div key={i} className="h-56 animate-pulse rounded-[14px] bg-[#DADBD9]" />)}
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-20">
-          <CategoryIllustration category="" className="h-20 w-20 opacity-60" />
-          <p className="text-[14px] text-[#6d7b78]">لا توجد نتائج لهذا البحث</p>
+          <CategoryIllustration category="" size={56} />
+          <p className="text-[13px] text-[#B5BDBE]">لا توجد نتائج</p>
         </div>
       ) : (
-        <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {items.map((item) => <MaterialCard key={item.id} item={item} qty={cart[item.id] || 0} setQty={setQty} />)}
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
-/* ─── Bundles view ─── */
+/* ─── Material Card — compact ─── */
+function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; setQty: (id: string, qty: number) => void }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const hasImg = !!item.imageUrl && !imgFailed;
+  const free = Math.max(item.stockQty - item.temporarilyReservedQty, 0);
+  const stockColor = free === 0 ? '#73384B' : free < 5 ? '#6B5A4A' : '#4F8F7A';
+  const stockLabel = item.isOnDemand ? 'عند الطلب' : free === 0 ? 'نافد' : free < 5 ? 'كمية محدودة' : 'متاح';
+
+  return (
+    <article className={`group flex flex-col overflow-hidden rounded-[14px] border bg-white transition hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.09)] ${qty > 0 ? 'border-[#2A6364]/40 ring-1 ring-[#2A6364]/15' : 'border-[#DADBD9]'}`}>
+      {/* Image */}
+      <div className="relative aspect-square overflow-hidden bg-[#F9F9F9]">
+        {hasImg ? (
+          <img src={item.imageUrl!} alt={item.title} loading="lazy" className="h-full w-full object-cover" onError={() => setImgFailed(true)} />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <CategoryIllustration category={item.category} size={56} />
+          </div>
+        )}
+        {/* Stock pill */}
+        <span className="absolute bottom-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: stockColor }}>
+          {stockLabel}
+        </span>
+        {/* Added badge */}
+        {qty > 0 && (
+          <span className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#2A6364] text-[10px] font-bold text-white">{qty}</span>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        <div>
+          <div className="text-[13px] font-bold leading-snug text-[#2A2A2A] line-clamp-2">{item.title}</div>
+          <div className="mt-0.5 text-[11px] text-[#B5BDBE]">{item.category}</div>
+        </div>
+        {item.isOnDemand && item.onDemandNote && (
+          <div className="text-[10px] leading-4 text-[#6B5A4A] line-clamp-2">{item.onDemandNote}</div>
+        )}
+
+        {qty > 0 ? (
+          <div className="mt-auto flex items-center justify-between gap-2">
+            <QuantityControl value={qty} onMinus={() => setQty(item.id, qty - 1)} onPlus={() => setQty(item.id, qty + 1)} onChange={(v) => setQty(item.id, v)} />
+            <button onClick={() => setQty(item.id, 0)} className="text-[11px] text-[#73384B] hover:underline">حذف</button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setQty(item.id, 1)} disabled={free === 0 && !item.isOnDemand}
+            className="mt-auto flex h-8 w-full items-center justify-center gap-1.5 rounded-[8px] border border-[#DADBD9] text-[12px] font-semibold text-[#2A6364] transition hover:border-[#2A6364]/40 hover:bg-[#eef5f4] disabled:cursor-not-allowed disabled:opacity-40">
+            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+            {free === 0 && !item.isOnDemand ? 'نافد' : 'إضافة'}
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/* ═══════════════════════════════════════
+   BUNDLES VIEW
+═══════════════════════════════════════ */
 function BundlesView({ bundles, traineeCount, onAdd }: { bundles: Bundle[]; traineeCount: number; onAdd: (b: Bundle) => void }) {
   return (
-    <section className="grid gap-4 lg:grid-cols-3">
-      {bundles.length === 0 && (
-        <div className="col-span-3 rounded-[20px] border border-dashed border-[#dce6e3] bg-white px-8 py-20 text-center text-[13px] text-[#6d7b78]">لا توجد بكجات مقترحة حالياً</div>
-      )}
+    <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {!bundles.length && <div className="col-span-3 rounded-[14px] border border-dashed border-[#DADBD9] py-20 text-center text-[13px] text-[#B5BDBE]">لا توجد بكجات</div>}
       {bundles.map((bundle) => (
-        <article key={bundle.id} className="overflow-hidden rounded-[20px] border border-[#dce6e3] bg-white shadow-[0_12px_32px_rgba(34,55,56,0.06)] transition hover:-translate-y-0.5 hover:border-[#b8cbc6]">
-          <ProductImage title={bundle.title} imageUrl={bundle.imageUrl} ratio="aspect-[16/9]" category="" />
-          <div className="p-5">
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="text-[18px] font-extrabold text-[#223738]">{bundle.title}</h2>
-              <span className="rounded-full bg-[#eef5f4] px-2 py-0.5 text-[11px] font-semibold text-[#2A6364]">{bundle.items.length} مادة</span>
+        <article key={bundle.id} className="flex flex-col overflow-hidden rounded-[14px] border border-[#DADBD9] bg-white transition hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+          <div className="aspect-[16/7] overflow-hidden bg-[#F9F9F9]">
+            {bundle.imageUrl ? <img src={bundle.imageUrl} alt={bundle.title} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center"><CategoryIllustration category="" size={48} /></div>}
+          </div>
+          <div className="flex flex-1 flex-col gap-3 p-4">
+            <div>
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-[15px] font-extrabold text-[#2A2A2A]">{bundle.title}</h3>
+                <span className="shrink-0 rounded-full border border-[#DADBD9] px-2 py-0.5 text-[10px] text-[#B5BDBE]">{bundle.items.length} مادة</span>
+              </div>
+              {bundle.description && <p className="mt-1 text-[12px] leading-5 text-[#B5BDBE]">{bundle.description}</p>}
             </div>
-            <p className="mt-1 min-h-10 text-[12px] leading-6 text-[#6d7b78]">{bundle.description}</p>
-            <div className="mt-3 space-y-1.5">
-              {bundle.items.map((item) => (
-                <div key={item.catalogItemId} className="flex items-center justify-between rounded-[10px] border border-[#edf2f1] bg-[#f8fbfb] px-3 py-2 text-[12px]">
-                  <span className="font-medium text-[#2a4444]">{item.title}</span>
-                  <span className="font-bold text-[#2A6364]">
-                    {item.quantityMode === 'PER_TRAINEE' ? `${traineeCount || '؟'} × ${item.quantity}` : item.quantity}
-                  </span>
+            <div className="space-y-1.5">
+              {bundle.items.slice(0, 4).map((item) => (
+                <div key={item.catalogItemId} className="flex items-center justify-between rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-3 py-1.5 text-[12px]">
+                  <span className="text-[#2A2A2A]">{item.title}</span>
+                  <span className="font-bold text-[#2A6364]">{item.quantityMode === 'PER_TRAINEE' ? `${traineeCount || '؟'}×${item.quantity}` : item.quantity}</span>
                 </div>
               ))}
+              {bundle.items.length > 4 && <div className="text-center text-[11px] text-[#B5BDBE]">+{bundle.items.length - 4} مواد أخرى</div>}
             </div>
-            {traineeCount === 0 && bundle.items.some((i) => i.quantityMode === 'PER_TRAINEE') && (
-              <p className="mt-2 text-[11px] text-[#8a6a37]">أدخل عدد المتدربين في صفحة المراجعة لحساب الكميات الدقيقة</p>
-            )}
             <button type="button" onClick={() => onAdd(bundle)}
-              className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#2A6364] text-[14px] font-bold text-white shadow-[0_8px_20px_rgba(42,99,100,0.2)] transition hover:bg-[#1e5152]">
+              className="mt-auto flex h-9 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[#2A6364] text-[13px] font-bold text-white hover:bg-[#1e5152]">
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-              إضافة البكج للطلبات
+              إضافة البكج
             </button>
           </div>
         </article>
@@ -606,7 +555,9 @@ function BundlesView({ bundles, traineeCount, onAdd }: { bundles: Bundle[]; trai
   );
 }
 
-/* ─── Rooms view ─── */
+/* ═══════════════════════════════════════
+   ROOMS VIEW
+═══════════════════════════════════════ */
 function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomType, setRoomSelections, goOrders }: {
   rooms: TrainingRoom[]; roomTypes: string[]; roomType: string; roomSelections: RoomSelection[];
   form: { startDate: string; endDate: string; traineeCount: string };
@@ -614,20 +565,17 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
   setRoomSelections: React.Dispatch<React.SetStateAction<RoomSelection[]>>;
   goOrders: () => void;
 }) {
-  const selectedRoomIds = new Set(roomSelections.map((s) => s.roomId));
-  const selectionRows = roomSelections.map((s) => ({ selection: s, room: rooms.find((r) => r.id === s.roomId) })).filter((r) => r.room) as { selection: RoomSelection; room: TrainingRoom }[];
-  const incomplete = roomSelections.some((s) => !s.startDate || !s.endDate);
+  const selectedIds = new Set(roomSelections.map((s) => s.roomId));
+  const selRows = roomSelections.map((s) => ({ selection: s, room: rooms.find((r) => r.id === s.roomId) })).filter((r) => r.room) as { selection: RoomSelection; room: TrainingRoom }[];
 
-  function selectRoom(room: TrainingRoom) {
+  function select(room: TrainingRoom) {
     if (!room.isAvailable) return;
     setRoomSelections((prev) => {
-      const exists = prev.some((s) => s.roomId === room.id);
-      if (exists) return prev.filter((s) => s.roomId !== room.id);
+      if (prev.some((s) => s.roomId === room.id)) return prev.filter((s) => s.roomId !== room.id);
       return [...prev, { roomId: room.id, layout: room.layoutOptions[0] || '', startDate: form.startDate, endDate: form.endDate }];
     });
   }
-
-  function updateSelection(roomId: string, patch: Partial<RoomSelection>) {
+  function updateSel(roomId: string, patch: Partial<RoomSelection>) {
     setRoomSelections((prev) => prev.map((s) => {
       if (s.roomId !== roomId) return s;
       const next = { ...s, ...patch };
@@ -637,71 +585,45 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
   }
 
   return (
-    <section className="relative grid gap-5 xl:block xl:pl-[420px]">
-      <div className="rounded-[20px] border border-[#dce6e3] bg-white p-4 shadow-[0_12px_32px_rgba(34,55,56,0.06)]">
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-[22px] font-extrabold text-[#223738]">القاعات التدريبية</h2>
-            <p className="mt-0.5 text-[12px] text-[#6d7b78]">اختر قاعة أو أكثر حسب أيام الدورة</p>
-          </div>
-          <div className="flex gap-2 overflow-x-auto">
+    <div className="relative grid gap-4 xl:block xl:pl-[380px]">
+      <div className="space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-[18px] font-extrabold text-[#2A2A2A]">القاعات التدريبية</h2>
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
             {roomTypes.map((t) => (
-              <button key={t} type="button" onClick={() => setRoomType(t)}
-                className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition ${roomType === t ? 'border-[#2A6364]/30 bg-[#2A6364] text-white' : 'border-[#dce6e3] bg-white text-[#4a5e5d] hover:bg-[#f4f9f8]'}`}>
+              <button key={t} onClick={() => setRoomType(t)}
+                className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition ${roomType === t ? 'border-[#2A6364] bg-[#2A6364] text-white' : 'border-[#DADBD9] bg-white text-[#5A5A5A] hover:border-[#2A6364]/30'}`}>
                 {t}
               </button>
             ))}
           </div>
         </div>
-        {incomplete && (
-          <div className="mb-4 flex items-start gap-2 rounded-[12px] border border-[#e8ddbf] bg-[#fffbf0] px-4 py-3 text-[12px] leading-6 text-[#7f6b43]">
-            <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
-            حدد تاريخ البداية والنهاية لكل قاعة مختارة
-          </div>
-        )}
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {rooms.map((room) => {
-            const selected = selectedRoomIds.has(room.id);
+            const sel = selectedIds.has(room.id);
             return (
-              <article key={room.id} className={`overflow-hidden rounded-[18px] border bg-white transition ${selected ? 'border-[#2A6364] ring-2 ring-[#d9e7e3]' : 'border-[#dce6e3] hover:border-[#b8cbc6]'}`}>
-                <div className="aspect-[16/9] overflow-hidden bg-[#eef4f2]">
-                  {room.imageUrl ? (
-                    <img src={room.imageUrl} alt={room.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <RoomIllustration type={room.type} />
-                  )}
+              <article key={room.id} className={`overflow-hidden rounded-[14px] border bg-white transition ${sel ? 'border-[#2A6364] ring-2 ring-[#2A6364]/15' : room.isAvailable ? 'border-[#DADBD9] hover:border-[#2A6364]/30' : 'border-[#DADBD9] opacity-60'}`}>
+                <div className="aspect-[16/7] overflow-hidden">
+                  {room.imageUrl ? <img src={room.imageUrl} alt={room.name} className="h-full w-full object-cover" /> : <RoomIllustration type={room.type} />}
                 </div>
-                <div className="space-y-3 p-4">
+                <div className="p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="text-[16px] font-extrabold text-[#223738]">{room.name}</div>
-                      <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-[#6d7b78]">
-                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                        {room.type} — سعة {room.capacity}
-                      </div>
+                      <div className="text-[14px] font-bold text-[#2A2A2A]">{room.name}</div>
+                      <div className="mt-0.5 text-[11px] text-[#B5BDBE]">{room.type} · سعة {room.capacity}</div>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${room.isAvailable ? 'bg-[#e8f5ef] text-[#1e6b4c]' : 'bg-[#fff1f3] text-[#7c1e3e]'}`}>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${room.isAvailable ? 'bg-[#eef8f2] text-[#4F8F7A]' : 'bg-[#fff0f3] text-[#73384B]'}`}>
                       {room.isAvailable ? 'متاحة' : 'محجوزة'}
                     </span>
                   </div>
                   {room.equipment.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {room.equipment.slice(0, 3).map((eq) => (
-                        <span key={eq} className="rounded-full bg-[#f4f8f7] px-2 py-0.5 text-[10px] text-[#4a5e5d]">{eq}</span>
-                      ))}
-                      {room.equipment.length > 3 && <span className="rounded-full bg-[#f4f8f7] px-2 py-0.5 text-[10px] text-[#9aacaa]">+{room.equipment.length - 3}</span>}
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {room.equipment.slice(0, 3).map((eq) => <span key={eq} className="rounded-full bg-[#F9F9F9] px-2 py-0.5 text-[10px] text-[#5A5A5A]">{eq}</span>)}
                     </div>
                   )}
-                  {room.layoutOptions.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {room.layoutOptions.slice(0, 2).map((l) => (
-                        <span key={l} className="rounded-full border border-[#dce6e3] px-2 py-0.5 text-[10px] text-[#6d7b78]">{l}</span>
-                      ))}
-                    </div>
-                  )}
-                  <button type="button" onClick={() => selectRoom(room)} disabled={!room.isAvailable}
-                    className={`h-10 w-full rounded-[10px] text-[13px] font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${selected ? 'border border-[#2A6364] bg-white text-[#2A6364] hover:bg-[#eef5f4]' : 'bg-[#2A6364] text-white hover:bg-[#1e5152]'}`}>
-                    {selected ? '✓ تم اختيار القاعة' : 'اختيار القاعة'}
+                  <button onClick={() => select(room)} disabled={!room.isAvailable}
+                    className={`mt-3 h-8 w-full rounded-[8px] text-[12px] font-bold transition disabled:opacity-40 ${sel ? 'border border-[#2A6364] bg-white text-[#2A6364]' : 'bg-[#2A6364] text-white hover:bg-[#1e5152]'}`}>
+                    {sel ? '✓ محددة' : 'اختيار'}
                   </button>
                 </div>
               </article>
@@ -710,393 +632,280 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
         </div>
       </div>
 
-      <aside className="rounded-[20px] border border-[#dce6e3] bg-white p-4 shadow-[0_12px_32px_rgba(34,55,56,0.07)] xl:fixed xl:left-[max(1rem,calc((100vw-1480px)/2+1rem))] xl:top-24 xl:z-20 xl:w-[390px]">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-[17px] font-extrabold text-[#223738]">القاعات المختارة</h3>
-          {selectionRows.length > 0 && (
-            <button type="button" onClick={() => setRoomSelections([])} className="rounded-[8px] border border-[#ecd0d8] px-2.5 py-1 text-[12px] font-semibold text-[#7c1e3e] hover:bg-[#fff7f8]">مسح الكل</button>
-          )}
+      {/* Side panel */}
+      <aside className="rounded-[14px] border border-[#DADBD9] bg-white p-4 xl:fixed xl:left-[max(1rem,calc((100vw-1480px)/2+1rem))] xl:top-20 xl:z-20 xl:w-[360px]">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[15px] font-extrabold text-[#2A2A2A]">القاعات المختارة</h3>
+          {selRows.length > 0 && <button onClick={() => setRoomSelections([])} className="text-[11px] text-[#73384B] hover:underline">مسح الكل</button>}
         </div>
         <div className="mt-3 space-y-2">
-          {selectionRows.length === 0 ? (
-            <div className="rounded-[14px] border border-dashed border-[#dce6e3] bg-[#f8fbfb] px-4 py-8 text-center text-[12px] leading-6 text-[#6d7b78]">
-              اختر قاعة من البطاقات وستظهر هنا
-            </div>
-          ) : selectionRows.map(({ selection, room }) => (
-            <div key={room.id} className="rounded-[14px] border border-[#dce6e3] bg-[#f8fbfb] p-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="text-[13px] font-bold text-[#223738]">{room.name}</div>
-                  <div className="text-[11px] text-[#6d7b78]">{room.type} — سعة {room.capacity}</div>
-                </div>
-                <button type="button" onClick={() => setRoomSelections((prev) => prev.filter((r) => r.roomId !== room.id))} className="text-[12px] text-[#7c1e3e] hover:underline">حذف</button>
+          {selRows.length === 0 ? (
+            <div className="rounded-[10px] border border-dashed border-[#DADBD9] py-6 text-center text-[12px] text-[#B5BDBE]">اختر قاعة من البطاقات</div>
+          ) : selRows.map(({ selection, room }) => (
+            <div key={room.id} className="rounded-[10px] border border-[#DADBD9] bg-[#F9F9F9] p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-[12px] font-bold text-[#2A2A2A]">{room.name}</div>
+                <button onClick={() => setRoomSelections((p) => p.filter((r) => r.roomId !== room.id))} className="text-[11px] text-[#73384B]">حذف</button>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-1.5">
-                <label className="block text-[10px] font-semibold text-[#4a5e5d]">
+                <label className="block text-[10px] text-[#B5BDBE]">
                   من
-                  <input type="date" value={selection.startDate} onChange={(e) => updateSelection(room.id, { startDate: e.target.value })}
-                    className="mt-0.5 h-8 w-full rounded-[8px] border border-[#dce6e3] bg-white px-2 text-[11px] outline-none focus:border-[#2A6364]/50" />
+                  <input type="date" value={selection.startDate} onChange={(e) => updateSel(room.id, { startDate: e.target.value })} className="mt-0.5 h-7 w-full rounded-[6px] border border-[#DADBD9] bg-white px-2 text-[11px] outline-none focus:border-[#2A6364]/40" />
                 </label>
-                <label className="block text-[10px] font-semibold text-[#4a5e5d]">
+                <label className="block text-[10px] text-[#B5BDBE]">
                   إلى
-                  <input type="date" value={selection.endDate} min={selection.startDate || undefined} onChange={(e) => updateSelection(room.id, { endDate: e.target.value })}
-                    className="mt-0.5 h-8 w-full rounded-[8px] border border-[#dce6e3] bg-white px-2 text-[11px] outline-none focus:border-[#2A6364]/50" />
+                  <input type="date" value={selection.endDate} min={selection.startDate || undefined} onChange={(e) => updateSel(room.id, { endDate: e.target.value })} className="mt-0.5 h-7 w-full rounded-[6px] border border-[#DADBD9] bg-white px-2 text-[11px] outline-none focus:border-[#2A6364]/40" />
                 </label>
               </div>
             </div>
           ))}
         </div>
-        <button type="button" onClick={goOrders}
-          className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#2A6364] text-[14px] font-bold text-white shadow-[0_8px_20px_rgba(42,99,100,0.2)] transition hover:bg-[#1e5152]">
-          متابعة ومراجعة الطلب
+        <button onClick={goOrders} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[10px] bg-[#2A6364] text-[13px] font-bold text-white hover:bg-[#1e5152]">
+          متابعة المراجعة
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
         </button>
       </aside>
-    </section>
+    </div>
   );
 }
 
-/* ─── Orders / Review view ─── */
-function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, setSuggestedItems, setQty, submitting, onSubmit, goHome, goRooms }: {
+/* ═══════════════════════════════════════
+   ORDERS VIEW — Review & Submit
+═══════════════════════════════════════ */
+function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, setQty, submitting, onSubmit, goHome, goRooms, onOpenSuggested }: {
   form: { trainerName: string; courseName: string; startDate: string; endDate: string; traineeCount: string };
   setForm: React.Dispatch<React.SetStateAction<typeof form>>;
   cartRows: { item: StoreItem; quantity: number }[];
   selectedRooms: { selection: RoomSelection; room: TrainingRoom }[];
   suggestedItems: SuggestedItem[];
-  setSuggestedItems: React.Dispatch<React.SetStateAction<SuggestedItem[]>>;
   setQty: (id: string, qty: number) => void;
   submitting: boolean; onSubmit: (e: React.FormEvent) => void;
-  goHome: () => void; goRooms: () => void;
+  goHome: () => void; goRooms: () => void; onOpenSuggested: () => void;
 }) {
-  function addSuggested() { setSuggestedItems((p) => [...p, { title: '', quantity: '1', note: '' }]); }
-  function updateSuggested(i: number, patch: Partial<SuggestedItem>) { setSuggestedItems((p) => p.map((s, idx) => idx === i ? { ...s, ...patch } : s)); }
-  function removeSuggested(i: number) { setSuggestedItems((p) => p.filter((_, idx) => idx !== i)); }
-
   return (
-    <form onSubmit={onSubmit} className="grid gap-5 xl:grid-cols-[1fr_420px]">
-      <section className="rounded-[20px] border border-[#dce6e3] bg-white shadow-[0_12px_32px_rgba(34,55,56,0.06)]">
-        <div className="flex items-center justify-between border-b border-[#edf2f1] px-5 py-4">
-          <h2 className="text-[20px] font-extrabold text-[#223738]">المواد المطلوبة</h2>
-          <button type="button" onClick={goHome}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#dce6e3] px-3 py-2 text-[12px] font-semibold text-[#2A6364] hover:bg-[#eef5f4]">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-            إضافة مواد
-          </button>
+    <form onSubmit={onSubmit} className="space-y-4">
+      {/* Course info — TOP, prominent */}
+      <section className="rounded-[14px] border border-[#DADBD9] bg-white p-4">
+        <h2 className="mb-3 text-[16px] font-extrabold text-[#2A6364]">بيانات الدورة التدريبية</h2>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <Field label="اسم المدرب *" value={form.trainerName} onChange={(v) => setForm((p) => ({ ...p, trainerName: v }))} required className="xl:col-span-2" />
+          <Field label="اسم الدورة *" value={form.courseName} onChange={(v) => setForm((p) => ({ ...p, courseName: v }))} required className="xl:col-span-2" />
+          <Field label="عدد المتدربين" type="number" value={form.traineeCount} required={false} onChange={(v) => setForm((p) => ({ ...p, traineeCount: v }))} />
+          <Field label="تاريخ البداية *" type="date" value={form.startDate} onChange={(v) => setForm((p) => ({ ...p, startDate: v }))} />
+          <Field label="تاريخ النهاية *" type="date" value={form.endDate} onChange={(v) => setForm((p) => ({ ...p, endDate: v }))} />
+          {/* Rooms quick summary */}
+          <div className="xl:col-span-3">
+            <div className="text-[11px] font-semibold text-[#B5BDBE] mb-1">القاعات</div>
+            <div className="flex flex-wrap items-center gap-2">
+              {selectedRooms.length ? selectedRooms.map(({ room, selection }) => (
+                <span key={room.id} className="rounded-full border border-[#DADBD9] bg-[#F9F9F9] px-2.5 py-1 text-[11px] text-[#2A2A2A]">
+                  {room.name} · {selection.startDate || '؟'} → {selection.endDate || '؟'}
+                </span>
+              )) : (
+                <button type="button" onClick={goRooms} className="text-[12px] text-[#2A6364] underline">اختر قاعة</button>
+              )}
+              {selectedRooms.length > 0 && <button type="button" onClick={goRooms} className="text-[11px] text-[#2A6364] underline">تعديل</button>}
+            </div>
+          </div>
         </div>
-        {cartRows.length ? (
-          <div className="divide-y divide-[#f0f4f3]">
-            {cartRows.map(({ item, quantity }) => (
-              <div key={item.id} className="grid gap-4 px-5 py-4 sm:grid-cols-[80px_1fr_auto] sm:items-center">
-                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[12px] bg-[#f4f8f7]">
-                  <CategoryIllustration category={item.category} className="h-12 w-12" />
-                </div>
-                <div>
-                  <div className="text-[16px] font-extrabold text-[#223738]">{item.title}</div>
-                  <div className="mt-0.5 text-[12px] text-[#6d7b78]">{item.category}</div>
-                  <StockLine item={item} />
-                  <button type="button" onClick={() => setQty(item.id, 0)} className="mt-2 text-[12px] text-[#7c1e3e] hover:underline">حذف</button>
-                </div>
-                <QuantityControl value={quantity} onMinus={() => setQty(item.id, quantity - 1)} onPlus={() => setQty(item.id, quantity + 1)} onChange={(v) => setQty(item.id, v)} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-3 py-20">
-            <CategoryIllustration category="" className="h-20 w-20 opacity-50" />
-            <p className="text-[13px] text-[#6d7b78]">لا توجد مواد في الطلب حتى الآن</p>
-            <button type="button" onClick={goHome} className="rounded-[10px] bg-[#2A6364] px-4 py-2 text-[13px] font-bold text-white">تصفح المواد</button>
-          </div>
-        )}
       </section>
 
-      {/* Suggested items section */}
-      <section className="rounded-[20px] border border-[#e8ddbf] bg-[#fffbf0] p-5 shadow-[0_4px_16px_rgba(138,106,55,0.08)]">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-[16px] font-extrabold text-[#7f6030]">مواد مقترحة غير متوفرة في المتجر</h3>
-            <p className="mt-0.5 text-[12px] text-[#9a7a48]">إذا احتجت مادة غير موجودة في قائمة المواد، أضفها هنا وسيراجعها المنسق ويحاول توفيرها.</p>
+      {/* Materials list + submit */}
+      <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
+        {/* Materials */}
+        <section className="rounded-[14px] border border-[#DADBD9] bg-white">
+          <div className="flex items-center justify-between border-b border-[#DADBD9] px-4 py-3">
+            <h2 className="text-[15px] font-extrabold text-[#2A2A2A]">المواد المطلوبة <span className="mr-1 text-[13px] font-normal text-[#B5BDBE]">({cartRows.length} صنف)</span></h2>
+            <button type="button" onClick={goHome} className="text-[12px] font-semibold text-[#2A6364] hover:underline">+ إضافة مواد</button>
           </div>
-          <button type="button" onClick={addSuggested}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-[10px] border border-[#d9c99f] bg-white px-3 py-2 text-[12px] font-bold text-[#8a6a37] transition hover:bg-[#fffbf0]">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-            إضافة مادة مقترحة
-          </button>
-        </div>
-        {suggestedItems.length > 0 && (
-          <div className="mt-3 space-y-2">
-            {suggestedItems.map((s, i) => (
-              <div key={i} className="grid gap-2 rounded-[14px] border border-[#e8ddbf] bg-white p-3 sm:grid-cols-[1fr_80px_1fr_auto]">
-                <input value={s.title} onChange={(e) => updateSuggested(i, { title: e.target.value })}
-                  placeholder="اسم المادة المطلوبة"
-                  className="h-9 rounded-[8px] border border-[#e8ddbf] bg-[#fffbf0] px-3 text-[13px] outline-none placeholder:text-[#b8a278] focus:border-[#c4a865]/60 focus:bg-white" />
-                <input type="number" min="1" value={s.quantity} onChange={(e) => updateSuggested(i, { quantity: e.target.value })}
-                  placeholder="الكمية"
-                  className="h-9 rounded-[8px] border border-[#e8ddbf] bg-[#fffbf0] px-3 text-[13px] outline-none focus:border-[#c4a865]/60 focus:bg-white" />
-                <input value={s.note} onChange={(e) => updateSuggested(i, { note: e.target.value })}
-                  placeholder="ملاحظة للمنسق (اختياري)"
-                  className="h-9 rounded-[8px] border border-[#e8ddbf] bg-[#fffbf0] px-3 text-[13px] outline-none placeholder:text-[#b8a278] focus:border-[#c4a865]/60 focus:bg-white" />
-                <button type="button" onClick={() => removeSuggested(i)}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] border border-[#ecd0d8] bg-white text-[#7c1e3e] hover:bg-[#fff7f8]">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
-                </button>
+          {cartRows.length ? (
+            <div className="divide-y divide-[#F9F9F9]">
+              {cartRows.map(({ item, quantity }) => {
+                const free = Math.max(item.stockQty - item.temporarilyReservedQty, 0);
+                return (
+                  <div key={item.id} className="grid grid-cols-[52px_1fr_auto] items-center gap-3 px-4 py-3">
+                    <div className="flex h-13 w-13 items-center justify-center overflow-hidden rounded-[8px] bg-[#F9F9F9]">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      ) : (
+                        <CategoryIllustration category={item.category} size={32} />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-[#2A2A2A] truncate">{item.title}</div>
+                      <div className="text-[11px] text-[#B5BDBE]">{item.category} · {item.isOnDemand ? 'عند الطلب' : `متاح: ${free}`}</div>
+                      <button type="button" onClick={() => setQty(item.id, 0)} className="text-[11px] text-[#73384B] hover:underline">حذف</button>
+                    </div>
+                    <QuantityControl value={quantity} onMinus={() => setQty(item.id, quantity - 1)} onPlus={() => setQty(item.id, quantity + 1)} onChange={(v) => setQty(item.id, v)} />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-14">
+              <CategoryIllustration category="" size={48} />
+              <p className="text-[13px] text-[#B5BDBE]">لا توجد مواد بعد</p>
+              <button type="button" onClick={goHome} className="rounded-[8px] bg-[#2A6364] px-4 py-2 text-[12px] font-bold text-white">تصفح المواد</button>
+            </div>
+          )}
+
+          {/* Suggested items summary */}
+          {suggestedItems.length > 0 && (
+            <div className="border-t border-[#DADBD9] px-4 py-3">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-[12px] font-bold text-[#6B5A4A]">مواد مقترحة ({suggestedItems.length})</span>
+                <button type="button" onClick={onOpenSuggested} className="text-[11px] text-[#2A6364] underline">تعديل</button>
               </div>
-            ))}
-          </div>
-        )}
-        {suggestedItems.length === 0 && (
-          <button type="button" onClick={addSuggested}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#d9c99f] px-4 py-4 text-[13px] text-[#9a7a48] transition hover:bg-white">
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-            اضغط لإضافة مادة مقترحة
-          </button>
-        )}
-      </section>
-
-      <aside className="rounded-[20px] border border-[#dce6e3] bg-white p-5 shadow-[0_12px_32px_rgba(34,55,56,0.07)] xl:sticky xl:top-24 xl:self-start">
-        <h3 className="text-[18px] font-extrabold text-[#223738]">بيانات الدورة</h3>
-        <div className="mt-4 space-y-3">
-          <FormField label="اسم المدرب" value={form.trainerName} onChange={(v) => setForm((p) => ({ ...p, trainerName: v }))} />
-          <FormField label="اسم الدورة" value={form.courseName} onChange={(v) => setForm((p) => ({ ...p, courseName: v }))} />
-          <div className="grid grid-cols-2 gap-2">
-            <FormField label="تاريخ البداية" type="date" value={form.startDate} onChange={(v) => setForm((p) => ({ ...p, startDate: v }))} />
-            <FormField label="تاريخ النهاية" type="date" value={form.endDate} onChange={(v) => setForm((p) => ({ ...p, endDate: v }))} />
-          </div>
-          <FormField label="عدد المتدربين" type="number" value={form.traineeCount} required={false} onChange={(v) => setForm((p) => ({ ...p, traineeCount: v }))} />
-        </div>
-
-        <div className="mt-4 rounded-[12px] border border-[#dce6e3] bg-[#f8fbfb] p-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="text-[13px] font-bold text-[#223738]">القاعات المطلوبة</div>
-            <button type="button" onClick={goRooms} className="text-[11px] font-semibold text-[#2A6364] hover:underline">
-              {selectedRooms.length ? 'تعديل' : 'اختيار قاعة'}
-            </button>
-          </div>
-          {selectedRooms.length ? (
-            <div className="mt-2 space-y-1">
-              {selectedRooms.map(({ selection, room }) => (
-                <div key={room.id} className="flex items-center gap-2 text-[12px] text-[#4a5e5d]">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
-                  </svg>
-                  <span>{room.name} — {selection.startDate || '؟'} إلى {selection.endDate || '؟'}</span>
+              {suggestedItems.map((s, i) => (
+                <div key={i} className="flex items-center justify-between text-[12px] text-[#5A5A5A]">
+                  <span>{s.title}</span>
+                  <span className="font-bold text-[#6B5A4A]">×{s.quantity}</span>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="mt-1 text-[11px] text-[#9aacaa]">لم يتم اختيار قاعة بعد</p>
           )}
-        </div>
+        </section>
 
-        <div className="mt-3 flex items-start gap-2 rounded-[12px] border border-[#e8ddbf] bg-[#fffbf0] px-3 py-2.5 text-[11px] leading-5 text-[#7f6b43]">
-          <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-3.5 w-3.5 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
-          تاريخ النهاية يُستخدم كموعد إرجاع متوقع للمواد المسترجعة
-        </div>
-
-        <button type="submit" disabled={submitting || cartRows.length === 0}
-          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#2A6364] text-[15px] font-extrabold text-white shadow-[0_10px_24px_rgba(42,99,100,0.25)] transition hover:bg-[#1e5152] disabled:cursor-not-allowed disabled:opacity-50">
-          {submitting ? (
-            <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> جاري الإرسال...</>
-          ) : (
-            <><svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg> إرسال الطلب</>
-          )}
-        </button>
-      </aside>
+        {/* Submit panel */}
+        <aside className="rounded-[14px] border border-[#DADBD9] bg-white p-4 xl:sticky xl:top-20 xl:self-start">
+          <h3 className="text-[15px] font-extrabold text-[#2A2A2A]">ملخص الطلب</h3>
+          <div className="mt-3 space-y-2">
+            <SummaryRow label="عدد الأصناف" value={`${cartRows.length} صنف`} />
+            <SummaryRow label="إجمالي الوحدات" value={`${cartRows.reduce((s, r) => s + r.quantity, 0)}`} />
+            {suggestedItems.length > 0 && <SummaryRow label="مواد مقترحة" value={`${suggestedItems.length}`} />}
+            {selectedRooms.length > 0 && <SummaryRow label="القاعات" value={`${selectedRooms.length}`} />}
+          </div>
+          <div className="my-4 border-t border-[#DADBD9]" />
+          <div className="text-[11px] leading-5 text-[#B5BDBE]">
+            تاريخ النهاية يُستخدم كموعد إرجاع متوقع للمواد المسترجعة.
+          </div>
+          <button type="submit" disabled={submitting || (cartRows.length === 0 && suggestedItems.length === 0)}
+            className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#2A6364] text-[14px] font-extrabold text-white shadow-[0_4px_14px_rgba(42,99,100,0.3)] hover:bg-[#1e5152] disabled:opacity-40">
+            {submitting ? (
+              <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> جاري الإرسال...</>
+            ) : (
+              <>إرسال الطلب <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg></>
+            )}
+          </button>
+        </aside>
+      </div>
     </form>
   );
 }
 
-/* ─── Success / Summary view ─── */
+/* ═══════════════════════════════════════
+   SUCCESS VIEW
+═══════════════════════════════════════ */
 function SuccessView({ order, onReset }: { order: SubmittedOrder; onReset: () => void }) {
   const [copied, setCopied] = useState(false);
-  const summaryRef = useRef<HTMLDivElement>(null);
 
   const lmsText = [
-    `طلب تجهيز دورة تدريبية`,
-    `رقم الطلب: ${order.code}`,
-    `─────────────────────`,
-    `المدرب: ${order.trainerName}`,
-    `الدورة: ${order.courseName}`,
+    `طلب تجهيز دورة تدريبية`, `رقم الطلب: ${order.code}`, `─────────────────────`,
+    `المدرب: ${order.trainerName}`, `الدورة: ${order.courseName}`,
     `التاريخ: ${order.startDate} إلى ${order.endDate}`,
     order.traineeCount > 0 ? `عدد المتدربين: ${order.traineeCount}` : '',
-    ``,
-    `المواد المطلوبة:`,
+    ``, `المواد المطلوبة:`,
     ...order.items.map((i) => `• ${i.title}  ×${i.quantity} ${i.unit}`),
-    order.suggestedItems?.length > 0 ? `` : '',
-    order.suggestedItems?.length > 0 ? `مواد مقترحة (تحتاج تأمين):` : '',
-    ...(order.suggestedItems || []).map((s) => `◇ ${s.title}  ×${s.quantity}${s.note ? ` — ${s.note}` : ''}`),
-    order.rooms.length > 0 ? `` : '',
-    order.rooms.length > 0 ? `القاعات المطلوبة:` : '',
-    ...order.rooms.map((r) => `• ${r.name} (${r.type}) — ${r.startDate} إلى ${r.endDate}`),
-    ``,
-    `تاريخ الإرسال: ${order.submittedAt}`,
-    `─────────────────────`,
-    `تم الإرسال عبر مساعد تجهيز الدورة — وكالة التدريب، جامعة نايف العربية للعلوم الأمنية`,
-  ].filter((l) => l !== undefined).join('\n');
-
-  function copyToClipboard() {
-    navigator.clipboard.writeText(lmsText).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    });
-  }
-
-  function printSummary() {
-    window.print();
-  }
+    ...(order.suggestedItems?.length ? [``, `مواد مقترحة:`, ...order.suggestedItems.map((s) => `◇ ${s.title} ×${s.quantity}${s.note ? ` — ${s.note}` : ''}`)] : []),
+    ...(order.rooms.length ? [``, `القاعات:`, ...order.rooms.map((r) => `• ${r.name} — ${r.startDate} → ${r.endDate}`)] : []),
+    ``, `تاريخ الإرسال: ${order.submittedAt}`,
+    `─────────────────────`, `مساعد تجهيز الدورة — وكالة التدريب، جامعة نايف العربية للعلوم الأمنية`,
+  ].filter(Boolean).join('\n');
 
   return (
-    <div className="mx-auto max-w-[720px]">
+    <div className="mx-auto max-w-[680px]">
       {/* Success header */}
-      <div className="no-print mb-5 flex flex-col items-center gap-3 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eef5f4] shadow-[0_0_0_8px_rgba(42,99,100,0.08)]">
-          <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-[#2A6364]" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
+      <div className="no-print mb-5 text-center">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef5f4]">
+          <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-[#4F8F7A]" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
         </div>
-        <div>
-          <h2 className="text-[24px] font-extrabold text-[#223738]">تم إرسال الطلب بنجاح</h2>
-          <p className="mt-1 text-[13px] text-[#6d7b78]">سيتولى المنسق مراجعة احتياجاتك والتواصل معك</p>
-        </div>
+        <h2 className="text-[22px] font-extrabold text-[#2A2A2A]">تم إرسال الطلب بنجاح</h2>
+        <p className="mt-1 text-[13px] text-[#B5BDBE]">سيراجع المنسق احتياجاتك ويتواصل معك</p>
       </div>
 
-      {/* Summary card — printed too */}
-      <div ref={summaryRef} className="rounded-[20px] border border-[#dce6e3] bg-white shadow-[0_12px_32px_rgba(34,55,56,0.08)]">
+      {/* Summary card */}
+      <div className="rounded-[18px] border border-[#DADBD9] bg-white overflow-hidden">
         {/* Code bar */}
-        <div className="flex items-center justify-between rounded-t-[20px] bg-[#2A6364] px-5 py-4">
-          <div>
-            <div className="text-[11px] font-semibold text-white/70">رقم الطلب</div>
-            <div className="mt-0.5 text-[22px] font-extrabold tracking-wide text-white">{order.code}</div>
-          </div>
-          <div className="text-left text-right">
-            <div className="text-[11px] text-white/70">تاريخ الإرسال</div>
-            <div className="mt-0.5 text-[13px] font-semibold text-white">{order.submittedAt}</div>
-          </div>
+        <div className="flex items-center justify-between bg-[#2A6364] px-5 py-4">
+          <div><div className="text-[10px] font-semibold text-white/60">رقم الطلب</div><div className="mt-0.5 text-[20px] font-extrabold tracking-wider text-white">{order.code}</div></div>
+          <div className="text-right"><div className="text-[10px] text-white/60">تاريخ الإرسال</div><div className="mt-0.5 text-[12px] font-semibold text-white">{order.submittedAt}</div></div>
         </div>
 
-        <div className="p-5">
-          {/* Course info */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <InfoRow icon={<svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" /><path d="M6 12v5c3.5 3 8.5 3 12 0v-5" /></svg>} label="المدرب" value={order.trainerName} />
-            <InfoRow icon={<svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" /><path d="M14 2v6h6" /></svg>} label="الدورة" value={order.courseName} />
-            <InfoRow icon={<svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>} label="الفترة" value={`${order.startDate} — ${order.endDate}`} />
-            {order.traineeCount > 0 && (
-              <InfoRow icon={<svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>} label="عدد المتدربين" value={`${order.traineeCount} متدرب`} />
-            )}
+        <div className="p-5 space-y-4">
+          {/* Info grid */}
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[['المدرب', order.trainerName], ['الدورة', order.courseName], ['الفترة', `${order.startDate} — ${order.endDate}`], ...(order.traineeCount > 0 ? [['المتدربون', `${order.traineeCount} متدرب`]] : [])].map(([l, v]) => (
+              <div key={String(l)} className="rounded-[10px] border border-[#DADBD9] bg-[#F9F9F9] px-3 py-2">
+                <div className="text-[10px] text-[#B5BDBE]">{l}</div>
+                <div className="mt-0.5 text-[13px] font-bold text-[#2A2A2A]">{v}</div>
+              </div>
+            ))}
           </div>
 
-          {/* Materials */}
-          <div className="mt-5">
-            <h3 className="mb-2 text-[14px] font-extrabold text-[#223738]">المواد المطلوبة</h3>
-            <div className="overflow-hidden rounded-[14px] border border-[#edf2f1]">
-              <table className="w-full text-[13px]">
-                <thead>
-                  <tr className="bg-[#f4f8f7] text-[12px] text-[#2A6364]">
-                    <th className="px-4 py-2.5 text-right font-bold">المادة</th>
-                    <th className="px-4 py-2.5 text-right font-bold">الفئة</th>
-                    <th className="px-4 py-2.5 text-center font-bold">الكمية</th>
-                    <th className="px-4 py-2.5 text-right font-bold">الوحدة</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#f0f4f3]">
+          {/* Materials table */}
+          <div>
+            <h3 className="mb-2 text-[13px] font-extrabold text-[#2A2A2A]">المواد المطلوبة</h3>
+            <div className="overflow-hidden rounded-[10px] border border-[#DADBD9]">
+              <table className="w-full text-[12px]">
+                <thead><tr className="bg-[#F9F9F9] text-[#5A5A5A]"><th className="px-3 py-2 text-right font-bold">المادة</th><th className="px-3 py-2 text-center font-bold">الكمية</th><th className="px-3 py-2 text-right font-bold">الوحدة</th></tr></thead>
+                <tbody className="divide-y divide-[#F9F9F9]">
                   {order.items.map((item, i) => (
-                    <tr key={i}>
-                      <td className="px-4 py-2.5 font-semibold text-[#223738]">{item.title}</td>
-                      <td className="px-4 py-2.5 text-[#6d7b78]">{item.category}</td>
-                      <td className="px-4 py-2.5 text-center font-bold text-[#2A6364]">{item.quantity}</td>
-                      <td className="px-4 py-2.5 text-[#6d7b78]">{item.unit}</td>
-                    </tr>
+                    <tr key={i}><td className="px-3 py-2 font-medium text-[#2A2A2A]">{item.title}</td><td className="px-3 py-2 text-center font-bold text-[#2A6364]">{item.quantity}</td><td className="px-3 py-2 text-[#B5BDBE]">{item.unit}</td></tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Rooms */}
-          {order.rooms.length > 0 && (
-            <div className="mt-4">
-              <h3 className="mb-2 text-[14px] font-extrabold text-[#223738]">القاعات المطلوبة</h3>
-              <div className="space-y-2">
-                {order.rooms.map((room, i) => (
-                  <div key={i} className="flex items-center gap-3 rounded-[12px] border border-[#dce6e3] bg-[#f8fbfb] px-4 py-2.5">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
-                    </svg>
-                    <div className="min-w-0 flex-1">
-                      <span className="font-bold text-[#223738]">{room.name}</span>
-                      <span className="mx-1 text-[#9aacaa]">—</span>
-                      <span className="text-[12px] text-[#6d7b78]">{room.type}</span>
-                    </div>
-                    <span className="shrink-0 text-[12px] text-[#6d7b78]">{room.startDate} → {room.endDate}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Suggested items */}
+          {order.suggestedItems?.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-[13px] font-extrabold text-[#6B5A4A]">مواد مقترحة</h3>
+              {order.suggestedItems.map((s, i) => (
+                <div key={i} className="flex items-center justify-between rounded-[8px] border border-[#DADBD9] bg-[#fdf8f0] px-3 py-2 text-[12px] mb-1">
+                  <span className="font-medium text-[#6B5A4A]">{s.title}{s.note ? ` — ${s.note}` : ''}</span>
+                  <span className="font-bold text-[#C7B08C]">×{s.quantity}</span>
+                </div>
+              ))}
             </div>
           )}
 
-          {/* Suggested items in summary */}
-          {order.suggestedItems?.length > 0 && (
-            <div className="mt-4">
-              <h3 className="mb-2 text-[14px] font-extrabold text-[#7f6030]">مواد مقترحة (تحتاج تأمين)</h3>
-              <div className="space-y-1.5">
-                {order.suggestedItems.map((s, i) => (
-                  <div key={i} className="flex items-center gap-3 rounded-[12px] border border-[#e8ddbf] bg-[#fffbf0] px-4 py-2.5">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-[#8a6a37]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
-                    </svg>
-                    <div className="min-w-0 flex-1">
-                      <span className="font-bold text-[#7f6030]">{s.title}</span>
-                      {s.note && <span className="mr-2 text-[11px] text-[#9a7a48]">— {s.note}</span>}
-                    </div>
-                    <span className="shrink-0 rounded-full bg-[#fbf6ea] px-2.5 py-0.5 text-[12px] font-bold text-[#8a6a37]">×{s.quantity}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Rooms */}
+          {order.rooms.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-[13px] font-extrabold text-[#2A2A2A]">القاعات</h3>
+              {order.rooms.map((r, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-3 py-2 text-[12px] mb-1">
+                  <span className="font-bold text-[#2A2A2A] flex-1">{r.name}</span>
+                  <span className="text-[#B5BDBE]">{r.startDate} → {r.endDate}</span>
+                </div>
+              ))}
             </div>
           )}
 
           {/* LMS note */}
-          <div className="no-print mt-5 rounded-[14px] border border-[#d9c99f] bg-[#fffbf0] px-4 py-3">
-            <div className="flex items-start gap-2">
-              <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-[#8a6a37]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
-              </svg>
-              <div>
-                <p className="text-[12px] font-bold text-[#7f6b43]">نقل الطلب إلى منصة التدريب LMS</p>
-                <p className="mt-0.5 text-[11px] leading-5 text-[#8a7048]">انسخ ملخص الطلب بزر "نسخ للـ LMS" أدناه والصقه في خانة الملاحظات أو العرض الفني للدورة في منصة التدريب.</p>
-              </div>
-            </div>
+          <div className="no-print rounded-[10px] border border-[#C7B08C]/30 bg-[#fdf8f0] px-4 py-3">
+            <p className="text-[11px] font-bold text-[#6B5A4A]">نقل إلى منصة التدريب LMS</p>
+            <p className="mt-0.5 text-[10px] leading-4 text-[#B5BDBE]">انسخ الملخص والصقه في خانة الملاحظات أو العرض الفني للدورة في منصة التدريب.</p>
           </div>
         </div>
 
-        {/* Footer stamp */}
-        <div className="rounded-b-[20px] border-t border-[#edf2f1] bg-[#f8fbfb] px-5 py-3 text-[11px] text-[#9aacaa]">
-          وكالة التدريب — جامعة نايف العربية للعلوم الأمنية — مساعد تجهيز الدورة
+        <div className="border-t border-[#DADBD9] bg-[#F9F9F9] px-5 py-2.5 text-center text-[10px] text-[#B5BDBE]">
+          وكالة التدريب — جامعة نايف العربية للعلوم الأمنية
         </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="no-print mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={printSummary}
-          className="inline-flex items-center gap-2 rounded-[12px] border border-[#dce6e3] bg-white px-5 py-2.5 text-[13px] font-bold text-[#223738] shadow-[0_2px_8px_rgba(34,55,56,0.06)] transition hover:border-[#2A6364]/30 hover:bg-[#eef5f4]">
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-            <rect x="6" y="14" width="12" height="8" />
-          </svg>
-          طباعة الملخص
+      {/* Actions */}
+      <div className="no-print mt-4 flex flex-wrap gap-2">
+        <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#DADBD9] bg-white px-4 py-2.5 text-[12px] font-bold text-[#5A5A5A] hover:border-[#2A6364]/30 hover:text-[#2A6364]">
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+          طباعة
         </button>
-        <button type="button" onClick={copyToClipboard}
-          className={`inline-flex items-center gap-2 rounded-[12px] px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_14px_rgba(42,99,100,0.25)] transition ${copied ? 'bg-[#1e6b4c]' : 'bg-[#2A6364] hover:bg-[#1e5152]'}`}>
-          {copied ? (
-            <><svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg> تم النسخ!</>
-          ) : (
-            <><svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg> نسخ للـ LMS</>
-          )}
+        <button onClick={() => { navigator.clipboard.writeText(lmsText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); }); }}
+          className={`inline-flex items-center gap-1.5 rounded-[10px] px-4 py-2.5 text-[12px] font-bold text-white transition ${copied ? 'bg-[#4F8F7A]' : 'bg-[#2A6364] hover:bg-[#1e5152]'}`}>
+          {copied ? '✓ تم النسخ' : 'نسخ للـ LMS'}
         </button>
-        <button type="button" onClick={onReset}
-          className="inline-flex items-center gap-2 rounded-[12px] border border-[#dce6e3] bg-white px-5 py-2.5 text-[13px] font-bold text-[#6d7b78] transition hover:border-[#2A6364]/30 hover:text-[#2A6364]">
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 9H5V5" /><path d="M5 9C6.8 6.6 9 5.5 12 5.5c4.7 0 8 3.3 8 8s-3.3 8-8 8c-3.3 0-5.8-1.3-7.5-4" />
-          </svg>
+        <button onClick={onReset} className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#DADBD9] bg-white px-4 py-2.5 text-[12px] font-bold text-[#5A5A5A] hover:border-[#2A6364]/30">
           طلب جديد
         </button>
       </div>
@@ -1104,153 +913,44 @@ function SuccessView({ order, onReset }: { order: SubmittedOrder; onReset: () =>
   );
 }
 
-/* ─── Shared sub-components ─── */
-function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; setQty: (id: string, qty: number) => void }) {
-  return (
-    <article className={`overflow-hidden rounded-[18px] border bg-white transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(34,55,56,0.10)] ${qty > 0 ? 'border-[#2A6364]/40 ring-2 ring-[#d9e7e3]' : 'border-[#dce6e3] hover:border-[#b8cbc6]'}`}>
-      <div className="aspect-[4/3] overflow-hidden bg-[#f4f8f7]">
-        {item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.title} loading="lazy" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <CategoryIllustration category={item.category} className="h-16 w-16" />
-          </div>
-        )}
-      </div>
-      <div className="space-y-3 p-3.5">
-        <div>
-          <div className="text-[14px] font-extrabold text-[#223738] leading-snug">{item.title}</div>
-          <div className="mt-0.5 text-[11px] text-[#6d7b78]">{item.category}</div>
-        </div>
-        <StockLine item={item} />
-        {qty > 0 ? (
-          <div className="flex items-center justify-between gap-2">
-            <QuantityControl value={qty} onMinus={() => setQty(item.id, qty - 1)} onPlus={() => setQty(item.id, qty + 1)} onChange={(v) => setQty(item.id, v)} />
-            <span className="rounded-full bg-[#eef5f4] px-2.5 py-1 text-[11px] font-bold text-[#2A6364]">✓ مضاف</span>
-          </div>
-        ) : (
-          <button type="button" onClick={() => setQty(item.id, 1)}
-            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-[10px] border border-[#dce6e3] bg-[#f8fbfb] text-[13px] font-semibold text-[#2A6364] transition hover:border-[#2A6364]/40 hover:bg-[#eef5f4]">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-            إضافة للطلب
-          </button>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function CheckoutBar({ count, uniqueCount, onCheckout }: { count: number; uniqueCount: number; onCheckout: () => void }) {
-  return (
-    <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-[#dce6e3] bg-white/94 px-4 py-3 shadow-[0_-12px_32px_rgba(34,55,56,0.12)] backdrop-blur">
-      <div className="mx-auto flex max-w-[880px] items-center justify-between gap-3 rounded-[14px] border border-[#dce6e3] bg-white p-2 shadow-[0_4px_16px_rgba(34,55,56,0.06)]">
-        <div className="flex items-center gap-3 px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2A6364] text-[13px] font-extrabold text-white">{count}</div>
-          <div>
-            <div className="text-[13px] font-bold text-[#223738]">{count} مادة محددة</div>
-            <div className="text-[11px] text-[#6d7b78]">{uniqueCount} صنف مختلف</div>
-          </div>
-        </div>
-        <button type="button" onClick={onCheckout}
-          className="flex h-11 shrink-0 items-center gap-2 rounded-[10px] bg-[#2A6364] px-5 text-[14px] font-bold text-white shadow-[0_6px_18px_rgba(42,99,100,0.25)] transition hover:bg-[#1e5152]">
-          اختيار القاعة
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ProductImage({ title, imageUrl, ratio, category }: { title: string; imageUrl?: string | null; ratio: string; category: string }) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => { setFailed(false); }, [imageUrl]);
-  return (
-    <div className={`${ratio} overflow-hidden bg-[#f4f8f7]`}>
-      {imageUrl && !failed ? (
-        <img src={imageUrl} alt={title} loading="lazy" onError={() => setFailed(true)} className="h-full w-full object-cover" />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center">
-          <CategoryIllustration category={category} className="h-16 w-16" />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function QuantityControl({ value, onMinus, onPlus, onChange }: { value: number; onMinus: () => void; onPlus: () => void; onChange: (v: number) => void }) {
-  return (
-    <div className="inline-flex h-9 items-center overflow-hidden rounded-full border border-[#dce6e3] bg-white shadow-[0_2px_8px_rgba(34,55,56,0.05)]">
-      <button type="button" onClick={onPlus} className="flex h-full w-9 items-center justify-center text-[20px] text-[#2A6364] hover:bg-[#eef5f4]">+</button>
-      <input type="number" min={0} value={value} onChange={(e) => onChange(Number(e.target.value))}
-        className="h-full w-12 border-x border-[#edf2f1] text-center text-[14px] font-bold outline-none" />
-      <button type="button" onClick={onMinus} className="flex h-full w-9 items-center justify-center text-[20px] text-[#2A6364] hover:bg-[#eef5f4]">−</button>
-    </div>
-  );
-}
-
-function StockLine({ item }: { item: StoreItem }) {
-  if (item.isOnDemand) return (
-    <div className="flex items-start gap-1.5 rounded-[8px] border border-[#e8ddbf] bg-[#fbf6ea] px-2.5 py-1.5 text-[11px] leading-5 text-[#7f6b43]">
-      <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-3 w-3 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
-      {item.onDemandNote || 'عند الطلب'}
-    </div>
-  );
-  const free = Math.max(item.stockQty - item.temporarilyReservedQty, 0);
-  const level = free === 0 ? 'نافد' : free < 5 ? 'منخفض' : 'متاح';
-  const color = free === 0 ? '#7c1e3e' : free < 5 ? '#8a6a37' : '#1e6b4c';
-  const bg = free === 0 ? '#fff1f3' : free < 5 ? '#fffbf0' : '#eef8f2';
-  return (
-    <div className="rounded-[8px] border px-2.5 py-1.5 text-[11px]" style={{ borderColor: `${color}30`, backgroundColor: bg }}>
-      <div className="flex items-center justify-between">
-        <span style={{ color }} className="font-bold">{level}</span>
-        <span style={{ color }} className="font-semibold">{free} {item.unit}</span>
-      </div>
-      {item.temporarilyReservedQty > 0 && <div className="mt-0.5 text-[#9aacaa]">محجوز مؤقتاً: {item.temporarilyReservedQty}</div>}
-    </div>
-  );
-}
-
-function NavBtn({ active, onClick, icon, badge, children }: { active: boolean; onClick: () => void; icon: React.ReactNode; badge?: number; children: React.ReactNode }) {
+/* ─── Shared primitives ─── */
+function NavBtn({ active, onClick, badge, children }: { active: boolean; onClick: () => void; badge?: number; children: React.ReactNode }) {
   return (
     <button type="button" onClick={onClick}
-      className={`relative inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-2 text-[12px] font-semibold transition ${
-        active ? 'border-[#2A6364]/30 bg-[#2A6364] text-white shadow-[0_4px_12px_rgba(42,99,100,0.2)]' : 'border-[#dce6e3] bg-white text-[#4a5e5d] hover:border-[#b8cbc6] hover:bg-[#f4f9f8]'
-      }`}>
-      {icon}{children}
+      className={`relative rounded-[8px] border px-3 py-2 text-[12px] font-semibold transition ${active ? 'border-[#2A6364] bg-[#2A6364] text-white' : 'border-[#DADBD9] bg-white text-[#5A5A5A] hover:border-[#2A6364]/30 hover:text-[#2A6364]'}`}>
+      {children}
       {badge !== undefined && badge > 0 && (
-        <span className="absolute -left-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#d0b284] text-[9px] font-extrabold text-[#1a3535]">{badge}</span>
+        <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#C7B08C] text-[9px] font-extrabold text-white">{badge}</span>
       )}
     </button>
   );
 }
 
-function StatChip({ label, value, color }: { label: string; value: number; color: string }) {
+function QuantityControl({ value, onMinus, onPlus, onChange }: { value: number; onMinus: () => void; onPlus: () => void; onChange: (v: number) => void }) {
   return (
-    <div className="rounded-[12px] border border-[#edf2f1] bg-white px-3 py-2 text-center shadow-[0_2px_8px_rgba(34,55,56,0.04)]">
-      <div className="text-[10px] font-semibold text-[#6d7b78]">{label}</div>
-      <div className="mt-0.5 text-[20px] font-extrabold" style={{ color }}>{value}</div>
+    <div className="inline-flex h-8 items-center overflow-hidden rounded-full border border-[#DADBD9] bg-white">
+      <button type="button" onClick={onPlus} className="flex h-full w-8 items-center justify-center text-[18px] text-[#2A6364] hover:bg-[#eef5f4]">+</button>
+      <input type="number" min={0} value={value} onChange={(e) => onChange(Number(e.target.value))} className="h-full w-10 border-x border-[#DADBD9] text-center text-[13px] font-bold outline-none" />
+      <button type="button" onClick={onMinus} className="flex h-full w-8 items-center justify-center text-[18px] text-[#2A6364] hover:bg-[#eef5f4]">−</button>
     </div>
   );
 }
 
-function FormField({ label, value, onChange, type = 'text', required = true }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean }) {
+function Field({ label, value, onChange, type = 'text', required = true, className = '' }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; className?: string }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-[11px] font-semibold text-[#4a5e5d]">{label}{required && <span className="text-[#7c1e3e]"> *</span>}</span>
+    <label className={`block ${className}`}>
+      <span className="mb-1 block text-[11px] font-semibold text-[#5A5A5A]">{label}</span>
       <input required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)}
-        className="h-10 w-full rounded-[10px] border border-[#dce6e3] bg-white px-3 text-[13px] outline-none transition focus:border-[#2A6364]/50 focus:shadow-[0_0_0_3px_rgba(42,99,100,0.08)]" />
+        className="h-9 w-full rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-3 text-[13px] outline-none transition focus:border-[#2A6364]/50 focus:bg-white" />
     </label>
   );
 }
 
-function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2.5 rounded-[12px] border border-[#edf2f1] bg-[#f8fbfb] px-3.5 py-2.5">
-      <div className="mt-0.5 text-[#2A6364]">{icon}</div>
-      <div>
-        <div className="text-[10px] font-semibold text-[#9aacaa]">{label}</div>
-        <div className="mt-0.5 text-[13px] font-bold text-[#223738]">{value}</div>
-      </div>
+    <div className="flex items-center justify-between text-[12px]">
+      <span className="text-[#B5BDBE]">{label}</span>
+      <span className="font-bold text-[#2A2A2A]">{value}</span>
     </div>
   );
 }
