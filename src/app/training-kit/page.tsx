@@ -473,10 +473,10 @@ function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; set
 
   return (
     <article className={`group flex flex-col overflow-hidden rounded-[14px] border bg-white transition hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.09)] ${qty > 0 ? 'border-[#2A6364]/40 ring-1 ring-[#2A6364]/15' : 'border-[#DADBD9]'}`}>
-      {/* Image */}
-      <div className="relative aspect-square overflow-hidden bg-[#F9F9F9]">
+      {/* Image — 4:3 ratio suits most professional product photos */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-[#F9F9F9]">
         {hasImg ? (
-          <img src={item.imageUrl!} alt={item.title} loading="lazy" className="h-full w-full object-cover" onError={() => setImgFailed(true)} />
+          <img src={item.imageUrl!} alt={item.title} loading="lazy" className="h-full w-full object-cover object-center" onError={() => setImgFailed(true)} />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <CategoryIllustration category={item.category} size={56} />
