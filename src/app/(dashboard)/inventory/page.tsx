@@ -221,9 +221,9 @@ async function fileToDataUrl(file: File): Promise<string> {
   return canvas.toDataURL('image/jpeg', 0.76);
 }
 
-/* ═════════════════════════════════════════════════════
-   BULK IMAGE UPLOAD — match files → items then save all
-═════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   BULK IMAGE UPLOAD v2 — loads ALL items, smarter matching
+═══════════════════════════════════════════════════════════ */
 
 type BulkMatch = {
   file: File;
@@ -233,82 +233,97 @@ type BulkMatch = {
   status: 'pending' | 'converting' | 'ready' | 'saving' | 'done' | 'error';
 };
 
-function normalizeBulk(text: string) {
+type SlimItem = { id: string; name: string; code: string; category: string; type: string; quantity: number; minStock: number; unitPrice?: number | null; financialTracking?: boolean };
+
+function nb(text: string) {
+  // Normalize Arabic + remove extension + unify separators
   return text.toLowerCase()
-    .replace(/\.[^.]+$/, '')
-    .replace(/[-_]/g, ' ')
-    .replace(/[أإآ]/g, 'ا')
-    .replace(/ة/g, 'ه')
-    .replace(/ى/g, 'ي')
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/\.[^.]+$/, '')          // remove extension
+    .replace(/[-_\.]/g, ' ')          // unify separators
+    .replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
+    .replace(/ؤ/g, 'و').replace(/ئ/g, 'ي').replace(/ء/g, '')
+    .replace(/\s+/g, ' ').trim();
 }
 
-function scoreMatch(filename: string, item: InventoryItem): number {
-  const fn = normalizeBulk(filename);
-  const name = normalizeBulk(item.name);
+function scoreItem(filename: string, item: SlimItem): number {
+  const fn = nb(filename);
+  const name = nb(item.name);
   const code = (item.code || '').toLowerCase().trim();
+  // Exact matches
   if (fn === name) return 100;
-  if (fn === code) return 95;
-  if (name.includes(fn) || fn.includes(name)) return 82;
-  if (code && (code.includes(fn) || fn.includes(code))) return 75;
-  const fnWords = fn.split(' ').filter((w) => w.length > 1);
-  const nameWords = name.split(' ').filter((w) => w.length > 1);
-  const overlap = fnWords.filter((w) => nameWords.some((nw) => nw.includes(w) || w.includes(nw))).length;
-  if (overlap > 0) return Math.round((overlap / Math.max(fnWords.length, nameWords.length)) * 65);
+  if (fn === code) return 96;
+  // Full containment
+  if (name === fn || name.includes(fn)) return 88;
+  if (fn.includes(name)) return 84;
+  if (code && (code.includes(fn) || fn.includes(code))) return 78;
+  // Word-level matching
+  const fnW = fn.split(' ').filter((w) => w.length > 1);
+  const nmW = name.split(' ').filter((w) => w.length > 1);
+  let hits = 0;
+  for (const fw of fnW) {
+    for (const nw of nmW) {
+      if (nw === fw || nw.startsWith(fw) || fw.startsWith(nw) || (fw.length > 3 && nw.includes(fw)) || (nw.length > 3 && fw.includes(nw))) {
+        hits++;
+        break;
+      }
+    }
+  }
+  if (hits > 0) return Math.max(15, Math.round((hits / Math.max(fnW.length, nmW.length)) * 72));
   return 0;
 }
 
-function ConfidenceBadge({ score }: { score: number }) {
-  const [color, label] =
-    score >= 85 ? ['bg-[#eef8f2] text-[#1e6b4c] border-[#cce6d7]', 'تطابق ممتاز'] :
-    score >= 55 ? ['bg-[#fffaf0] text-[#8a6a37] border-[#e8ddbf]', 'تطابق جيد'] :
-    score >= 30 ? ['bg-[#f4e7eb] text-[#7c1e3e] border-[#ecd0d8]', 'تطابق ضعيف'] :
-    ['bg-[#f3f5f5] text-[#8a9a98] border-[#dce6e3]', 'بدون تطابق'];
+function BulkBadge({ score }: { score: number }) {
+  const [cls, txt] =
+    score >= 85 ? ['bg-[#eef8f2] text-[#1e6b4c] border-[#cce6d7]', '✓ ممتاز'] :
+    score >= 60 ? ['bg-[#fffaf0] text-[#8a6a37] border-[#e8ddbf]', '~ جيد'] :
+    score >= 25 ? ['bg-[#f4e7eb] text-[#7c1e3e] border-[#ecd0d8]', '? ضعيف'] :
+    ['bg-[#f3f5f5] text-[#8a9a98] border-[#dce6e3]', '— بدون تطابق'];
   return (
-    <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${color}`}>
-      {score > 0 ? `${score}% — ${label}` : label}
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${cls}`}>
+      {txt}{score > 0 && <span className="opacity-60">({score}%)</span>}
     </span>
   );
 }
 
-function BulkUploadModal({
-  items,
-  onClose,
-  onDone,
-}: {
-  items: InventoryItem[];
-  onClose: () => void;
-  onDone: () => Promise<void>;
-}) {
+function BulkUploadModal({ onClose, onDone }: { onClose: () => void; onDone: () => Promise<void> }) {
+  const [allItems, setAllItems] = useState<SlimItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(true);
   const [matches, setMatches] = useState<BulkMatch[]>([]);
   const [step, setStep] = useState<'select' | 'review' | 'saving' | 'done'>('select');
   const [progress, setProgress] = useState({ done: 0, total: 0, errors: 0 });
   const [dragOver, setDragOver] = useState(false);
+  const [itemSearch, setItemSearch] = useState<Record<number, string>>({});
+
+  // Load ALL inventory items on open
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/inventory?page=1&limit=500', { cache: 'no-store' });
+        const json = await res.json().catch(() => ({}));
+        if (mounted) setAllItems(Array.isArray(json.data) ? json.data : []);
+      } catch { /**/ } finally {
+        if (mounted) setLoadingItems(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   async function processFiles(files: File[]) {
-    const imageFiles = files.filter((f) => f.type.startsWith('image/'));
-    if (!imageFiles.length) return;
-
-    const initial: BulkMatch[] = imageFiles.map((file) => {
-      const scores = items
-        .map((item) => ({ item, score: scoreMatch(file.name, item) }))
+    const imgs = files.filter((f) => f.type.startsWith('image/'));
+    if (!imgs.length) return;
+    const initial: BulkMatch[] = imgs.map((file) => {
+      const ranked = allItems
+        .map((item) => ({ item, score: scoreItem(file.name, item) }))
         .sort((a, b) => b.score - a.score);
-      const best = scores[0];
-      return {
-        file,
-        dataUrl: null,
-        itemId: best.score >= 30 ? best.item.id : null,
-        confidence: best.score,
-        status: 'converting' as const,
-      };
+      const best = ranked[0];
+      return { file, dataUrl: null, itemId: best?.score >= 20 ? best.item.id : null, confidence: best?.score ?? 0, status: 'converting' as const };
     });
     setMatches(initial);
     setStep('review');
-
-    for (let i = 0; i < imageFiles.length; i++) {
+    for (let i = 0; i < imgs.length; i++) {
       try {
-        const dataUrl = await fileToDataUrl(imageFiles[i]);
+        const dataUrl = await fileToDataUrl(imgs[i]);
         setMatches((prev) => prev.map((m, idx) => idx === i ? { ...m, dataUrl, status: 'ready' } : m));
       } catch {
         setMatches((prev) => prev.map((m, idx) => idx === i ? { ...m, status: 'error' } : m));
@@ -316,102 +331,81 @@ function BulkUploadModal({
     }
   }
 
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    setDragOver(false);
-    processFiles(Array.from(e.dataTransfer.files));
-  }
-
-  function setItemId(idx: number, itemId: string) {
-    setMatches((prev) => prev.map((m, i) => i === idx ? { ...m, itemId } : m));
-  }
-
-  function removeMatch(idx: number) {
-    setMatches((prev) => prev.filter((_, i) => i !== idx));
-  }
-
   async function saveAll() {
     const toSave = matches.filter((m) => m.itemId && m.dataUrl);
     setProgress({ done: 0, total: toSave.length, errors: 0 });
     setStep('saving');
-
     for (const match of toSave) {
-      const item = items.find((i) => i.id === match.itemId);
+      const item = allItems.find((i) => i.id === match.itemId);
       if (!item) continue;
       try {
         await fetch(`/api/inventory/${match.itemId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: item.name,
-            category: item.category,
-            type: item.type,
-            quantity: item.quantity,
-            minStock: item.minStock,
-            unitPrice: item.unitPrice ?? null,
-            financialTracking: item.financialTracking || false,
-            imageUrl: match.dataUrl,
-            showInStore: true,
-            storeOnDemandNote: getStoreMeta(item)?.onDemandNote || null,
-            storeSortOrder: getStoreMeta(item)?.sortOrder ?? 0,
-          }),
+          body: JSON.stringify({ name: item.name, category: item.category, type: item.type, quantity: item.quantity, minStock: item.minStock, unitPrice: item.unitPrice ?? null, financialTracking: item.financialTracking || false, imageUrl: match.dataUrl, showInStore: true }),
         });
         setProgress((prev) => ({ ...prev, done: prev.done + 1 }));
       } catch {
         setProgress((prev) => ({ ...prev, done: prev.done + 1, errors: prev.errors + 1 }));
       }
     }
-
     await onDone();
     setStep('done');
   }
 
   const readyCount = matches.filter((m) => m.status === 'ready' && m.itemId).length;
+  const unmatched = matches.filter((m) => !m.itemId).length;
   const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
 
+  function filteredItems(idx: number) {
+    const q = (itemSearch[idx] || '').toLowerCase();
+    if (!q) return allItems;
+    return allItems.filter((i) => i.name.toLowerCase().includes(q) || (i.code || '').toLowerCase().includes(q));
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" dir="rtl">
-      <div className="relative flex max-h-[90vh] w-full max-w-[900px] flex-col rounded-[20px] bg-white shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3" dir="rtl">
+      <div className="relative flex max-h-[92vh] w-full max-w-[980px] flex-col rounded-[20px] bg-white shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#dce6e3] px-5 py-4">
           <div>
             <h2 className="text-[18px] font-extrabold text-[#203634]">رفع صور دفعي</h2>
-            <p className="mt-0.5 text-[12px] text-[#8a9a98]">سمّ ملفات الصور باسم المادة — النظام سيطابقها تلقائياً</p>
+            <p className="mt-0.5 text-[12px] text-[#8a9a98]">
+              {loadingItems ? 'جاري تحميل قائمة المواد...' : `${allItems.length} مادة متاحة للمطابقة`}
+            </p>
           </div>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f4f8f7] text-[#5a6f6e] hover:bg-[#dce6e3]">✕</button>
         </div>
 
-        {/* Content */}
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
-
           {/* STEP: select */}
           {step === 'select' && (
             <div className="space-y-4">
-              {/* Instructions */}
-              <div className="rounded-[14px] border border-[#e8ddbf] bg-[#fffaf0] p-4">
-                <p className="text-[13px] font-bold text-[#8a6a37]">كيف يعمل الرفع الدفعي؟</p>
-                <ol className="mt-2 space-y-1.5 text-[12px] leading-6 text-[#7f6b43]" style={{ listStyle: 'arabic-indic', paddingRight: '1.2em' }}>
-                  <li>سمّ كل صورة بنفس اسم المادة في المخزون — مثلاً: <code className="rounded bg-[#f5edd8] px-1">أقلام سبورة.jpg</code></li>
-                  <li>اختر جميع الصور دفعة واحدة</li>
-                  <li>راجع المطابقات واعدّل أي مادة خاطئة</li>
-                  <li>اضغط «حفظ الكل» — ستُحفظ جميع الصور مرة واحدة</li>
-                </ol>
-                <p className="mt-2 text-[11px] text-[#9a7a48]">💡 يقبل النظام: JPG, PNG, WebP, AVIF — الحجم المثالي: أقل من 500KB للملف</p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  ['1', 'سمّ الصورة باسم المادة', 'مثال: أقلام سبورة.jpg أو سترة حماية.png'],
+                  ['2', 'اختر جميع الصور معاً', 'يمكن اختيار عدة مئات دفعة واحدة'],
+                  ['3', 'راجع وعدّل ثم احفظ', 'يُظهر النظام أفضل تطابق، وتقدر تعدّل يدوياً'],
+                ].map(([n, t, d]) => (
+                  <div key={n} className="rounded-[14px] border border-[#dce6e3] bg-[#f8fbfb] p-3">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2A6364] text-[12px] font-bold text-white">{n}</div>
+                    <div className="mt-2 text-[13px] font-bold text-[#223738]">{t}</div>
+                    <div className="mt-0.5 text-[11px] text-[#8a9a98]">{d}</div>
+                  </div>
+                ))}
               </div>
-
-              {/* Drop zone */}
               <label
-                className={`flex cursor-pointer flex-col items-center justify-center rounded-[16px] border-2 border-dashed py-14 transition ${dragOver ? 'border-[#2A6364] bg-[#eef5f4]' : 'border-[#DADBD9] bg-[#f8fbfb] hover:border-[#2A6364]/40 hover:bg-[#f4f9f8]'}`}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-[16px] border-2 border-dashed py-16 transition ${loadingItems ? 'opacity-50' : dragOver ? 'border-[#2A6364] bg-[#eef5f4]' : 'border-[#DADBD9] hover:border-[#2A6364]/40'}`}
+                onDragOver={(e) => { if (!loadingItems) { e.preventDefault(); setDragOver(true); } }}
                 onDragLeave={() => setDragOver(false)}
-                onDrop={handleDrop}
+                onDrop={(e) => { e.preventDefault(); setDragOver(false); if (!loadingItems) processFiles(Array.from(e.dataTransfer.files)); }}
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-10 w-10 text-[#B5BDBE]" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                 </svg>
-                <p className="mt-3 text-[14px] font-bold text-[#5A5A5A]">اسحب الصور هنا أو اضغط للاختيار</p>
-                <p className="mt-1 text-[12px] text-[#B5BDBE]">يمكن اختيار عدة صور دفعة واحدة</p>
-                <input type="file" multiple accept="image/*" className="hidden"
+                <p className="mt-3 text-[14px] font-bold text-[#5A5A5A]">{loadingItems ? 'انتظر...' : 'اسحب الصور هنا أو اضغط للاختيار'}</p>
+                <p className="mt-1 text-[11px] text-[#B5BDBE]">JPG · PNG · WebP · AVIF — أفضل جودة أقل من 500KB للملف</p>
+                <input type="file" multiple accept="image/*" disabled={loadingItems} className="hidden"
                   onChange={(e) => processFiles(Array.from(e.target.files || []))} />
               </label>
             </div>
@@ -421,80 +415,82 @@ function BulkUploadModal({
           {step === 'review' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[13px] text-[#5A5A5A]">
-                  <span className="font-bold text-[#2A6364]">{matches.length}</span> ملف · <span className="font-bold text-[#1e6b4c]">{readyCount}</span> مطابق وجاهز للحفظ
+                <div className="flex items-center gap-3 text-[13px]">
+                  <span className="rounded-full bg-[#eef5f4] px-3 py-1 font-bold text-[#2A6364]">{matches.length} ملف</span>
+                  <span className="rounded-full bg-[#eef8f2] px-3 py-1 font-bold text-[#1e6b4c]">{readyCount} جاهز</span>
+                  {unmatched > 0 && <span className="rounded-full bg-[#fffaf0] px-3 py-1 font-bold text-[#8a6a37]">{unmatched} يحتاج تعيين يدوي</span>}
                 </div>
                 <button onClick={() => { setMatches([]); setStep('select'); }} className="text-[12px] text-[#2A6364] underline">اختيار صور أخرى</button>
               </div>
 
-              <div className="overflow-hidden rounded-[14px] border border-[#dce6e3]">
-                <table className="w-full text-right text-[13px]">
-                  <thead>
-                    <tr className="bg-[#f4f8f7] text-[11px] text-[#2A6364]">
-                      <th className="px-3 py-2.5 font-bold">الصورة</th>
-                      <th className="px-3 py-2.5 font-bold">اسم الملف</th>
-                      <th className="px-3 py-2.5 font-bold">التطابق</th>
-                      <th className="px-3 py-2.5 font-bold">المادة المطابقة</th>
-                      <th className="px-3 py-2.5 font-bold"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#f0f4f3]">
-                    {matches.map((m, idx) => (
-                      <tr key={idx} className={`${!m.itemId ? 'bg-[#fffaf0]' : ''}`}>
-                        {/* Thumbnail */}
-                        <td className="px-3 py-2">
-                          <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded-[8px] border border-[#dce6e3] bg-[#f4f8f7]">
-                            {m.status === 'converting' ? (
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#dce6e3] border-t-[#2A6364]" />
-                            ) : m.dataUrl ? (
-                              <img src={m.dataUrl} alt="" className="h-full w-full object-cover" />
-                            ) : (
-                              <span className="text-[10px] text-[#B5BDBE]">خطأ</span>
-                            )}
+              <div className="space-y-2">
+                {matches.map((m, idx) => {
+                  const matched = allItems.find((i) => i.id === m.itemId);
+                  const isOk = m.status === 'ready' && m.itemId;
+                  return (
+                    <div key={idx} className={`flex items-start gap-3 rounded-[12px] border p-3 ${isOk ? 'border-[#cce6d7] bg-[#f8fdfb]' : 'border-[#e8ddbf] bg-[#fffbf0]'}`}>
+                      {/* Thumb */}
+                      <div className="flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[#dce6e3] bg-[#f4f8f7]">
+                        {m.status === 'converting' ? <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#dce6e3] border-t-[#2A6364]" /> :
+                         m.dataUrl ? <img src={m.dataUrl} alt="" className="h-full w-full object-cover" /> :
+                         <span className="text-[10px] text-[#B5BDBE]">خطأ</span>}
+                      </div>
+                      {/* Info */}
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="max-w-[220px] truncate text-[12px] font-bold text-[#223738]">{m.file.name}</span>
+                          <BulkBadge score={m.confidence} />
+                          <span className="text-[10px] text-[#B5BDBE]">{(m.file.size / 1024).toFixed(0)} KB</span>
+                        </div>
+                        {/* Matched item name or search+select */}
+                        {matched && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[12px] text-[#1e6b4c]">→ {matched.name} ({matched.code})</span>
+                            <button onClick={() => setMatches((p) => p.map((mm, i) => i === idx ? { ...mm, itemId: null, confidence: 0 } : mm))}
+                              className="text-[10px] text-[#7c1e3e] underline">تغيير</button>
                           </div>
-                        </td>
-                        {/* Filename */}
-                        <td className="px-3 py-2">
-                          <div className="max-w-[180px] truncate text-[12px] text-[#5A5A5A]">{m.file.name}</div>
-                          <div className="text-[10px] text-[#B5BDBE]">{(m.file.size / 1024).toFixed(0)} KB</div>
-                        </td>
-                        {/* Confidence */}
-                        <td className="px-3 py-2"><ConfidenceBadge score={m.confidence} /></td>
-                        {/* Item selector */}
-                        <td className="px-3 py-2">
-                          <select
-                            value={m.itemId || ''}
-                            onChange={(e) => setItemId(idx, e.target.value)}
-                            className="h-9 w-full min-w-[200px] rounded-[8px] border border-[#dce6e3] bg-white px-2 text-[12px] outline-none focus:border-[#2A6364]/40"
-                          >
-                            <option value="">— اختر المادة يدوياً —</option>
-                            {items.map((item) => (
-                              <option key={item.id} value={item.id}>{item.name} ({item.code})</option>
-                            ))}
-                          </select>
-                        </td>
-                        {/* Remove */}
-                        <td className="px-3 py-2">
-                          <button onClick={() => removeMatch(idx)} className="text-[#7c1e3e] hover:underline text-[11px]">حذف</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        )}
+                        {!matched && (
+                          <div className="flex gap-2">
+                            <input
+                              value={itemSearch[idx] || ''}
+                              onChange={(e) => setItemSearch((p) => ({ ...p, [idx]: e.target.value }))}
+                              placeholder="اكتب لبحث عن المادة..."
+                              className="h-8 flex-1 rounded-[8px] border border-[#dce6e3] px-2 text-[12px] outline-none focus:border-[#2A6364]/40"
+                            />
+                            <select
+                              value=""
+                              onChange={(e) => { if (e.target.value) setMatches((p) => p.map((mm, i) => i === idx ? { ...mm, itemId: e.target.value, confidence: 90 } : mm)); }}
+                              className="h-8 max-w-[260px] rounded-[8px] border border-[#dce6e3] bg-white px-2 text-[12px] outline-none focus:border-[#2A6364]/40"
+                            >
+                              <option value="">— اختر المادة —</option>
+                              {filteredItems(idx).slice(0, 40).map((item) => (
+                                <option key={item.id} value={item.id}>{item.name} ({item.code})</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                      {/* Remove */}
+                      <button onClick={() => setMatches((p) => p.filter((_, i) => i !== idx))}
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#B5BDBE] hover:bg-[#f4e7eb] hover:text-[#7c1e3e]">✕</button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* STEP: saving */}
+          {/* STEP: saving / done */}
           {(step === 'saving' || step === 'done') && (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="flex flex-col items-center justify-center py-16 text-center">
               {step === 'saving' ? (
                 <>
                   <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#dce6e3] border-t-[#2A6364]" />
                   <p className="mt-4 text-[16px] font-bold text-[#203634]">جاري الحفظ...</p>
                   <p className="mt-1 text-[13px] text-[#8a9a98]">{progress.done} من {progress.total}</p>
-                  <div className="mt-4 h-2 w-full max-w-[320px] overflow-hidden rounded-full bg-[#edf3f2]">
-                    <div className="h-2 rounded-full bg-[#2A6364] transition-all duration-300" style={{ width: `${pct}%` }} />
+                  <div className="mt-4 h-2.5 w-full max-w-[360px] overflow-hidden rounded-full bg-[#edf3f2]">
+                    <div className="h-full rounded-full bg-[#2A6364] transition-all duration-300" style={{ width: `${pct}%` }} />
                   </div>
                 </>
               ) : (
@@ -502,37 +498,31 @@ function BulkUploadModal({
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eef5f4]">
                     <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-[#2A6364]" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                   </div>
-                  <p className="mt-4 text-[18px] font-extrabold text-[#203634]">تم حفظ الصور بنجاح!</p>
-                  <p className="mt-1 text-[13px] text-[#8a9a98]">
-                    {progress.done - progress.errors} صورة محفوظة
-                    {progress.errors > 0 && ` · ${progress.errors} أخطاء`}
-                  </p>
+                  <p className="mt-4 text-[20px] font-extrabold text-[#203634]">تم حفظ الصور!</p>
+                  <p className="mt-1 text-[13px] text-[#8a9a98]">{progress.done - progress.errors} صورة محفوظة{progress.errors > 0 && ` · ${progress.errors} أخطاء`}</p>
                 </>
               )}
             </div>
           )}
         </div>
 
-        {/* Footer actions */}
+        {/* Footer */}
         {step === 'review' && (
-          <div className="flex items-center justify-between border-t border-[#dce6e3] px-5 py-4">
+          <div className="flex items-center justify-between border-t border-[#dce6e3] px-5 py-3.5">
             <div className="text-[12px] text-[#8a9a98]">
-              {readyCount === 0 ? 'لا توجد صور جاهزة للحفظ' : `${readyCount} صورة ستُحفظ`}
+              {readyCount === 0 ? 'اختر مادة لكل صورة' : `${readyCount} صورة جاهزة للحفظ`}
+              {unmatched > 0 && <span className="mr-2 text-[#8a6a37]">({unmatched} غير معيّنة لن تُحفظ)</span>}
             </div>
             <div className="flex gap-2">
               <Button variant="ghost" className="border border-slate-200" onClick={onClose}>إلغاء</Button>
-              <Button
-                className="bg-[#2A6364] text-white hover:bg-[#214f50]"
-                disabled={readyCount === 0}
-                onClick={saveAll}
-              >
+              <Button className="bg-[#2A6364] text-white hover:bg-[#214f50]" disabled={readyCount === 0} onClick={saveAll}>
                 حفظ {readyCount} صورة
               </Button>
             </div>
           </div>
         )}
         {step === 'done' && (
-          <div className="flex justify-center border-t border-[#dce6e3] px-5 py-4">
+          <div className="flex justify-center border-t border-[#dce6e3] px-5 py-3.5">
             <Button className="bg-[#2A6364] text-white hover:bg-[#214f50]" onClick={onClose}>إغلاق</Button>
           </div>
         )}
@@ -949,7 +939,6 @@ export default function InventoryPage() {
 
       {showBulkUpload ? (
         <BulkUploadModal
-          items={items}
           onClose={() => setShowBulkUpload(false)}
           onDone={async () => { await fetchInventory(); await fetchBundles(); }}
         />
