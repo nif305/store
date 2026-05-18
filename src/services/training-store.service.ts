@@ -794,6 +794,28 @@ export async function createTrainerNeed(data: any) {
     });
   }
 
+  // Audit log — training kit submission
+  await prisma.auditLog.create({
+    data: {
+      action: 'TRAINER_NEED_CREATED',
+      entity: 'TrainerNeed',
+      entityId: need.code,
+      details: JSON.stringify({
+        code: need.code,
+        trainerName,
+        courseName,
+        traineeCount,
+        startDate: startDate?.toISOString().slice(0, 10),
+        endDate: endDate?.toISOString().slice(0, 10),
+        itemsCount: need.items.length,
+        hasSuggestedItems: suggestedItems.length > 0,
+        suggestedCount: suggestedItems.length,
+        hasRoomRequest: !!primaryRoomId,
+        source: 'training-kit',
+      }),
+    },
+  });
+
   return need;
 }
 
@@ -938,6 +960,14 @@ export async function assignTrainerNeed(id: string, assignedToId: string | null)
     },
     include: includeNeed(),
   });
+  await prisma.auditLog.create({
+    data: {
+      action: assignedToId ? 'TRAINER_NEED_ASSIGNED' : 'TRAINER_NEED_UNASSIGNED',
+      entity: 'TrainerNeed',
+      entityId: need.code,
+      details: JSON.stringify({ code: need.code, assignedToId, status: need.status }),
+    },
+  }).catch(() => undefined);
   return mapNeed(need);
 }
 
@@ -1211,6 +1241,23 @@ export async function convertTrainerNeedToRequest(id: string, session: SessionUs
       },
     });
   });
+
+  // Audit log — conversion to material request
+  await prisma.auditLog.create({
+    data: {
+      userId: session.id,
+      action: 'TRAINER_NEED_CONVERTED_TO_REQUEST',
+      entity: 'TrainerNeed',
+      entityId: need.code,
+      details: JSON.stringify({
+        needCode: need.code,
+        requestCode: request.code,
+        trainerName: need.trainerName,
+        courseName: need.courseName,
+        convertedBy: session.fullName || session.email,
+      }),
+    },
+  }).catch(() => undefined);
 
   return getTrainerNeed(id);
 }

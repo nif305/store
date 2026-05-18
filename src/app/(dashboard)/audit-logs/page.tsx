@@ -35,11 +35,28 @@ function normalizeArabic(value: string) {
 
 function actionVariant(action: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' {
   const a = action.toLowerCase();
-  if (a.includes('delete') || a.includes('remove') || a.includes('reject') || a.includes('cancel')) return 'danger';
-  if (a.includes('approve') || a.includes('issue') || a.includes('close') || a.includes('return') || a.includes('complete')) return 'success';
-  if (a.includes('update') || a.includes('edit') || a.includes('adjust')) return 'warning';
-  if (a.includes('create') || a.includes('add') || a.includes('new')) return 'info';
+  if (a.includes('delete') || a.includes('remove') || a.includes('reject') || a.includes('cancel') || a.includes('unassigned')) return 'danger';
+  if (a.includes('approve') || a.includes('issue') || a.includes('close') || a.includes('return') || a.includes('complete') || a.includes('converted')) return 'success';
+  if (a.includes('update') || a.includes('edit') || a.includes('adjust') || a.includes('assigned')) return 'warning';
+  if (a.includes('create') || a.includes('add') || a.includes('new') || a.includes('created')) return 'info';
   return 'neutral';
+}
+
+const ACTION_LABELS: Record<string, string> = {
+  TRAINER_NEED_CREATED: 'إنشاء احتياج مدرب',
+  TRAINER_NEED_ASSIGNED: 'تعيين المنسق',
+  TRAINER_NEED_UNASSIGNED: 'إلغاء التعيين',
+  TRAINER_NEED_CONVERTED_TO_REQUEST: 'تحويل إلى طلب مواد',
+  TRAINER_NEED_UPDATED: 'تعديل الاحتياج',
+  TRAINER_NEED_CANCELLED: 'إلغاء الاحتياج',
+};
+
+function actionLabel(action: string) {
+  return ACTION_LABELS[action] || action;
+}
+
+function isTrainingKitEvent(action: string) {
+  return action.startsWith('TRAINER_NEED');
 }
 
 export default function AuditLogsPage() {
@@ -99,7 +116,7 @@ export default function AuditLogsPage() {
     decisions: rows.filter((row) => /approve|reject|issue|close|return|complete/i.test(row.action)).length,
   }), [rows, pagination.total]);
 
-  const entityOptions = ['Request', 'ReturnRequest', 'CustodyRecord', 'InventoryItem'];
+  const entityOptions = ['TrainerNeed', 'Request', 'ReturnRequest', 'CustodyRecord', 'InventoryItem'];
 
   function prettyDetails(value?: string | null) {
     if (!value) return '—';
@@ -168,7 +185,10 @@ export default function AuditLogsPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={actionVariant(row.action)}>{row.action}</Badge>
+                  <Badge variant={actionVariant(row.action)}>{actionLabel(row.action)}</Badge>
+                  {isTrainingKitEvent(row.action) && (
+                    <span className="rounded-full border border-[#d9c99f] bg-[#fffaf0] px-2.5 py-0.5 text-[10px] font-bold text-[#8a6a37]">مساعد تجهيز الدورة</span>
+                  )}
                   {row.entity ? <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-700">{row.entity}</span> : null}
                   {row.entityId ? <span className="rounded-full bg-[#016564]/10 px-3 py-1 text-[11px] text-[#016564]">{row.entityId}</span> : null}
                 </div>

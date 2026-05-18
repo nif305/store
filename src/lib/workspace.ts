@@ -67,22 +67,7 @@ export function getWorkspaceGroups(
   language: AppLanguage = 'ar',
   options: { canManageTrainerNeeds?: boolean } = {}
 ): WorkspaceNavGroup[] {
-  const systemItems: WorkspaceNavItem[] = [];
-
-  if (canAccessWorkspace(role, 'materials')) {
-    systemItems.push({
-      href: '/materials/dashboard',
-      label: label(language, 'workspace.materialsTitle'),
-    });
-  }
-
-  const groups: WorkspaceNavGroup[] = [
-    {
-      key: 'systems',
-      title: label(language, 'workspace.systems'),
-      items: systemItems,
-    },
-  ];
+  const groups: WorkspaceNavGroup[] = [];
 
   if (workspace === 'materials') {
     groups.push(
