@@ -1,7 +1,72 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+
+/* ══════════════════════════════════════
+   Performance data type
+══════════════════════════════════════ */
+type PerformanceData = {
+  totalRequests: number; totalUnitsRequested: number; fulfillmentRate: number;
+  requestsByStatus: { pending: number; issued: number; returned: number; rejected: number };
+  monthlyTrend: { month: string; year: number; count: number }[];
+  custody: { active: number; overdue: number; returned: number };
+  returns: { pending: number; approved: number; rejected: number };
+  trainerNeedsAssigned: number;
+};
+
+/* ── Donut chart ── */
+function Donut({ segments, size = 120, stroke = 18, label, value }: {
+  segments: { color: string; value: number }[]; size?: number; stroke?: number; label: string; value: string | number;
+}) {
+  const r = (size / 2) - (stroke / 2);
+  const c = 2 * Math.PI * r;
+  const total = Math.max(segments.reduce((s, seg) => s + seg.value, 0), 1);
+  let offset = 0;
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#DADBD9" strokeWidth={stroke} />
+        {segments.map((seg, i) => {
+          const dash = (seg.value / total) * c;
+          const el = <circle key={i} cx={size/2} cy={size/2} r={r} fill="none" stroke={seg.color} strokeWidth={stroke} strokeDasharray={`${dash} ${c - dash}`} strokeDashoffset={-offset} strokeLinecap="round" />;
+          offset += dash;
+          return el;
+        })}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <div className="text-[10px] leading-tight text-[#B5BDBE]">{label}</div>
+        <div className="text-[18px] font-extrabold text-[#2A2A2A]">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Bar chart ── */
+function BarChart({ data }: { data: { month: string; count: number }[] }) {
+  const max = Math.max(...data.map((d) => d.count), 1);
+  return (
+    <div className="flex h-[90px] items-end gap-1.5">
+      {data.map((d, i) => (
+        <div key={i} className="flex flex-1 flex-col items-center gap-1">
+          <div className="text-[9px] font-bold text-[#2A6364]">{d.count > 0 ? d.count : ''}</div>
+          <div className="w-full rounded-t-[4px] bg-[#2A6364] transition-all" style={{ height: `${Math.max((d.count / max) * 60, d.count > 0 ? 4 : 2)}px`, opacity: d.count > 0 ? 1 : 0.2 }} />
+          <div className="text-[8px] text-[#B5BDBE] text-center leading-tight">{d.month.slice(0, 3)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── KPI chip ── */
+function KpiChip({ label, value, color, bg }: { label: string; value: string | number; color: string; bg: string }) {
+  return (
+    <div className="flex flex-col items-center rounded-[12px] border px-3 py-2.5 text-center" style={{ backgroundColor: bg, borderColor: `${color}30` }}>
+      <div className="text-[22px] font-extrabold" style={{ color }}>{value}</div>
+      <div className="mt-0.5 text-[10px] font-semibold" style={{ color: `${color}bb` }}>{label}</div>
+    </div>
+  );
+}
 
 /* ══════════════════════════════════════
    Types
@@ -311,6 +376,16 @@ export function EmployeeDashboard({ metrics }: { metrics: Metrics | null }) {
   const { user } = useAuth();
   const [showStore, setShowStore] = useState(false);
   const [successCode, setSuccessCode] = useState('');
+  const [perf, setPerf] = useState<PerformanceData | null>(null);
+  const [perfLoading, setPerfLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/employee/performance', { cache: 'no-store', credentials: 'include' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => d && setPerf(d))
+      .catch(() => null)
+      .finally(() => setPerfLoading(false));
+  }, []);
 
   const greetHour = new Date().getHours();
   const greeting = greetHour < 12 ? 'صباح الخير' : greetHour < 17 ? 'مساء الخير' : 'مساء النور';
@@ -422,6 +497,145 @@ export function EmployeeDashboard({ metrics }: { metrics: Metrics | null }) {
             لديك <strong className="mx-1">{metrics?.delayedCustody}</strong> عهدة متأخرة التسليم
             <a href="/materials/custody" className="mr-auto font-bold underline">عرض</a>
           </div>
+        )}
+      </section>
+
+      {/* ── Performance Report ── */}
+      <section className="rounded-[20px] border border-[#DADBD9] bg-white p-5" dir="rtl">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#2A6364]/10">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-[#2A6364]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3v18h18"/><path d="M18 9l-5-5-5 5"/><path d="M18 9v7"/>
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-[16px] font-extrabold text-[#2A2A2A]">تقرير أدائي</h2>
+              <div className="text-[11px] text-[#B5BDBE]">آخر 6 أشهر</div>
+            </div>
+          </div>
+          <a href="/materials/requests" className="text-[12px] font-semibold text-[#2A6364] hover:underline">تفاصيل الطلبات</a>
+        </div>
+
+        {perfLoading ? (
+          <div className="grid gap-3 sm:grid-cols-4">
+            {[1,2,3,4].map((i) => <div key={i} className="h-20 animate-pulse rounded-[14px] bg-[#F0F0F0]" />)}
+          </div>
+        ) : perf ? (
+          <>
+            {/* KPI row */}
+            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <KpiChip label="إجمالي الطلبات" value={perf.totalRequests} color="#2A6364" bg="#eef5f4" />
+              <KpiChip label="نسبة التلبية" value={`${perf.fulfillmentRate}%`} color={perf.fulfillmentRate >= 80 ? '#1e6b4c' : perf.fulfillmentRate >= 50 ? '#8a6a37' : '#73384B'} bg={perf.fulfillmentRate >= 80 ? '#e8f5ef' : perf.fulfillmentRate >= 50 ? '#f7f1e4' : '#f4e7eb'} />
+              <KpiChip label="وحدات مطلوبة" value={perf.totalUnitsRequested} color="#1b4f68" bg="#e7eff5" />
+              <KpiChip label="احتياجات مسندة" value={perf.trainerNeedsAssigned} color="#73384B" bg="#f4e7eb" />
+            </div>
+
+            {/* Charts row */}
+            <div className="grid gap-5 sm:grid-cols-2">
+              {/* Request status donut */}
+              <div className="rounded-[16px] border border-[#DADBD9] bg-[#F9F9F9] p-4">
+                <div className="mb-3 text-[13px] font-extrabold text-[#2A2A2A]">حالة الطلبات</div>
+                <div className="flex items-center gap-5">
+                  <Donut
+                    size={130}
+                    stroke={20}
+                    label="طلب"
+                    value={perf.totalRequests}
+                    segments={[
+                      { color: '#2A6364', value: perf.requestsByStatus.issued },
+                      { color: '#4F8F7A', value: perf.requestsByStatus.returned },
+                      { color: '#C7B08C', value: perf.requestsByStatus.pending },
+                      { color: '#73384B', value: perf.requestsByStatus.rejected },
+                    ]}
+                  />
+                  <div className="flex flex-1 flex-col gap-2">
+                    {[
+                      { label: 'مصروفة', value: perf.requestsByStatus.issued, color: '#2A6364', bg: '#eef5f4' },
+                      { label: 'مرتجعة', value: perf.requestsByStatus.returned, color: '#4F8F7A', bg: '#edf4f0' },
+                      { label: 'معلقة', value: perf.requestsByStatus.pending, color: '#8a6a37', bg: '#f7f1e4' },
+                      { label: 'مرفوضة', value: perf.requestsByStatus.rejected, color: '#73384B', bg: '#f4e7eb' },
+                    ].map((s) => (
+                      <div key={s.label} className="flex items-center justify-between rounded-[8px] px-2.5 py-1" style={{ backgroundColor: s.bg }}>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
+                          <span className="text-[11px] font-semibold" style={{ color: s.color }}>{s.label}</span>
+                        </div>
+                        <span className="text-[13px] font-extrabold" style={{ color: s.color }}>{s.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Monthly trend bar chart */}
+              <div className="rounded-[16px] border border-[#DADBD9] bg-[#F9F9F9] p-4">
+                <div className="mb-3 text-[13px] font-extrabold text-[#2A2A2A]">الطلبات الشهرية</div>
+                <BarChart data={perf.monthlyTrend.map((m) => ({ month: m.month, count: m.count }))} />
+              </div>
+            </div>
+
+            {/* Custody + Returns row */}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {/* Custody health */}
+              <div className="rounded-[16px] border border-[#DADBD9] bg-[#F9F9F9] p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#2A6364]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2 4 6v6c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6l-8-4z"/>
+                  </svg>
+                  <span className="text-[13px] font-extrabold text-[#2A2A2A]">حالة العهدة</span>
+                </div>
+                <div className="flex gap-3">
+                  {[
+                    { label: 'نشطة', value: perf.custody.active, color: '#2A6364', bg: '#eef5f4' },
+                    { label: 'متأخرة', value: perf.custody.overdue, color: '#73384B', bg: '#f4e7eb' },
+                    { label: 'مُعادة', value: perf.custody.returned, color: '#4F8F7A', bg: '#edf4f0' },
+                  ].map((c) => (
+                    <div key={c.label} className="flex flex-1 flex-col items-center rounded-[12px] py-3" style={{ backgroundColor: c.bg }}>
+                      <div className="text-[22px] font-extrabold" style={{ color: c.color }}>{c.value}</div>
+                      <div className="text-[10px] font-semibold" style={{ color: `${c.color}aa` }}>{c.label}</div>
+                    </div>
+                  ))}
+                </div>
+                {perf.custody.overdue > 0 && (
+                  <div className="mt-2 flex items-center gap-1.5 rounded-[8px] border border-[#ecd0d8] bg-[#fff7f8] px-3 py-1.5 text-[11px] text-[#73384B]">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                    {perf.custody.overdue} عهدة تجاوزت تاريخ الإرجاع
+                    <a href="/materials/custody" className="mr-auto font-bold underline">عرض</a>
+                  </div>
+                )}
+              </div>
+
+              {/* Returns health */}
+              <div className="rounded-[16px] border border-[#DADBD9] bg-[#F9F9F9] p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#1b4f68]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 9H5V5"/><path d="M5 9C6.8 6.6 9 5.5 12 5.5c4.7 0 8 3.3 8 8s-3.3 8-8 8c-3.3 0-5.8-1.3-7.5-4"/>
+                  </svg>
+                  <span className="text-[13px] font-extrabold text-[#2A2A2A]">طلبات الإرجاع</span>
+                </div>
+                <div className="flex gap-3">
+                  {[
+                    { label: 'بانتظار', value: perf.returns.pending, color: '#8a6a37', bg: '#f7f1e4' },
+                    { label: 'مقبولة', value: perf.returns.approved, color: '#1e6b4c', bg: '#e8f5ef' },
+                    { label: 'مرفوضة', value: perf.returns.rejected, color: '#73384B', bg: '#f4e7eb' },
+                  ].map((c) => (
+                    <div key={c.label} className="flex flex-1 flex-col items-center rounded-[12px] py-3" style={{ backgroundColor: c.bg }}>
+                      <div className="text-[22px] font-extrabold" style={{ color: c.color }}>{c.value}</div>
+                      <div className="text-[10px] font-semibold" style={{ color: `${c.color}aa` }}>{c.label}</div>
+                    </div>
+                  ))}
+                </div>
+                <a href="/materials/returns"
+                  className="mt-2 flex h-8 w-full items-center justify-center gap-1 rounded-[8px] border border-[#DADBD9] text-[11px] font-semibold text-[#1b4f68] transition hover:bg-white">
+                  عرض المرتجعات
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                </a>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex h-32 items-center justify-center text-[13px] text-[#B5BDBE]">تعذر تحميل بيانات الأداء</div>
         )}
       </section>
 
