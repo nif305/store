@@ -4,8 +4,10 @@ import {
   canAdminRooms,
   canManageRooms,
   createTrainingRoom,
+  deleteTrainingRoom,
   getRoomsAdminCatalog,
   listRoomBookings,
+  seedRealRooms,
   updateTrainingRoom,
 } from '@/services/training-rooms.service';
 
@@ -42,10 +44,28 @@ export async function PATCH(request: NextRequest) {
     const session = await resolveSessionUser(request);
     if (!canAdminRooms(session)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     const body = await request.json();
+    // Seed real rooms action
+    if (body?.action === 'seed-real-rooms') {
+      const result = await seedRealRooms();
+      return NextResponse.json({ ok: true, ...result });
+    }
     const id = String(body?.id || '').trim();
     if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
     return NextResponse.json({ data: await updateTrainingRoom(id, body) });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'تعذر تحديث القاعة' }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await resolveSessionUser(request);
+    if (!canAdminRooms(session)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
+    const id = request.nextUrl.searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
+    await deleteTrainingRoom(id);
+    return NextResponse.json({ ok: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message || 'تعذر حذف القاعة' }, { status: 400 });
   }
 }

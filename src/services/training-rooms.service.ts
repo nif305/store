@@ -235,6 +235,83 @@ export async function updateTrainingRoom(id: string, data: any) {
   });
 }
 
+export async function deleteTrainingRoom(id: string) {
+  const hasBookings = await prisma.trainingRoomBooking.count({
+    where: { OR: [{ requestedRoomId: id }, { approvedRoomId: id }] },
+  });
+  if (hasBookings > 0) {
+    // Soft delete — just hide it
+    return prisma.trainingRoom.update({ where: { id }, data: { isVisible: false } });
+  }
+  return prisma.trainingRoom.delete({ where: { id } });
+}
+
+/* ─── Real rooms seed — replaces the default seed with actual building data ─── */
+export async function seedRealRooms(): Promise<{ created: number; updated: number }> {
+  type RoomDef = {
+    name: string; type: string; capacity: number; location: string;
+    description: string; layoutOptions: string[]; equipment: string[];
+    sortOrder: number;
+  };
+
+  const REAL_ROOMS: RoomDef[] = [
+    // قاعات الاجتماعات — مبنى وكالة التدريب
+    { name: 'Meeting Room (3-1)', type: 'قاعة اجتماعات', capacity: 10, location: 'مبنى وكالة التدريب — الطابق الثالث', description: 'قاعة اجتماعات صغيرة بسعة 10 أشخاص.', layoutOptions: ['طاولة مستطيلة', 'طاولة دائرية'], equipment: ['شاشة عرض', 'نظام صوتيات', 'تكييف'], sortOrder: 10 },
+    { name: 'Meeting Room (3-7)', type: 'قاعة اجتماعات', capacity: 7, location: 'مبنى وكالة التدريب — الطابق الثالث', description: 'قاعة اجتماعات صغيرة بسعة 7 أشخاص.', layoutOptions: ['طاولة مستطيلة'], equipment: ['شاشة عرض', 'تكييف'], sortOrder: 11 },
+    { name: 'Meeting Room (4-2)', type: 'قاعة اجتماعات', capacity: 12, location: 'مبنى وكالة التدريب — الطابق الرابع', description: 'قاعة اجتماعات بسعة 12 شخصاً.', layoutOptions: ['طاولة مستطيلة', 'طاولة دائرية'], equipment: ['شاشة عرض', 'نظام صوتيات', 'تكييف'], sortOrder: 12 },
+    { name: 'Meeting Room (4-7)', type: 'قاعة اجتماعات', capacity: 8, location: 'مبنى وكالة التدريب — الطابق الرابع', description: 'قاعة اجتماعات بسعة 8 أشخاص.', layoutOptions: ['طاولة مستطيلة'], equipment: ['شاشة عرض', 'تكييف'], sortOrder: 13 },
+    // المعامل — مبنى وكالة التدريب
+    { name: 'Lab 1', type: 'معمل حاسب آلي', capacity: 36, location: 'مبنى وكالة التدريب', description: 'أكبر المعامل وأهمها — مخصص لورش العمل الكبيرة. السعة القصوى 40.', layoutOptions: ['طاولات دائرية', 'ورش عمل كبيرة', 'معمل حاسب آلي'], equipment: ['أجهزة حاسب آلي', 'شاشة عرض كبيرة', 'بروجكتر', 'شبكة إنترنت', 'تكييف'], sortOrder: 20 },
+    { name: 'Lab 2', type: 'معمل حاسب آلي', capacity: 15, location: 'مبنى وكالة التدريب', description: 'معمل حاسب آلي بسعة 15 متدرباً.', layoutOptions: ['طاولات مدرجة', 'معمل حاسب آلي'], equipment: ['أجهزة حاسب آلي', 'شاشة عرض', 'شبكة إنترنت', 'تكييف'], sortOrder: 21 },
+    { name: 'Lab 3', type: 'معمل حاسب آلي', capacity: 24, location: 'مبنى وكالة التدريب', description: 'معمل حاسب آلي بسعة 24 متدرباً.', layoutOptions: ['طاولات مدرجة', 'معمل حاسب آلي'], equipment: ['أجهزة حاسب آلي', 'شاشة عرض', 'شبكة إنترنت', 'تكييف'], sortOrder: 22 },
+    { name: 'Lab 4', type: 'معمل حاسب آلي', capacity: 28, location: 'مبنى وكالة التدريب', description: 'معمل حاسب آلي بسعة 28 متدرباً.', layoutOptions: ['طاولات مدرجة', 'معمل حاسب آلي'], equipment: ['أجهزة حاسب آلي', 'شاشة عرض', 'شبكة إنترنت', 'تكييف'], sortOrder: 23 },
+    { name: 'Lab 5', type: 'معمل حاسب آلي', capacity: 24, location: 'مبنى وكالة التدريب', description: 'معمل حاسب آلي بسعة 24 متدرباً.', layoutOptions: ['طاولات مدرجة', 'معمل حاسب آلي'], equipment: ['أجهزة حاسب آلي', 'شاشة عرض', 'شبكة إنترنت', 'تكييف'], sortOrder: 24 },
+    { name: 'Lab 6', type: 'معمل حاسب آلي', capacity: 20, location: 'مبنى وكالة التدريب', description: 'معمل حاسب آلي بسعة أساسية 20 والقصوى 24.', layoutOptions: ['طاولات مدرجة', 'معمل حاسب آلي'], equipment: ['أجهزة حاسب آلي', 'شاشة عرض', 'شبكة إنترنت', 'تكييف'], sortOrder: 25 },
+    // القاعات التدريبية — مبنى وكالة التدريب
+    { name: 'Class 1', type: 'قاعة تدريبية', capacity: 56, location: 'مبنى وكالة التدريب', description: 'أكبر القاعات التدريبية بسعة 56 متدرباً.', layoutOptions: ['طاولات مدرجة', 'صفوف تدريبية'], equipment: ['شاشة عرض', 'بروجكتر', 'سبورة', 'نظام صوتيات', 'تكييف'], sortOrder: 30 },
+    { name: 'Class 2', type: 'قاعة تدريبية', capacity: 24, location: 'مبنى وكالة التدريب', description: 'قاعة تدريبية بسعة 24 متدرباً.', layoutOptions: ['طاولات مدرجة', 'صفوف تدريبية', 'طاولات دائرية'], equipment: ['شاشة عرض', 'بروجكتر', 'سبورة', 'تكييف'], sortOrder: 31 },
+    { name: 'Class 3', type: 'قاعة تدريبية', capacity: 24, location: 'مبنى وكالة التدريب', description: 'قاعة تدريبية بسعة 24 متدرباً.', layoutOptions: ['طاولات مدرجة', 'صفوف تدريبية', 'طاولات دائرية'], equipment: ['شاشة عرض', 'بروجكتر', 'سبورة', 'تكييف'], sortOrder: 32 },
+    { name: 'Class 4', type: 'قاعة تدريبية', capacity: 20, location: 'مبنى وكالة التدريب', description: 'قاعة تدريبية بسعة 20 متدرباً.', layoutOptions: ['طاولات مدرجة', 'صفوف تدريبية', 'طاولات دائرية'], equipment: ['شاشة عرض', 'بروجكتر', 'سبورة', 'تكييف'], sortOrder: 33 },
+    { name: 'Class 5', type: 'قاعة تدريبية', capacity: 20, location: 'مبنى وكالة التدريب', description: 'قاعة تدريبية بسعة 20 متدرباً.', layoutOptions: ['طاولات مدرجة', 'صفوف تدريبية', 'طاولات دائرية'], equipment: ['شاشة عرض', 'بروجكتر', 'سبورة', 'تكييف'], sortOrder: 34 },
+    { name: 'Class 6', type: 'قاعة تدريبية', capacity: 24, location: 'مبنى وكالة التدريب', description: 'قاعة تدريبية بسعة 24 متدرباً.', layoutOptions: ['طاولات مدرجة', 'صفوف تدريبية', 'طاولات دائرية'], equipment: ['شاشة عرض', 'بروجكتر', 'سبورة', 'تكييف'], sortOrder: 35 },
+    { name: 'Class 7', type: 'قاعة تدريبية', capacity: 16, location: 'مبنى وكالة التدريب', description: 'قاعة تدريبية بسعة 16 متدرباً.', layoutOptions: ['طاولات مدرجة', 'صفوف تدريبية'], equipment: ['شاشة عرض', 'سبورة', 'تكييف'], sortOrder: 36 },
+    { name: 'Class 8', type: 'قاعة تدريبية', capacity: 24, location: 'مبنى وكالة التدريب', description: 'قاعة تدريبية بسعة 24 متدرباً.', layoutOptions: ['طاولات مدرجة', 'صفوف تدريبية', 'طاولات دائرية'], equipment: ['شاشة عرض', 'بروجكتر', 'سبورة', 'تكييف'], sortOrder: 37 },
+    // مراكز خارج مبنى وكالة التدريب
+    { name: 'مركز السلامة المرورية', type: 'مركز خارجي', capacity: 30, location: 'خارج مبنى وكالة التدريب', description: 'مركز متخصص في تدريب السلامة المرورية والقيادة.', layoutOptions: ['ورش عمل', 'تدريب تطبيقي'], equipment: ['معدات تدريب متخصصة', 'شاشة عرض'], sortOrder: 50 },
+    { name: 'مركز الأمن السيبراني', type: 'مركز خارجي', capacity: 24, location: 'خارج مبنى وكالة التدريب', description: 'مركز متخصص في تدريب الأمن السيبراني والحماية الرقمية.', layoutOptions: ['معمل حاسب آلي', 'ورش عمل تطبيقية'], equipment: ['أجهزة حاسب متخصصة', 'شبكة مخصصة', 'شاشات عرض'], sortOrder: 51 },
+    { name: 'مركز الذكاء الاصطناعي', type: 'مركز خارجي', capacity: 20, location: 'خارج مبنى وكالة التدريب', description: 'مركز متخصص في برامج الذكاء الاصطناعي والبيانات الضخمة.', layoutOptions: ['معمل حاسب آلي', 'ورش عمل'], equipment: ['أجهزة عالية الأداء', 'شاشات عرض', 'شبكة سريعة'], sortOrder: 52 },
+    { name: 'النادي الرياضي', type: 'نشاط رياضي', capacity: 50, location: 'خارج مبنى وكالة التدريب', description: 'مرفق رياضي للأنشطة البدنية وبرامج اللياقة.', layoutOptions: ['فضاء مفتوح', 'نشاط جماعي'], equipment: ['معدات رياضية', 'مساحة مفتوحة'], sortOrder: 53 },
+    { name: 'معمل خبير', type: 'مركز خارجي', capacity: 20, location: 'خارج مبنى وكالة التدريب', description: 'معمل متخصص للتدريب التطبيقي والمحاكاة.', layoutOptions: ['معمل تطبيقي', 'محاكاة'], equipment: ['معدات تخصصية', 'شاشات عرض'], sortOrder: 54 },
+  ];
+
+  const existing = await prisma.trainingRoom.findMany({ select: { id: true, name: true } });
+  const existingByName = new Map(existing.map((r) => [r.name, r.id]));
+  let created = 0;
+  let updated = 0;
+
+  for (const room of REAL_ROOMS) {
+    const existingId = existingByName.get(room.name);
+    if (existingId) {
+      await prisma.trainingRoom.update({
+        where: { id: existingId },
+        data: {
+          type: room.type, capacity: room.capacity, location: room.location,
+          description: room.description, layoutOptions: room.layoutOptions,
+          equipment: room.equipment, sortOrder: room.sortOrder, isVisible: true,
+        },
+      });
+      updated++;
+    } else {
+      await prisma.trainingRoom.create({
+        data: { ...room, isVisible: true },
+      });
+      created++;
+    }
+  }
+
+  return { created, updated };
+}
+
 export async function createTrainingRoom(data: any) {
   const name = normalizeText(data.name);
   if (!name) throw new Error('اسم القاعة مطلوب');
