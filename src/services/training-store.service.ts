@@ -205,38 +205,20 @@ async function ensureStoreSeed() {
     }
   }
 
-  const missingOnDemand = ON_DEMAND_ITEMS.filter((title) => !onDemandTitles.has(title));
-  const seededOnDemandRows = existingCatalog.filter((item) => item.isOnDemand && ON_DEMAND_ITEMS.includes(item.title));
-  const retiredSeedRows = existingCatalog.filter((item) => item.isOnDemand && !ON_DEMAND_ITEMS.includes(item.title));
-  if (retiredSeedRows.length) {
+  // Do NOT auto-create standalone on-demand items.
+  // The store catalog must mirror the inventory — every visible item must
+  // have a corresponding InventoryItem. If an item is needed, add it to
+  // the inventory first (with quantity=0 if not yet stocked).
+  //
+  // Hide any orphaned catalog items that lost their inventory counterpart.
+  const inventoryIdSet = new Set(inventoryItems.map((i) => i.id));
+  const orphaned = existingCatalog.filter(
+    (item) => item.inventoryItemId && !inventoryIdSet.has(item.inventoryItemId)
+  );
+  if (orphaned.length) {
     await prisma.storeCatalogItem.updateMany({
-      where: { id: { in: retiredSeedRows.map((item) => item.id) } },
+      where: { id: { in: orphaned.map((i) => i.id) } },
       data: { isVisible: false },
-    });
-  }
-  const seededOnDemandRowsNeedingSync = seededOnDemandRows.filter((item) => item.category !== onDemandCategory(item.title));
-  if (seededOnDemandRowsNeedingSync.length) {
-    await Promise.all(
-      seededOnDemandRowsNeedingSync.map((item) =>
-        prisma.storeCatalogItem.update({
-          where: { id: item.id },
-          data: { category: onDemandCategory(item.title) },
-        })
-      )
-    );
-  }
-  if (missingOnDemand.length) {
-    await prisma.storeCatalogItem.createMany({
-      data: missingOnDemand.map((title, index) => ({
-        title,
-        description: ON_DEMAND_NOTE,
-        category: onDemandCategory(title),
-        isVisible: true,
-        isOnDemand: true,
-        onDemandNote: ON_DEMAND_NOTE,
-        sortOrder: 1000 + index,
-      })),
-      skipDuplicates: true,
     });
   }
 
@@ -373,6 +355,47 @@ export async function syncStoreCatalogWithInventory() {
   await ensureStoreSeed();
   const inventoryItems = await prisma.inventoryItem.findMany({ select: { id: true } });
   await Promise.all(inventoryItems.map((item) => syncInventoryItemWithStore(item.id)));
+}
+
+/**
+ * Full one-way sync: Inventory → Store.
+ * 1. Creates/updates a catalog entry for every inventory item.
+ * 2. Hides catalog entries whose inventory item was deleted.
+ * 3. Hides standalone catalog entries with no inventory link (on-demand orphans).
+ * Returns counts for reporting.
+ */
+export async function fullResyncInventoryToStore(): Promise<{ synced: number; hidden: number }> {
+  const inventoryItems = await prisma.inventoryItem.findMany({
+    orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+  });
+
+  // 1. Upsert a catalog entry for every inventory item
+  await Promise.all(inventoryItems.map((item) => syncInventoryItemWithStore(item.id)));
+
+  const inventoryIdSet = new Set(inventoryItems.map((i) => i.id));
+
+  // 2. Hide catalog entries that have no valid inventory counterpart
+  const allCatalog = await prisma.storeCatalogItem.findMany({
+    select: { id: true, inventoryItemId: true, isVisible: true },
+  });
+
+  const toHide = allCatalog.filter(
+    (c) => c.isVisible && (
+      // Linked to a deleted inventory item
+      (c.inventoryItemId && !inventoryIdSet.has(c.inventoryItemId)) ||
+      // Standalone (no inventory link at all)
+      !c.inventoryItemId
+    )
+  );
+
+  if (toHide.length) {
+    await prisma.storeCatalogItem.updateMany({
+      where: { id: { in: toHide.map((c) => c.id) } },
+      data: { isVisible: false },
+    });
+  }
+
+  return { synced: inventoryItems.length, hidden: toHide.length };
 }
 
 async function activeReservationsByInventory(inventoryIds?: string[]) {

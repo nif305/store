@@ -569,6 +569,8 @@ export default function InventoryPage() {
   const [generatingImages, setGeneratingImages] = useState(false);
   const [imageGenProgress, setImageGenProgress] = useState('');
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState('');
   const canModify = user?.role === 'manager' || user?.role === 'warehouse';
   const selectedBundle = useMemo(() => bundles.find((bundle) => bundle.id === selectedBundleId) || bundles[0], [bundles, selectedBundleId]);
   const catalogChoices = useMemo(() => storeItems.filter((item) => !item.isOnDemand), [storeItems]);
@@ -858,6 +860,25 @@ export default function InventoryPage() {
     setTimeout(() => setImageGenProgress(''), 4000);
   };
 
+  const syncStore = async () => {
+    setSyncing(true);
+    setSyncResult('');
+    try {
+      const res = await fetch('/api/inventory/sync', { method: 'POST', credentials: 'include' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || 'فشلت المزامنة');
+      setSyncResult(`تمت المزامنة — ${json.synced} مادة مزامَنة، ${json.hidden} مخفية ✓`);
+      await fetchInventory();
+      await fetchBundles();
+      setTimeout(() => setSyncResult(''), 5000);
+    } catch (err: any) {
+      setSyncResult(err?.message || 'فشلت المزامنة');
+      setTimeout(() => setSyncResult(''), 4000);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('');
@@ -876,14 +897,30 @@ export default function InventoryPage() {
       <section className="rounded-[14px] border border-[#dce6e3] bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="text-[13px] text-[#6f817f]">المخزون هو المصدر الأساسي للصور والكميات والظهور للمدرب</div>
-            <h1 className="mt-1 text-[28px] text-[#203634]">إدارة مواد المخزن</h1>
+            <h1 className="text-[26px] font-extrabold text-[#203634]">إدارة مواد المخزن</h1>
+            <div className="mt-1.5 flex items-start gap-2 text-[12px] text-[#6f817f]">
+              <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+              </svg>
+              <span>المتجر = المخزون تماماً. أي مادة تُضيفها هنا تظهر في المتجر تلقائياً، وأي مادة تحذفها تختفي من المتجر. اضغط <strong className="text-[#7c1e3e]">"مزامنة المتجر الآن"</strong> لإزالة أي تعارضات قديمة.</span>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {imageGenProgress && (
-              <span className="rounded-full border border-[#dce6e3] bg-[#f4f8f7] px-3 py-1 text-[12px] text-[#2A6364]">{imageGenProgress}</span>
+            {(imageGenProgress || syncResult) && (
+              <span className="rounded-full border border-[#dce6e3] bg-[#f4f8f7] px-3 py-1 text-[12px] text-[#2A6364]">{syncResult || imageGenProgress}</span>
             )}
             <Button variant="ghost" className="border border-slate-200" onClick={() => window.open('/training-kit', '_blank')}>معاينة المتجر</Button>
+            {canModify ? (
+              <Button
+                variant="ghost"
+                className="border border-[#7c1e3e]/25 bg-[#fff7f8] text-[#7c1e3e] hover:bg-[#fee8ec]"
+                disabled={syncing}
+                onClick={syncStore}
+                title="يُزامن المتجر مع المخزون ويُخفي المواد الزائدة"
+              >
+                {syncing ? 'جاري المزامنة...' : 'مزامنة المتجر الآن'}
+              </Button>
+            ) : null}
             {canModify ? (
               <Button
                 variant="ghost"
