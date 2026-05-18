@@ -658,12 +658,24 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="text-[14px] font-bold text-[#2A2A2A]">{room.name}</div>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="text-[11px] text-[#B5BDBE]">{room.type}</span>
-                        <span className="flex items-center gap-1 rounded-full bg-[#F9F9F9] px-2 py-0.5 text-[10px] text-[#5A5A5A]">
-                          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                          {room.maxCapacity && room.maxCapacity !== room.capacity ? `${room.capacity}–${room.maxCapacity}` : room.capacity}
-                        </span>
+                      <div className="mt-1.5 space-y-1">
+                        <div className="text-[11px] text-[#B5BDBE]">{room.type}</div>
+                        <div className="flex items-center gap-2">
+                          {/* السعة الأساسية */}
+                          <span className="flex items-center gap-1 rounded-full border border-[#DADBD9] px-2 py-0.5 text-[10px] font-semibold text-[#2A6364]">
+                            <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                            {room.capacity}
+                            <span className="text-[#B5BDBE] font-normal">أساسي</span>
+                          </span>
+                          {/* السعة القصوى — فقط إذا كانت مختلفة */}
+                          {room.maxCapacity && room.maxCapacity !== room.capacity && (
+                            <span className="flex items-center gap-1 rounded-full border border-[#e8ddbf] bg-[#fffbf0] px-2 py-0.5 text-[10px] font-semibold text-[#8a6a37]">
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                              {room.maxCapacity}
+                              <span className="text-[#b8a278] font-normal">قصوى</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">

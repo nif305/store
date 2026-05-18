@@ -77,21 +77,8 @@ export function canAdminRooms(session: Pick<SessionUser, 'role'>) {
 }
 
 export async function ensureTrainingRoomsSeed() {
-  const count = await prisma.trainingRoom.count();
-  if (count > 0) return;
-
-  await prisma.trainingRoom.createMany({
-    data: DEFAULT_ROOMS.map(([name, type, capacity, layouts, equipment], index) => ({
-      name,
-      type,
-      capacity,
-      layoutOptions: normalizeList(layouts),
-      equipment: normalizeList(equipment),
-      isVisible: true,
-      sortOrder: index,
-      description: `${type} بسعة ${capacity} متدرب.`,
-    })),
-  });
+  // Always seed real rooms — ensures DB always has correct data
+  await seedRealRooms();
 }
 
 export async function roomAvailabilityMap(startDate?: Date | null, endDate?: Date | null) {
@@ -249,7 +236,7 @@ export async function deleteTrainingRoom(id: string) {
 }
 
 /* ─── Real rooms seed — replaces the default seed with actual building data ─── */
-export async function seedRealRooms(): Promise<{ created: number; updated: number }> {
+export async function seedRealRooms(): Promise<{ created: number; updated: number; hidden: number }> {
   type RoomDef = {
     name: string; type: string; capacity: number; maxCapacity?: number;
     location: string; description: string; layoutOptions: string[]; equipment: string[];
@@ -389,7 +376,20 @@ export async function seedRealRooms(): Promise<{ created: number; updated: numbe
     }
   }
 
-  return { created, updated };
+  // Hide ALL rooms not in the real rooms list (old defaults / test data / orphans)
+  const realNameSet = new Set(REAL_ROOMS.map((r) => r.name));
+  const toHide = await prisma.trainingRoom.findMany({
+    where: { isVisible: true, name: { notIn: Array.from(realNameSet) } },
+    select: { id: true, name: true },
+  });
+  if (toHide.length) {
+    await prisma.trainingRoom.updateMany({
+      where: { id: { in: toHide.map((r) => r.id) } },
+      data: { isVisible: false },
+    });
+  }
+
+  return { created, updated, hidden: toHide.length };
 }
 
 export async function createTrainingRoom(data: any) {
