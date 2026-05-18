@@ -47,6 +47,7 @@ const ACTION_LABELS: Record<string, string> = {
   TRAINER_NEED_ASSIGNED: 'تعيين المنسق',
   TRAINER_NEED_UNASSIGNED: 'إلغاء التعيين',
   TRAINER_NEED_CONVERTED_TO_REQUEST: 'تحويل إلى طلب مواد',
+  TRAINER_NEED_EXTERNAL_SOURCING: 'تأمين خارجي',
   TRAINER_NEED_UPDATED: 'تعديل الاحتياج',
   TRAINER_NEED_CANCELLED: 'إلغاء الاحتياج',
 };

@@ -46,7 +46,29 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ data: await proposeTrainerNeedPlan(id) });
     }
     if (action === 'update-order') {
-      return NextResponse.json({ data: await updateTrainerNeedOrder(id, body) });
+      const result = await updateTrainerNeedOrder(id, body);
+      // Log external sourcing decisions if any
+      const externalItems = Array.isArray(body?.items)
+        ? body.items.filter((item: any) => String(item.coordinatorNote || '').startsWith('[تأمين خارجي]'))
+        : [];
+      if (externalItems.length > 0) {
+        const { prisma } = await import('@/lib/prisma');
+        await prisma.auditLog.create({
+          data: {
+            userId: session.id,
+            action: 'TRAINER_NEED_EXTERNAL_SOURCING',
+            entity: 'TrainerNeed',
+            entityId: result.code,
+            details: JSON.stringify({
+              code: result.code,
+              externalItemsCount: externalItems.length,
+              items: externalItems.map((i: any) => ({ title: i.title, note: i.coordinatorNote })),
+              decidedBy: session.fullName || session.email,
+            }),
+          },
+        }).catch(() => undefined);
+      }
+      return NextResponse.json({ data: result });
     }
     if (action === 'reserve') {
       return NextResponse.json({ data: await reserveTrainerNeedAvailable(id, session.id) });

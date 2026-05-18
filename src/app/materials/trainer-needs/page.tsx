@@ -30,6 +30,7 @@ type Need = {
   assignedToId?: string | null;
   assignedTo?: { id: string; fullName: string } | null;
   linkedRequest?: { id: string; code: string; status: string } | null;
+  decisionNote?: string | null;
   roomBooking?: {
     id: string;
     status: string;
@@ -96,6 +97,9 @@ export default function TrainerNeedsPage() {
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [draftRows, setDraftRows] = useState<DraftRow[]>([]);
   const [draftTraineeCount, setDraftTraineeCount] = useState(0);
+  const [externalRow, setExternalRow] = useState<string | null>(null);
+  const [externalSource, setExternalSource] = useState('');
+  const [externalDate, setExternalDate] = useState('');
   const [addCatalogItemId, setAddCatalogItemId] = useState('');
   const [selectedId, setSelectedId] = useState('');
   const [openedId, setOpenedId] = useState('');
@@ -140,6 +144,17 @@ export default function TrainerNeedsPage() {
     const noItems = draftRows.length === 0;
     const noConvertibleItems = draftRows.length > 0 && draftStats.convertible === 0;
     const hasShortage = draftStats.shortage > 0;
+    const externallySourcedCount = draftRows.filter((r) => r.coordinatorNote?.startsWith('[تأمين خارجي]')).length;
+    const unhandledShortageRows = draftRows.filter((row) => {
+      const original = opened?.items.find((i) => i.catalogItemId === row.catalogItemId);
+      const stock = original?.stockQty ?? 0;
+      const reserved = original?.reservedQty ?? 0;
+      const free = Math.max(stock - Math.max((original?.temporarilyReservedQty ?? 0) - reserved, 0), 0);
+      const toWarehouse = Math.min(row.requestedQty, Math.max(reserved, free));
+      const shortage = Math.max(row.requestedQty - toWarehouse, 0);
+      return shortage > 0 && !row.coordinatorNote?.startsWith('[تأمين خارجي]');
+    });
+    const allShortagesHandled = externallySourcedCount > 0 && unhandledShortageRows.length === 0;
     const readyForWarehouse = !noItems && draftStats.convertible > 0 && !needsTraineeCount && (!hasRoomRequest || roomApproved);
 
     return {
@@ -147,11 +162,15 @@ export default function TrainerNeedsPage() {
       status: readyForWarehouse ? 'جاهز للتحويل للمخزن' : 'يحتاج استكمال قبل التحويل',
       materialDecision: noItems
         ? 'لا توجد مواد في الطلب'
-        : noConvertibleItems
+        : noConvertibleItems && !allShortagesHandled
           ? 'لا توجد كميات متوفرة قابلة للتحويل'
-          : hasShortage
-            ? `يحول المتوفر (${draftStats.convertible}) ويبقى النقص (${draftStats.shortage}) للمتابعة`
-            : `كل الكميات المطلوبة متوفرة للتحويل (${draftStats.convertible})`,
+          : hasShortage && allShortagesHandled
+            ? `يحول المتوفر (${draftStats.convertible}) — النقص (${draftStats.shortage}) مُعالَج بالتأمين الخارجي`
+            : hasShortage
+              ? `يحول المتوفر (${draftStats.convertible}) ويبقى النقص (${draftStats.shortage}) يحتاج قرار`
+              : `كل الكميات متوفرة للتحويل (${draftStats.convertible})`,
+      externalCount: externallySourcedCount,
+      unhandledShortage: unhandledShortageRows.length,
       roomDecision: !hasRoomRequest
         ? 'لم يطلب المدرب قاعة'
         : roomApproved
@@ -337,6 +356,22 @@ export default function TrainerNeedsPage() {
     setAddCatalogItemId('');
   }
 
+  function isExternallySourced(note?: string) {
+    return !!(note && note.startsWith('[تأمين خارجي]'));
+  }
+
+  function applyExternalSourcing(catalogItemId: string, qty: number) {
+    const note = `[تأمين خارجي] المصدر: ${externalSource || 'غير محدد'} | الكمية: ${qty} | تسليم متوقع: ${externalDate || 'غير محدد'}`;
+    updateDraftRow(catalogItemId, { coordinatorNote: note });
+    setExternalRow(null);
+    setExternalSource('');
+    setExternalDate('');
+  }
+
+  function removeExternalSourcing(catalogItemId: string) {
+    updateDraftRow(catalogItemId, { coordinatorNote: '' });
+  }
+
   function confirmDelete() {
     if (!opened) return;
     if (confirm('سيتم حذف طلب المدرب بالكامل قبل تحويله للمخزن. هل تريد المتابعة؟')) {
@@ -519,6 +554,17 @@ export default function TrainerNeedsPage() {
                 </a>
               ) : null}
 
+              {/* Suggested items from trainer (stored in decisionNote) */}
+              {opened.decisionNote && opened.decisionNote.includes('مواد مقترحة') ? (
+                <div className="rounded-[8px] border border-[#e8ddbf] bg-[#fffbf0] px-4 py-3">
+                  <div className="mb-1 text-[12px] font-extrabold text-[#8a6a37]">
+                    مواد مقترحة من المدرب (غير متوفرة في المتجر)
+                  </div>
+                  <pre className="whitespace-pre-wrap text-[12px] leading-6 text-[#7f6b43]">{opened.decisionNote}</pre>
+                  <p className="mt-2 text-[11px] text-[#b8a278]">هذه المواد تحتاج إجراء من المنسق: إما التأمين الخارجي أو إخبار المدرب بعدم التوفر.</p>
+                </div>
+              ) : null}
+
               {!isLocked ? (
                 <div className="rounded-[8px] border border-[#dce6e3] bg-[#fbfcfc] p-4">
                   <label className="block max-w-sm text-[13px] text-[#536866]">
@@ -559,6 +605,17 @@ export default function TrainerNeedsPage() {
                   <DecisionLine label="قرار القاعة" value={decisionSummary.roomDecision} />
                   <DecisionLine label="عدد المتدربين" value={decisionSummary.traineeDecision} />
                   <DecisionLine label="إرجاع المواد المسترجعة" value={decisionSummary.returnDecision} />
+                  {decisionSummary.externalCount > 0 && (
+                    <div className="rounded-[8px] border border-[#d9c99f] bg-[#fffbf0] px-3 py-3 md:col-span-2">
+                      <div className="text-[11px] font-bold text-[#8a6a37]">التأمين الخارجي</div>
+                      <div className="mt-1 text-[13px] leading-6 text-[#7f6b43]">
+                        {decisionSummary.externalCount} مادة مُحددة للتأمين الخارجي
+                        {decisionSummary.unhandledShortage > 0
+                          ? ` — لا يزال ${decisionSummary.unhandledShortage} بند يحتاج قرار`
+                          : ' — كل المواد الناقصة لها قرار ✓'}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -631,23 +688,23 @@ export default function TrainerNeedsPage() {
               <div className="overflow-visible rounded-[8px] border border-[#dce6e3]">
                 <table className="w-full table-fixed text-right text-[13px]">
                   <colgroup>
-                    <col className="w-[24%]" />
-                    <col className="w-[11%]" />
+                    <col className="w-[22%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[8%]" />
+                    <col className="w-[10%]" />
                     <col className="w-[9%]" />
-                    <col className="w-[11%]" />
-                    <col className="w-[10%]" />
-                    <col className="w-[10%]" />
-                    <col className="w-[25%]" />
+                    <col className="w-[9%]" />
+                    <col className="w-[32%]" />
                   </colgroup>
                   <thead className="bg-[#f6f9f8] text-[#536866]">
                     <tr>
                       <th className="px-4 py-3">المادة</th>
-                      <th className="px-4 py-3">الكمية المطلوبة</th>
-                      <th className="px-4 py-3">المتاح الآن</th>
-                      <th className="px-4 py-3">محجوز لطلبات أخرى</th>
-                      <th className="px-4 py-3">سيتحول للمخزن</th>
-                      <th className="px-4 py-3">يحتاج توفير</th>
-                      <th className="px-4 py-3">قرار المنسق</th>
+                      <th className="px-4 py-3">المطلوب</th>
+                      <th className="px-4 py-3">المتاح</th>
+                      <th className="px-4 py-3">محجوز لغيره</th>
+                      <th className="px-4 py-3">للمخزن</th>
+                      <th className="px-4 py-3">نقص</th>
+                      <th className="px-4 py-3">قرار المنسق / التأمين الخارجي</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#edf1f1]">
@@ -682,11 +739,78 @@ export default function TrainerNeedsPage() {
                           <td className="px-4 py-3 text-[#8a6a37]">{shortage}</td>
                           <td className="px-4 py-3">
                             {isLocked ? (
-                              <div className="max-w-[280px] text-[12px] leading-6 text-[#536866]">{row.coordinatorNote || '-'}</div>
+                              <div className="space-y-1">
+                                {isExternallySourced(row.coordinatorNote) ? (
+                                  <div className="rounded-[6px] border border-[#d9c99f] bg-[#fffbf0] px-2 py-1.5 text-[11px] leading-5 text-[#7f6b43]">
+                                    <span className="font-bold">تأمين خارجي</span><br />{row.coordinatorNote?.replace('[تأمين خارجي]', '').trim()}
+                                  </div>
+                                ) : (
+                                  <div className="text-[12px] leading-6 text-[#536866]">{row.coordinatorNote || '-'}</div>
+                                )}
+                              </div>
                             ) : (
-                              <div className="grid gap-2">
-                                <input value={row.coordinatorNote || ''} onChange={(event) => updateDraftRow(row.catalogItemId, { coordinatorNote: event.target.value })} placeholder="مثال: حذف غير منطقي / توفير لاحق / تخفيض الكمية" className="h-10 w-full rounded-[8px] border border-[#dce6e3] px-2 text-[12px]" />
-                                <button type="button" onClick={() => removeDraftRow(row.catalogItemId)} className="h-10 rounded-[8px] bg-[#7c1e3e] px-3 text-[12px] font-bold text-white">حذف البند</button>
+                              <div className="space-y-2">
+                                {/* Normal note input */}
+                                {!isExternallySourced(row.coordinatorNote) && externalRow !== row.catalogItemId && (
+                                  <input
+                                    value={row.coordinatorNote || ''}
+                                    onChange={(e) => updateDraftRow(row.catalogItemId, { coordinatorNote: e.target.value })}
+                                    placeholder="ملاحظة المنسق..."
+                                    className="h-9 w-full rounded-[6px] border border-[#dce6e3] px-2 text-[12px]"
+                                  />
+                                )}
+
+                                {/* External sourcing tag */}
+                                {isExternallySourced(row.coordinatorNote) && externalRow !== row.catalogItemId && (
+                                  <div className="rounded-[6px] border border-[#d9c99f] bg-[#fffbf0] px-2 py-1.5 text-[11px] leading-5 text-[#7f6b43]">
+                                    <span className="font-bold">تأمين خارجي ✓</span>
+                                    <br />{row.coordinatorNote?.replace('[تأمين خارجي]', '').trim()}
+                                    <button onClick={() => removeExternalSourcing(row.catalogItemId)} className="mr-2 text-[#7c1e3e] underline">إلغاء</button>
+                                  </div>
+                                )}
+
+                                {/* Inline external sourcing form */}
+                                {externalRow === row.catalogItemId && (
+                                  <div className="space-y-1.5 rounded-[8px] border border-[#d9c99f] bg-[#fffbf0] p-2">
+                                    <div className="text-[11px] font-bold text-[#8a6a37]">تفاصيل التأمين الخارجي</div>
+                                    <input
+                                      value={externalSource}
+                                      onChange={(e) => setExternalSource(e.target.value)}
+                                      placeholder="المصدر / المورد"
+                                      className="h-8 w-full rounded-[6px] border border-[#e8ddbf] bg-white px-2 text-[11px]"
+                                    />
+                                    <input
+                                      type="date"
+                                      value={externalDate}
+                                      onChange={(e) => setExternalDate(e.target.value)}
+                                      className="h-8 w-full rounded-[6px] border border-[#e8ddbf] bg-white px-2 text-[11px]"
+                                    />
+                                    <div className="flex gap-1.5">
+                                      <button onClick={() => applyExternalSourcing(row.catalogItemId, shortage)} className="flex-1 h-8 rounded-[6px] bg-[#8a6a37] text-[11px] font-bold text-white">تأكيد</button>
+                                      <button onClick={() => setExternalRow(null)} className="h-8 rounded-[6px] border border-[#dce6e3] px-3 text-[11px] text-[#536866]">إلغاء</button>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Buttons row */}
+                                <div className="flex flex-wrap gap-1.5">
+                                  {shortage > 0 && !isExternallySourced(row.coordinatorNote) && externalRow !== row.catalogItemId && (
+                                    <button
+                                      type="button"
+                                      onClick={() => { setExternalRow(row.catalogItemId); setExternalSource(''); setExternalDate(''); }}
+                                      className="h-8 rounded-[6px] border border-[#d9c99f] bg-white px-2 text-[11px] font-bold text-[#8a6a37] hover:bg-[#fffbf0]"
+                                    >
+                                      تأمين خارجي
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => removeDraftRow(row.catalogItemId)}
+                                    className="h-8 rounded-[6px] bg-[#7c1e3e] px-2 text-[11px] font-bold text-white"
+                                  >
+                                    حذف
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </td>
