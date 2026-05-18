@@ -371,7 +371,7 @@ export default function TrainingKitPage() {
       )}
 
       {/* ─── Content ─── */}
-      <div className="mx-auto max-w-[1480px] px-4 py-4">
+      <div className={`mx-auto max-w-[1480px] px-4 py-4 ${view !== 'orders' && view !== 'success' && cartCount > 0 ? 'pb-28' : ''}`}>
         {error && (
           <div className="no-print mb-3 flex items-center gap-2 rounded-[10px] border border-[#73384B]/20 bg-[#fff5f7] px-4 py-2.5 text-[13px] text-[#73384B]">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
@@ -392,16 +392,21 @@ export default function TrainingKitPage() {
 
       {/* Checkout float bar */}
       {view !== 'orders' && view !== 'success' && cartCount > 0 && (
-        <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-[#DADBD9] bg-white/95 px-4 py-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur">
-          <div className="mx-auto flex max-w-[600px] items-center justify-between gap-3">
+        <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-[#DADBD9] bg-white/96 px-4 py-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur">
+          <div className="mx-auto flex max-w-[640px] items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2A6364] text-[13px] font-bold text-white">{cartCount}</span>
-              <div><div className="text-[13px] font-bold text-[#2A2A2A]">{cartCount} مادة في الطلب</div><div className="text-[11px] text-[#B5BDBE]">{cartRows.length} صنف</div></div>
+              <div><div className="text-[13px] font-bold text-[#2A2A2A]">{cartRows.length} صنف · {cartCount} وحدة</div><div className="text-[10px] text-[#B5BDBE]">القاعة اختيارية — يمكن المتابعة بدونها</div></div>
             </div>
-            <button onClick={() => setView('rooms')} className="flex items-center gap-2 rounded-[10px] bg-[#2A6364] px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_14px_rgba(42,99,100,0.3)] hover:bg-[#1e5152]">
-              اختيار القاعة
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-            </button>
+            <div className="flex gap-2">
+              <button onClick={() => setView('orders')} className="flex items-center gap-1.5 rounded-[10px] border border-[#DADBD9] bg-white px-3 py-2 text-[12px] font-bold text-[#5A5A5A] hover:border-[#2A6364]/30">
+                مراجعة مباشرة
+              </button>
+              <button onClick={() => setView('rooms')} className="flex items-center gap-1.5 rounded-[10px] bg-[#2A6364] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#1e5152]">
+                اختيار قاعة
+                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -518,9 +523,26 @@ function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; set
    BUNDLES VIEW
 ═══════════════════════════════════════ */
 function BundlesView({ bundles, traineeCount, onAdd }: { bundles: Bundle[]; traineeCount: number; onAdd: (b: Bundle) => void }) {
+  const needsTraineeCount = bundles.some((b) => b.items.some((i) => i.quantityMode === 'PER_TRAINEE')) && traineeCount === 0;
   return (
+    <div className="space-y-3">
+      {/* Info bar */}
+      <div className="flex items-start gap-3 rounded-[12px] border border-[#DADBD9] bg-white px-4 py-3">
+        <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
+        <div>
+          <p className="text-[12px] font-bold text-[#2A6364]">البكجات الجاهزة</p>
+          <p className="text-[11px] text-[#B5BDBE]">مجموعات مواد جاهزة لأنواع شائعة من الدورات — أضف بكجاً بضغطة واحدة وعدّل الكميات لاحقاً من صفحة الطلبات.</p>
+          {needsTraineeCount && <p className="mt-1 text-[11px] text-[#C7B08C]">💡 بعض البكجات تحسب الكمية حسب عدد المتدربين — أدخله في صفحة المراجعة لرؤية الكميات الدقيقة.</p>}
+        </div>
+      </div>
     <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {!bundles.length && <div className="col-span-3 rounded-[14px] border border-dashed border-[#DADBD9] py-20 text-center text-[13px] text-[#B5BDBE]">لا توجد بكجات</div>}
+      {!bundles.length && (
+        <div className="col-span-3 rounded-[14px] border border-dashed border-[#DADBD9] bg-white py-16 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#F9F9F9]"><CategoryIllustration category="" size={32} /></div>
+          <p className="text-[13px] font-semibold text-[#5A5A5A]">لا توجد بكجات جاهزة حالياً</p>
+          <p className="mt-1 text-[11px] text-[#B5BDBE]">يمكنك إضافة بكجات من قسم إدارة المخزون في المنصة الرئيسية</p>
+        </div>
+      )}
       {bundles.map((bundle) => (
         <article key={bundle.id} className="flex flex-col overflow-hidden rounded-[14px] border border-[#DADBD9] bg-white transition hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
           <div className="aspect-[16/7] overflow-hidden bg-[#F9F9F9]">
@@ -552,6 +574,7 @@ function BundlesView({ bundles, traineeCount, onAdd }: { bundles: Bundle[]; trai
         </article>
       ))}
     </section>
+    </div>
   );
 }
 
@@ -585,7 +608,7 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
   }
 
   return (
-    <div className="relative grid gap-4 xl:block xl:pl-[380px]">
+    <div className="relative grid gap-4 xl:block xl:pl-[390px]">
       <div className="space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-[18px] font-extrabold text-[#2A2A2A]">القاعات التدريبية</h2>
@@ -633,7 +656,7 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
       </div>
 
       {/* Side panel */}
-      <aside className="rounded-[14px] border border-[#DADBD9] bg-white p-4 xl:fixed xl:left-[max(1rem,calc((100vw-1480px)/2+1rem))] xl:top-20 xl:z-20 xl:w-[360px]">
+      <aside className="rounded-[14px] border border-[#DADBD9] bg-white p-4 xl:fixed xl:left-[max(1rem,calc((100vw-1480px)/2+1rem))] xl:top-[108px] xl:z-20 xl:w-[375px] xl:max-h-[calc(100vh-120px)] xl:overflow-y-auto">
         <div className="flex items-center justify-between">
           <h3 className="text-[15px] font-extrabold text-[#2A2A2A]">القاعات المختارة</h3>
           {selRows.length > 0 && <button onClick={() => setRoomSelections([])} className="text-[11px] text-[#73384B] hover:underline">مسح الكل</button>}
