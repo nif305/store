@@ -496,9 +496,11 @@ function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; set
             <CategoryIllustration category={item.category} size={56} />
           </div>
         )}
-        {/* Stock pill */}
-        <span className="absolute bottom-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: stockColor }}>
-          {stockLabel}
+        {/* Stock pill — shows status + actual number */}
+        <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white shadow-sm" style={{ backgroundColor: stockColor }}>
+          {item.isOnDemand ? 'عند الطلب' : free === 0 ? 'نافد' : (
+            <>{free === item.stockQty ? '✓' : '⚡'} {free} {item.unit} متاح</>
+          )}
         </span>
         {/* Added badge */}
         {qty > 0 && (
@@ -512,8 +514,29 @@ function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; set
           <div className="text-[13px] font-bold leading-snug text-[#2A2A2A] line-clamp-2">{item.title}</div>
           <div className="mt-0.5 text-[11px] text-[#B5BDBE]">{item.category}</div>
         </div>
-        {item.isOnDemand && item.onDemandNote && (
-          <div className="text-[10px] leading-4 text-[#6B5A4A] line-clamp-2">{item.onDemandNote}</div>
+
+        {/* Stock details */}
+        {item.isOnDemand ? (
+          <div className="rounded-[7px] border border-[#e8ddbf] bg-[#fffbf0] px-2.5 py-1.5 text-[11px] leading-5 text-[#7f6b43]">
+            {item.onDemandNote || 'يُوفَّر عند الطلب'}
+          </div>
+        ) : (
+          <div className="rounded-[7px] border px-2.5 py-1.5 text-[11px]"
+            style={{ borderColor: `${stockColor}40`, backgroundColor: `${stockColor}0d` }}>
+            <div className="flex items-center justify-between gap-2">
+              <span style={{ color: stockColor }} className="font-bold">
+                {free === 0 ? 'نافد من المخزون' : `المتاح: ${free} ${item.unit}`}
+              </span>
+              {item.temporarilyReservedQty > 0 && (
+                <span className="text-[#B5BDBE]">محجوز: {item.temporarilyReservedQty}</span>
+              )}
+            </div>
+            {item.temporarilyReservedQty > 0 && free > 0 && (
+              <div className="mt-0.5 text-[10px] text-[#B5BDBE]">
+                إجمالي المخزون: {item.stockQty} {item.unit}
+              </div>
+            )}
+          </div>
         )}
 
         {qty > 0 ? (
@@ -624,6 +647,24 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
   return (
     <div className="relative grid gap-4 xl:block xl:pl-[390px]">
       <div className="space-y-3">
+        {/* Availability note — show when no dates entered */}
+        {!form.startDate && (
+          <div className="flex items-start gap-2 rounded-[12px] border border-[#DADBD9] bg-[#F9F9F9] px-4 py-3 text-[12px] text-[#5A5A5A]">
+            <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+            </svg>
+            <span>أدخل تواريخ الدورة في صفحة المراجعة لمعرفة <strong className="text-[#2A6364]">توفر القاعات الفعلي</strong> في تلك الفترة. الحالة المعروضة الآن هي حالة اليوم فقط.</span>
+          </div>
+        )}
+        {form.startDate && (
+          <div className="flex items-center gap-2 rounded-[12px] border border-[#cce6d7] bg-[#eef8f2] px-4 py-2.5 text-[12px] text-[#1e6b4c]">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="9" />
+            </svg>
+            <span>التوفر مُحسَّب للفترة: <strong>{form.startDate}</strong> → <strong>{form.endDate || '؟'}</strong>{form.traineeCount && ` · ${form.traineeCount} متدرب`}</span>
+          </div>
+        )}
+
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-[18px] font-extrabold text-[#2A2A2A]">القاعات التدريبية</h2>
           <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
@@ -649,9 +690,16 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
                       <div className="text-[14px] font-bold text-[#2A2A2A]">{room.name}</div>
                       <div className="mt-0.5 text-[11px] text-[#B5BDBE]">{room.type} · سعة {room.capacity}</div>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${room.isAvailable ? 'bg-[#eef8f2] text-[#4F8F7A]' : 'bg-[#fff0f3] text-[#73384B]'}`}>
-                      {room.isAvailable ? 'متاحة' : 'محجوزة'}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${room.isAvailable ? 'bg-[#eef8f2] text-[#4F8F7A]' : 'bg-[#fff0f3] text-[#73384B]'}`}>
+                        {room.isAvailable ? '✓ متاحة للفترة' : '✕ محجوزة للفترة'}
+                      </span>
+                      {!room.capacityFit && form.traineeCount && (
+                        <span className="rounded-full bg-[#fffbf0] px-2 py-0.5 text-[9px] font-bold text-[#8a6a37]">
+                          السعة أقل من عدد المتدربين
+                        </span>
+                      )}
+                    </div>
                   </div>
                   {room.equipment.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
@@ -659,8 +707,8 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
                     </div>
                   )}
                   <button onClick={() => select(room)} disabled={!room.isAvailable}
-                    className={`mt-3 h-8 w-full rounded-[8px] text-[12px] font-bold transition disabled:opacity-40 ${sel ? 'border border-[#2A6364] bg-white text-[#2A6364]' : 'bg-[#2A6364] text-white hover:bg-[#1e5152]'}`}>
-                    {sel ? '✓ محددة' : 'اختيار'}
+                    className={`mt-3 h-8 w-full rounded-[8px] text-[12px] font-bold transition disabled:opacity-40 ${sel ? 'border border-[#2A6364] bg-white text-[#2A6364]' : room.isAvailable ? 'bg-[#2A6364] text-white hover:bg-[#1e5152]' : 'bg-[#DADBD9] text-[#B5BDBE] cursor-not-allowed'}`}>
+                    {sel ? '✓ محددة' : room.isAvailable ? 'اختيار' : 'محجوزة في هذه الفترة'}
                   </button>
                 </div>
               </article>
