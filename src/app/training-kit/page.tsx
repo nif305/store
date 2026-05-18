@@ -23,10 +23,12 @@ type TrainingRoom = {
 type Cart = Record<string, number>;
 type View = 'home' | 'bundles' | 'rooms' | 'orders' | 'success';
 type RoomSelection = { roomId: string; layout: string; startDate: string; endDate: string };
+type SuggestedItem = { title: string; quantity: string; note: string };
 type SubmittedOrder = {
   code: string; trainerName: string; courseName: string;
   startDate: string; endDate: string; traineeCount: number;
   items: { title: string; quantity: number; unit: string; category: string }[];
+  suggestedItems: SuggestedItem[];
   rooms: { name: string; type: string; startDate: string; endDate: string }[];
   submittedAt: string;
 };
@@ -254,6 +256,7 @@ export default function TrainingKitPage() {
   const [roomType, setRoomType] = useState('الكل');
   const [cart, setCart] = useState<Cart>({});
   const [roomSelections, setRoomSelections] = useState<RoomSelection[]>([]);
+  const [suggestedItems, setSuggestedItems] = useState<SuggestedItem[]>([]);
   const [form, setForm] = useState({ trainerName: '', courseName: '', startDate: '', endDate: '', traineeCount: '' });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -354,6 +357,7 @@ export default function TrainingKitPage() {
         body: JSON.stringify({
           ...form, traineeCount,
           items: cartRows.map((r) => ({ catalogItemId: r.item.id, quantity: r.quantity })),
+          suggestedItems: suggestedItems.filter((s) => s.title.trim() && Number(s.quantity) > 0).map((s) => ({ title: s.title.trim(), quantity: Number(s.quantity), note: s.note.trim() || undefined })),
           roomId: roomSelections[0]?.roomId || null,
           requestedLayout: roomSelections[0]?.layout || '',
           roomSelections: roomSelections.map((s) => ({
@@ -374,6 +378,7 @@ export default function TrainingKitPage() {
         endDate: form.endDate,
         traineeCount,
         items: cartRows.map((r) => ({ title: r.item.title, quantity: r.quantity, unit: r.item.unit, category: r.item.category })),
+        suggestedItems: suggestedItems.filter((s) => s.title.trim() && Number(s.quantity) > 0),
         rooms: selectedRooms.map(({ selection, room }) => ({
           name: room.name, type: room.type,
           startDate: selection.startDate || form.startDate,
@@ -383,6 +388,7 @@ export default function TrainingKitPage() {
       });
       setCart({});
       setRoomSelections([]);
+      setSuggestedItems([]);
       await loadCatalog();
       await loadRooms();
       setView('success');
@@ -496,6 +502,7 @@ export default function TrainingKitPage() {
         )}
         {view === 'orders' && (
           <OrdersView form={form} setForm={setForm} cartRows={cartRows} selectedRooms={selectedRooms}
+            suggestedItems={suggestedItems} setSuggestedItems={setSuggestedItems}
             setQty={setQty} submitting={submitting} onSubmit={submitNeed}
             goHome={() => setView('home')} goRooms={() => setView('rooms')} />
         )}
@@ -750,15 +757,21 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
 }
 
 /* ─── Orders / Review view ─── */
-function OrdersView({ form, setForm, cartRows, selectedRooms, setQty, submitting, onSubmit, goHome, goRooms }: {
+function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, setSuggestedItems, setQty, submitting, onSubmit, goHome, goRooms }: {
   form: { trainerName: string; courseName: string; startDate: string; endDate: string; traineeCount: string };
   setForm: React.Dispatch<React.SetStateAction<typeof form>>;
   cartRows: { item: StoreItem; quantity: number }[];
   selectedRooms: { selection: RoomSelection; room: TrainingRoom }[];
+  suggestedItems: SuggestedItem[];
+  setSuggestedItems: React.Dispatch<React.SetStateAction<SuggestedItem[]>>;
   setQty: (id: string, qty: number) => void;
   submitting: boolean; onSubmit: (e: React.FormEvent) => void;
   goHome: () => void; goRooms: () => void;
 }) {
+  function addSuggested() { setSuggestedItems((p) => [...p, { title: '', quantity: '1', note: '' }]); }
+  function updateSuggested(i: number, patch: Partial<SuggestedItem>) { setSuggestedItems((p) => p.map((s, idx) => idx === i ? { ...s, ...patch } : s)); }
+  function removeSuggested(i: number) { setSuggestedItems((p) => p.filter((_, idx) => idx !== i)); }
+
   return (
     <form onSubmit={onSubmit} className="grid gap-5 xl:grid-cols-[1fr_420px]">
       <section className="rounded-[20px] border border-[#dce6e3] bg-white shadow-[0_12px_32px_rgba(34,55,56,0.06)]">
@@ -793,6 +806,49 @@ function OrdersView({ form, setForm, cartRows, selectedRooms, setQty, submitting
             <p className="text-[13px] text-[#6d7b78]">لا توجد مواد في الطلب حتى الآن</p>
             <button type="button" onClick={goHome} className="rounded-[10px] bg-[#2A6364] px-4 py-2 text-[13px] font-bold text-white">تصفح المواد</button>
           </div>
+        )}
+      </section>
+
+      {/* Suggested items section */}
+      <section className="rounded-[20px] border border-[#e8ddbf] bg-[#fffbf0] p-5 shadow-[0_4px_16px_rgba(138,106,55,0.08)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-[16px] font-extrabold text-[#7f6030]">مواد مقترحة غير متوفرة في المتجر</h3>
+            <p className="mt-0.5 text-[12px] text-[#9a7a48]">إذا احتجت مادة غير موجودة في قائمة المواد، أضفها هنا وسيراجعها المنسق ويحاول توفيرها.</p>
+          </div>
+          <button type="button" onClick={addSuggested}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-[10px] border border-[#d9c99f] bg-white px-3 py-2 text-[12px] font-bold text-[#8a6a37] transition hover:bg-[#fffbf0]">
+            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+            إضافة مادة مقترحة
+          </button>
+        </div>
+        {suggestedItems.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {suggestedItems.map((s, i) => (
+              <div key={i} className="grid gap-2 rounded-[14px] border border-[#e8ddbf] bg-white p-3 sm:grid-cols-[1fr_80px_1fr_auto]">
+                <input value={s.title} onChange={(e) => updateSuggested(i, { title: e.target.value })}
+                  placeholder="اسم المادة المطلوبة"
+                  className="h-9 rounded-[8px] border border-[#e8ddbf] bg-[#fffbf0] px-3 text-[13px] outline-none placeholder:text-[#b8a278] focus:border-[#c4a865]/60 focus:bg-white" />
+                <input type="number" min="1" value={s.quantity} onChange={(e) => updateSuggested(i, { quantity: e.target.value })}
+                  placeholder="الكمية"
+                  className="h-9 rounded-[8px] border border-[#e8ddbf] bg-[#fffbf0] px-3 text-[13px] outline-none focus:border-[#c4a865]/60 focus:bg-white" />
+                <input value={s.note} onChange={(e) => updateSuggested(i, { note: e.target.value })}
+                  placeholder="ملاحظة للمنسق (اختياري)"
+                  className="h-9 rounded-[8px] border border-[#e8ddbf] bg-[#fffbf0] px-3 text-[13px] outline-none placeholder:text-[#b8a278] focus:border-[#c4a865]/60 focus:bg-white" />
+                <button type="button" onClick={() => removeSuggested(i)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] border border-[#ecd0d8] bg-white text-[#7c1e3e] hover:bg-[#fff7f8]">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {suggestedItems.length === 0 && (
+          <button type="button" onClick={addSuggested}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#d9c99f] px-4 py-4 text-[13px] text-[#9a7a48] transition hover:bg-white">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+            اضغط لإضافة مادة مقترحة
+          </button>
         )}
       </section>
 
@@ -865,6 +921,9 @@ function SuccessView({ order, onReset }: { order: SubmittedOrder; onReset: () =>
     ``,
     `المواد المطلوبة:`,
     ...order.items.map((i) => `• ${i.title}  ×${i.quantity} ${i.unit}`),
+    order.suggestedItems?.length > 0 ? `` : '',
+    order.suggestedItems?.length > 0 ? `مواد مقترحة (تحتاج تأمين):` : '',
+    ...(order.suggestedItems || []).map((s) => `◇ ${s.title}  ×${s.quantity}${s.note ? ` — ${s.note}` : ''}`),
     order.rooms.length > 0 ? `` : '',
     order.rooms.length > 0 ? `القاعات المطلوبة:` : '',
     ...order.rooms.map((r) => `• ${r.name} (${r.type}) — ${r.startDate} إلى ${r.endDate}`),
@@ -968,6 +1027,27 @@ function SuccessView({ order, onReset }: { order: SubmittedOrder; onReset: () =>
                       <span className="text-[12px] text-[#6d7b78]">{room.type}</span>
                     </div>
                     <span className="shrink-0 text-[12px] text-[#6d7b78]">{room.startDate} → {room.endDate}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Suggested items in summary */}
+          {order.suggestedItems?.length > 0 && (
+            <div className="mt-4">
+              <h3 className="mb-2 text-[14px] font-extrabold text-[#7f6030]">مواد مقترحة (تحتاج تأمين)</h3>
+              <div className="space-y-1.5">
+                {order.suggestedItems.map((s, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-[12px] border border-[#e8ddbf] bg-[#fffbf0] px-4 py-2.5">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-[#8a6a37]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+                    </svg>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-bold text-[#7f6030]">{s.title}</span>
+                      {s.note && <span className="mr-2 text-[11px] text-[#9a7a48]">— {s.note}</span>}
+                    </div>
+                    <span className="shrink-0 rounded-full bg-[#fbf6ea] px-2.5 py-0.5 text-[12px] font-bold text-[#8a6a37]">×{s.quantity}</span>
                   </div>
                 ))}
               </div>

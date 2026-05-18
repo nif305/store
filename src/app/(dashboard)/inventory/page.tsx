@@ -142,6 +142,63 @@ function getItemImage(item: InventoryItem) {
   return item.imageUrl || getStoreMeta(item)?.imageUrl || null;
 }
 
+/* ─── Auto-generate category SVG images ─── */
+function generateItemSvgDataUrl(name: string, category: string): string {
+  const c = category || '';
+  const firstChar = (name || '؟').slice(0, 2).trim();
+
+  type Theme = { bg1: string; bg2: string; stroke: string; badge: string };
+  const theme: Theme =
+    /قلم|أقلام|قرطاسية/.test(c) ? { bg1: '#eef5f4', bg2: '#d9edea', stroke: '#2A6364', badge: '#2A6364' } :
+    /نوت|دفتر|كتاب/.test(c)    ? { bg1: '#eef5f4', bg2: '#d9edea', stroke: '#1e6b4c', badge: '#1e6b4c' } :
+    /ملف|فولدر|حافظة/.test(c)  ? { bg1: '#f7f1e4', bg2: '#ede0c8', stroke: '#8a6a37', badge: '#8a6a37' } :
+    /شهادة|جائزة/.test(c)      ? { bg1: '#f7f1e4', bg2: '#ede0c8', stroke: '#b79059', badge: '#b79059' } :
+    /لابتوب|حاسب|جهاز|USB/.test(c) ? { bg1: '#e7eff5', bg2: '#cde0ec', stroke: '#1b4f68', badge: '#1b4f68' } :
+    /ميكروفون|مكبر|صوت/.test(c) ? { bg1: '#eef5f4', bg2: '#d9edea', stroke: '#2A6364', badge: '#2A6364' } :
+    /سبورة|لوح|ماركر/.test(c)  ? { bg1: '#f4e7eb', bg2: '#e8ccd5', stroke: '#7c1e3e', badge: '#7c1e3e' } :
+    /تقني|جهاز|حاسب/.test(c)  ? { bg1: '#e7eff5', bg2: '#cde0ec', stroke: '#1b4f68', badge: '#1b4f68' } :
+      { bg1: '#eef5f4', bg2: '#d9edea', stroke: '#2A6364', badge: '#2A6364' };
+
+  // Determine icon paths based on category
+  const iconPath: string =
+    /قلم|أقلام/.test(c)        ? '<path d="M52 20l8 8L32 56H24v-8L52 20z" stroke-width="2.5" stroke-linejoin="round"/><path d="M45 27l8 8M24 48l4 4" stroke-width="2" stroke-linecap="round"/>' :
+    /نوت|دفتر/.test(c)         ? '<rect x="24" y="14" width="36" height="52" rx="4" fill="white" stroke-width="2"/><rect x="18" y="20" width="8" height="40" rx="2" fill="' + theme.stroke + '" opacity=".4"/><path d="M32 28h20M32 36h20M32 44h14" stroke-width="2" stroke-linecap="round"/>' :
+    /ملف|فولدر/.test(c)        ? '<path d="M14 30a4 4 0 0 1 4-4h16l6 6h22a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V30z" fill="' + theme.stroke + '" opacity=".2" stroke-width="2"/><path d="M28 50h24M28 43h16" stroke-width="2" stroke-linecap="round"/>' :
+    /شهادة/.test(c)            ? '<rect x="16" y="18" width="48" height="32" rx="4" fill="white" stroke-width="2"/><path d="M26 30h28M26 38h18" stroke-width="2" stroke-linecap="round"/><circle cx="40" cy="60" r="9" fill="' + theme.stroke + '" opacity=".25" stroke-width="2"/><path d="M37 60l2.5 2.5 5-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' :
+    /لابتوب|حاسب/.test(c)     ? '<rect x="14" y="20" width="52" height="30" rx="4" fill="white" stroke-width="2"/><rect x="20" y="26" width="40" height="18" rx="2" fill="' + theme.bg1 + '"/><path d="M8 50h64l-4 8H12l-4-8z" fill="white" stroke-width="2"/><circle cx="40" cy="55" r="2" fill="' + theme.stroke + '" opacity=".4"/>' :
+    /ميكروفون/.test(c)         ? '<rect x="32" y="14" width="16" height="26" rx="8" fill="white" stroke-width="2"/><path d="M24 36a16 16 0 0 0 32 0M40 52v8M32 60h16" stroke-width="2" stroke-linecap="round"/>' :
+    /سبورة|لوح/.test(c)        ? '<rect x="12" y="16" width="56" height="36" rx="4" fill="white" stroke-width="2"/><path d="M22 38l8-10 7 7 6-6 8 9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 52l4 8h8l4-8" stroke-width="1.5" stroke-linecap="round"/>' :
+      '<path d="M22 26a4 4 0 0 1 4-4h28l10 10v26a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V26z" fill="white" stroke-width="2"/><path d="M54 22v10h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/><path d="M30 36h20M30 44h14" stroke-width="2" stroke-linecap="round"/>';
+
+  const truncatedName = name.length > 18 ? name.slice(0, 16) + '…' : name;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${theme.bg1}"/>
+      <stop offset="100%" stop-color="${theme.bg2}"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="240" fill="url(#bg)" rx="0"/>
+  <circle cx="260" cy="40" r="60" fill="${theme.stroke}" opacity=".05"/>
+  <circle cx="60" cy="200" r="80" fill="${theme.stroke}" opacity=".05"/>
+  <g transform="translate(120,50)" stroke="${theme.stroke}" fill="none" stroke-linecap="round">
+    ${iconPath}
+  </g>
+  <rect x="0" y="178" width="320" height="62" fill="${theme.stroke}" opacity=".08"/>
+  <text x="160" y="204" font-family="Cairo,Arial" font-size="15" font-weight="700" fill="${theme.stroke}" text-anchor="middle" dominant-baseline="middle">${truncatedName}</text>
+  <text x="160" y="225" font-family="Cairo,Arial" font-size="11" fill="${theme.stroke}" opacity=".65" text-anchor="middle" dominant-baseline="middle">${category}</text>
+  <rect x="8" y="8" width="54" height="22" rx="11" fill="${theme.badge}" opacity=".15"/>
+  <text x="35" y="20" font-family="Cairo,Arial" font-size="10" font-weight="700" fill="${theme.badge}" text-anchor="middle" dominant-baseline="middle">${firstChar}</text>
+</svg>`;
+
+  try {
+    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+  } catch {
+    return '';
+  }
+}
+
 async function fileToDataUrl(file: File): Promise<string> {
   const image = document.createElement('img');
   const reader = new FileReader();
@@ -189,6 +246,8 @@ export default function InventoryPage() {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 });
   const [formState, setFormState] = useState(defaultForm);
 
+  const [generatingImages, setGeneratingImages] = useState(false);
+  const [imageGenProgress, setImageGenProgress] = useState('');
   const canModify = user?.role === 'manager' || user?.role === 'warehouse';
   const selectedBundle = useMemo(() => bundles.find((bundle) => bundle.id === selectedBundleId) || bundles[0], [bundles, selectedBundleId]);
   const catalogChoices = useMemo(() => storeItems.filter((item) => !item.isOnDemand), [storeItems]);
@@ -441,6 +500,43 @@ export default function InventoryPage() {
     updateBundle({ items: selectedBundle.items.map((item) => (item.catalogItemId === catalogItemId ? { ...item, ...patch } : item)) });
   };
 
+  const applyGeneratedImages = async () => {
+    const itemsWithoutImages = items.filter((item) => !getItemImage(item));
+    if (!itemsWithoutImages.length) {
+      setImageGenProgress('جميع المواد لديها صور بالفعل ✓');
+      setTimeout(() => setImageGenProgress(''), 3000);
+      return;
+    }
+    setGeneratingImages(true);
+    setImageGenProgress(`جاري توليد ${itemsWithoutImages.length} صورة...`);
+    let done = 0;
+    for (const item of itemsWithoutImages) {
+      const imageUrl = generateItemSvgDataUrl(item.name, item.category);
+      if (!imageUrl) continue;
+      try {
+        await fetch(`/api/inventory/${item.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: item.name, category: item.category, type: item.type,
+            quantity: item.quantity, minStock: item.minStock,
+            unitPrice: item.unitPrice ?? null, financialTracking: item.financialTracking || false,
+            imageUrl,
+            showInStore: getStoreMeta(item)?.isVisible ?? true,
+            storeOnDemandNote: getStoreMeta(item)?.onDemandNote || null,
+            storeSortOrder: getStoreMeta(item)?.sortOrder ?? 0,
+          }),
+        });
+        done += 1;
+        setImageGenProgress(`تم ${done} من ${itemsWithoutImages.length}...`);
+      } catch { /* skip */ }
+    }
+    await fetchInventory();
+    setGeneratingImages(false);
+    setImageGenProgress(`تم توليد ${done} صورة بنجاح ✓`);
+    setTimeout(() => setImageGenProgress(''), 4000);
+  };
+
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('');
@@ -462,9 +558,22 @@ export default function InventoryPage() {
             <div className="text-[13px] text-[#6f817f]">المخزون هو المصدر الأساسي للصور والكميات والظهور للمدرب</div>
             <h1 className="mt-1 text-[28px] text-[#203634]">إدارة مواد المخزن</h1>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="ghost" className="border border-slate-200" onClick={() => window.open('/training-kit', '_blank')}>معاينة صفحة الطلب</Button>
-            {canModify ? <Button className="bg-[#2A6364] text-white hover:bg-[#214f50]" onClick={openCreateModal}>إضافة مادة</Button> : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {imageGenProgress && (
+              <span className="rounded-full border border-[#dce6e3] bg-[#f4f8f7] px-3 py-1 text-[12px] text-[#2A6364]">{imageGenProgress}</span>
+            )}
+            <Button variant="ghost" className="border border-slate-200" onClick={() => window.open('/training-kit', '_blank')}>معاينة المتجر</Button>
+            {canModify && stats.missingImagesCount > 0 ? (
+              <Button
+                variant="ghost"
+                className="border border-[#d9c99f] bg-[#fffaf0] text-[#7f6030] hover:bg-[#f5edd8]"
+                disabled={generatingImages}
+                onClick={applyGeneratedImages}
+              >
+                {generatingImages ? 'جاري التوليد...' : `توليد صور تلقائية (${stats.missingImagesCount})`}
+              </Button>
+            ) : null}
+            {canModify ? <Button className="bg-[#2A6364] text-white hover:bg-[#214f50]" onClick={openCreateModal}>+ إضافة مادة</Button> : null}
           </div>
         </div>
       </section>
@@ -601,10 +710,16 @@ export default function InventoryPage() {
             <div className="grid gap-3 md:grid-cols-2">
               <Input label="اسم المادة" value={formState.name} onChange={(event) => setFormState((prev) => ({ ...prev, name: event.target.value }))} required />
               <Input label="الفئة" value={formState.category} onChange={(event) => setFormState((prev) => ({ ...prev, category: event.target.value }))} list="inventory-categories" required />
-              <select value={formState.type} onChange={(event) => setFormState((prev) => ({ ...prev, type: event.target.value as any }))} className="h-11 rounded-xl border border-slate-200 px-3">
-                <option value="RETURNABLE">مسترجعة</option>
-                <option value="CONSUMABLE">مستهلكة</option>
-              </select>
+              <div className="space-y-1">
+                <label className="block text-[11px] font-semibold text-slate-600">نوع المادة</label>
+                <select value={formState.type} onChange={(event) => setFormState((prev) => ({ ...prev, type: event.target.value as any }))} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm">
+                  <option value="RETURNABLE">مسترجعة — تُعاد بعد الاستخدام (عهدة)</option>
+                  <option value="CONSUMABLE">مستهلكة — لا تُعاد (تُخصم عند الصرف)</option>
+                </select>
+                <p className="text-[10px] text-slate-400">
+                  {formState.type === 'RETURNABLE' ? 'تُنشئ عهدة على المستلم وتظهر في المرتجعات.' : 'تُخصم من المخزون مباشرة عند الصرف. لا عهدة ولا إرجاع.'}
+                </p>
+              </div>
               <Input label="الكمية" type="number" min="0" value={formState.quantity} onChange={(event) => setFormState((prev) => ({ ...prev, quantity: event.target.value }))} required />
               <Input label="الحد الأدنى" type="number" min="1" value={formState.minStock} onChange={(event) => setFormState((prev) => ({ ...prev, minStock: event.target.value }))} required />
               <Input label="سعر المفرد" type="number" min="0" step="0.01" value={formState.unitPrice} onChange={(event) => setFormState((prev) => ({ ...prev, unitPrice: event.target.value }))} />
@@ -666,6 +781,23 @@ function StatusBadge({ status }: { status: InventoryItem['status'] }) {
   if (status === 'LOW_STOCK') return <Badge variant="warning">منخفض</Badge>;
   if (status === 'OUT_OF_STOCK') return <Badge variant="danger">نافد</Badge>;
   return <Badge variant="success">متاح</Badge>;
+}
+
+function TypeBadge({ type }: { type: 'RETURNABLE' | 'CONSUMABLE' }) {
+  if (type === 'CONSUMABLE') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-[#d9c99f] bg-[#fbf6ea] px-2.5 py-0.5 text-[11px] font-bold text-[#8a6a37]">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#8a6a37]" />
+        مستهلكة
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-[#cce6d7] bg-[#f0fbf5] px-2.5 py-0.5 text-[11px] font-bold text-[#1e6b4c]">
+      <span className="h-1.5 w-1.5 rounded-full bg-[#1e6b4c]" />
+      مسترجعة
+    </span>
+  );
 }
 
 function InventoryTable({
@@ -732,7 +864,7 @@ function InventoryTable({
                     </div>
                   </td>
                   <td className="p-3 text-sm text-slate-700">{getInventoryDisplayCategory(item, 'ar')}</td>
-                  <td className="p-3 text-sm text-slate-700">{getInventoryTypeLabel(item.type, 'ar')}</td>
+                  <td className="p-3"><TypeBadge type={item.type} /></td>
                   <td className="p-3 text-sm text-slate-800">{formatNumber(item.quantity)} {getInventoryDisplayUnit(item, 'ar')}</td>
                   <td className="p-3 text-sm text-slate-700">{formatNumber(item.availableQty)}</td>
                   <td className="p-3 text-sm text-slate-700">{formatNumber(item.reservedQty)}</td>

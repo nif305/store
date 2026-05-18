@@ -667,10 +667,18 @@ export async function createTrainerNeed(data: any) {
         .filter((item: any) => item.catalogItemId && item.quantity > 0)
     : [];
 
+  const suggestedItems: { title: string; quantity: number; note?: string }[] = Array.isArray(data.suggestedItems)
+    ? data.suggestedItems.filter((s: any) => normalizeText(s.title) && Number(s.quantity) > 0).map((s: any) => ({
+        title: normalizeText(s.title),
+        quantity: Math.max(1, Math.floor(Number(s.quantity))),
+        note: normalizeText(s.note) || undefined,
+      }))
+    : [];
+
   if (!trainerName || !courseName || !startDate || Number.isNaN(startDate.getTime()) || !endDate || Number.isNaN(endDate.getTime())) {
     throw new Error('بيانات الدورة الأساسية غير مكتملة');
   }
-  if (!rows.length) throw new Error('يجب اختيار مادة واحدة على الأقل');
+  if (!rows.length && !suggestedItems.length) throw new Error('يجب اختيار مادة واحدة على الأقل أو إضافة مادة مقترحة');
   rows = await appendDefaultPerTraineeRows(rows, traineeCount);
 
   const catalog = await prisma.storeCatalogItem.findMany({
@@ -699,6 +707,12 @@ export async function createTrainerNeed(data: any) {
     await assertRoomsAvailable(roomAvailabilitySelections);
   }
 
+  // Build suggested items note for coordinator
+  const suggestedNote = suggestedItems.length
+    ? `\n\n─── مواد مقترحة (غير متوفرة في المتجر) ───\n` +
+      suggestedItems.map((s) => `• ${s.title} (${s.quantity})${s.note ? ` — ${s.note}` : ''}`).join('\n')
+    : '';
+
   const count = await prisma.trainerNeed.count();
   const code = `TN-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
@@ -712,6 +726,7 @@ export async function createTrainerNeed(data: any) {
         startDate,
         endDate,
         status: TrainerNeedStatus.NEW,
+        decisionNote: suggestedNote || null,
         items: {
           create: rows.map((row: any) => {
             const item = byId.get(row.catalogItemId)!;
