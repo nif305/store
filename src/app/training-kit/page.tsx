@@ -390,21 +390,35 @@ export default function TrainingKitPage() {
         وكالة التدريب — جامعة نايف العربية للعلوم الأمنية © 2026
       </footer>
 
-      {/* Checkout float bar */}
+      {/* Checkout float bar — fully white, high contrast */}
       {view !== 'orders' && view !== 'success' && cartCount > 0 && (
-        <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-[#DADBD9] bg-white/96 px-4 py-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur">
-          <div className="mx-auto flex max-w-[640px] items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2A6364] text-[13px] font-bold text-white">{cartCount}</span>
-              <div><div className="text-[13px] font-bold text-[#2A2A2A]">{cartRows.length} صنف · {cartCount} وحدة</div><div className="text-[10px] text-[#B5BDBE]">القاعة اختيارية — يمكن المتابعة بدونها</div></div>
+        <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t-2 border-[#2A6364]/20 bg-white px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.12)]">
+          <div className="mx-auto flex max-w-[680px] items-center justify-between gap-4">
+            {/* Cart summary */}
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2A6364] shadow-[0_2px_8px_rgba(42,99,100,0.35)]">
+                <span className="text-[14px] font-extrabold text-white">{cartCount}</span>
+              </div>
+              <div>
+                <div className="text-[13px] font-extrabold text-[#2A2A2A]">{cartRows.length} صنف · {cartCount} وحدة</div>
+                <div className="text-[10px] text-[#B5BDBE]">القاعة اختيارية</div>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setView('orders')} className="flex items-center gap-1.5 rounded-[10px] border border-[#DADBD9] bg-white px-3 py-2 text-[12px] font-bold text-[#5A5A5A] hover:border-[#2A6364]/30">
-                مراجعة مباشرة
-              </button>
-              <button onClick={() => setView('rooms')} className="flex items-center gap-1.5 rounded-[10px] bg-[#2A6364] px-4 py-2 text-[12px] font-bold text-white hover:bg-[#1e5152]">
+            {/* Action buttons */}
+            <div className="flex items-center gap-2">
+              <button onClick={() => setView('rooms')}
+                className="flex items-center gap-1.5 rounded-[10px] border border-[#DADBD9] bg-[#F9F9F9] px-4 py-2.5 text-[13px] font-semibold text-[#5A5A5A] transition hover:border-[#2A6364]/30 hover:bg-[#eef5f4] hover:text-[#2A6364]">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
+                </svg>
                 اختيار قاعة
-                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+              </button>
+              <button onClick={() => setView('orders')}
+                className="flex items-center gap-2 rounded-[10px] bg-[#2A6364] px-5 py-2.5 text-[13px] font-extrabold text-white shadow-[0_3px_12px_rgba(42,99,100,0.4)] transition hover:bg-[#1e5152]">
+                مراجعة الطلب
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
               </button>
             </div>
           </div>
@@ -705,111 +719,171 @@ function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, se
   submitting: boolean; onSubmit: (e: React.FormEvent) => void;
   goHome: () => void; goRooms: () => void; onOpenSuggested: () => void;
 }) {
+  const totalUnits = cartRows.reduce((s, r) => s + r.quantity, 0);
+  const isReady = form.trainerName && form.courseName && form.startDate && form.endDate && (cartRows.length > 0 || suggestedItems.length > 0);
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {/* Course info — TOP, prominent */}
-      <section className="rounded-[14px] border border-[#DADBD9] bg-white p-4">
-        <h2 className="mb-3 text-[16px] font-extrabold text-[#2A6364]">بيانات الدورة التدريبية</h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+
+      {/* ── Course info — distinctive teal background ── */}
+      <section className="overflow-hidden rounded-[16px] border border-[#2A6364]/20 bg-[#eef5f4]">
+        <div className="flex items-center gap-2 border-b border-[#2A6364]/15 bg-[#2A6364] px-4 py-2.5">
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" /><path d="M6 12v5c3.5 3 8.5 3 12 0v-5" />
+          </svg>
+          <h2 className="text-[14px] font-extrabold text-white">بيانات الدورة التدريبية</h2>
+          <span className="mr-auto text-[11px] text-white/60">الحقول المُعلّمة بـ * مطلوبة</span>
+        </div>
+        <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
           <Field label="اسم المدرب *" value={form.trainerName} onChange={(v) => setForm((p) => ({ ...p, trainerName: v }))} required className="xl:col-span-2" />
           <Field label="اسم الدورة *" value={form.courseName} onChange={(v) => setForm((p) => ({ ...p, courseName: v }))} required className="xl:col-span-2" />
           <Field label="عدد المتدربين" type="number" value={form.traineeCount} required={false} onChange={(v) => setForm((p) => ({ ...p, traineeCount: v }))} />
           <Field label="تاريخ البداية *" type="date" value={form.startDate} onChange={(v) => setForm((p) => ({ ...p, startDate: v }))} />
           <Field label="تاريخ النهاية *" type="date" value={form.endDate} onChange={(v) => setForm((p) => ({ ...p, endDate: v }))} />
-          {/* Rooms quick summary */}
-          <div className="xl:col-span-3">
-            <div className="text-[11px] font-semibold text-[#B5BDBE] mb-1">القاعات</div>
-            <div className="flex flex-wrap items-center gap-2">
-              {selectedRooms.length ? selectedRooms.map(({ room, selection }) => (
-                <span key={room.id} className="rounded-full border border-[#DADBD9] bg-[#F9F9F9] px-2.5 py-1 text-[11px] text-[#2A2A2A]">
-                  {room.name} · {selection.startDate || '؟'} → {selection.endDate || '؟'}
-                </span>
-              )) : (
-                <button type="button" onClick={goRooms} className="text-[12px] text-[#2A6364] underline">اختر قاعة</button>
-              )}
-              {selectedRooms.length > 0 && <button type="button" onClick={goRooms} className="text-[11px] text-[#2A6364] underline">تعديل</button>}
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* Materials list + submit */}
-      <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
-        {/* Materials */}
+      {/* ── 3 columns: Materials | Room | Summary ── */}
+      <div className="grid gap-4 xl:grid-cols-[1fr_260px_260px]">
+
+        {/* Column 1 — Materials */}
         <section className="rounded-[14px] border border-[#DADBD9] bg-white">
           <div className="flex items-center justify-between border-b border-[#DADBD9] px-4 py-3">
-            <h2 className="text-[15px] font-extrabold text-[#2A2A2A]">المواد المطلوبة <span className="mr-1 text-[13px] font-normal text-[#B5BDBE]">({cartRows.length} صنف)</span></h2>
-            <button type="button" onClick={goHome} className="text-[12px] font-semibold text-[#2A6364] hover:underline">+ إضافة مواد</button>
+            <h3 className="text-[14px] font-extrabold text-[#2A2A2A]">
+              المواد المطلوبة
+              <span className="mr-1.5 text-[12px] font-normal text-[#B5BDBE]">{cartRows.length} صنف</span>
+            </h3>
+            <button type="button" onClick={goHome} className="text-[12px] font-semibold text-[#2A6364] hover:underline">+ إضافة</button>
           </div>
           {cartRows.length ? (
-            <div className="divide-y divide-[#F9F9F9]">
+            <div className="divide-y divide-[#f5f5f5]">
               {cartRows.map(({ item, quantity }) => {
                 const free = Math.max(item.stockQty - item.temporarilyReservedQty, 0);
                 return (
-                  <div key={item.id} className="grid grid-cols-[52px_1fr_auto] items-center gap-3 px-4 py-3">
-                    <div className="flex h-13 w-13 items-center justify-center overflow-hidden rounded-[8px] bg-[#F9F9F9]">
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      ) : (
-                        <CategoryIllustration category={item.category} size={32} />
-                      )}
+                  <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                    <div className="flex h-11 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-[#F9F9F9]">
+                      {item.imageUrl
+                        ? <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        : <CategoryIllustration category={item.category} size={28} />}
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-semibold text-[#2A2A2A] truncate">{item.title}</div>
-                      <div className="text-[11px] text-[#B5BDBE]">{item.category} · {item.isOnDemand ? 'عند الطلب' : `متاح: ${free}`}</div>
-                      <button type="button" onClick={() => setQty(item.id, 0)} className="text-[11px] text-[#73384B] hover:underline">حذف</button>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] font-semibold text-[#2A2A2A]">{item.title}</div>
+                      <div className="text-[10px] text-[#B5BDBE]">{item.isOnDemand ? 'عند الطلب' : `متاح: ${free}`}</div>
                     </div>
-                    <QuantityControl value={quantity} onMinus={() => setQty(item.id, quantity - 1)} onPlus={() => setQty(item.id, quantity + 1)} onChange={(v) => setQty(item.id, v)} />
+                    <div className="flex shrink-0 items-center gap-2">
+                      <QuantityControl value={quantity} onMinus={() => setQty(item.id, quantity - 1)} onPlus={() => setQty(item.id, quantity + 1)} onChange={(v) => setQty(item.id, v)} />
+                      <button type="button" onClick={() => setQty(item.id, 0)} className="text-[11px] text-[#73384B]">✕</button>
+                    </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3 py-14">
-              <CategoryIllustration category="" size={48} />
-              <p className="text-[13px] text-[#B5BDBE]">لا توجد مواد بعد</p>
-              <button type="button" onClick={goHome} className="rounded-[8px] bg-[#2A6364] px-4 py-2 text-[12px] font-bold text-white">تصفح المواد</button>
+            <div className="flex flex-col items-center gap-2 py-10">
+              <CategoryIllustration category="" size={40} />
+              <p className="text-[12px] text-[#B5BDBE]">لا توجد مواد</p>
+              <button type="button" onClick={goHome} className="rounded-[8px] bg-[#2A6364] px-3 py-1.5 text-[12px] font-bold text-white">تصفح المواد</button>
             </div>
           )}
-
-          {/* Suggested items summary */}
           {suggestedItems.length > 0 && (
             <div className="border-t border-[#DADBD9] px-4 py-3">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[12px] font-bold text-[#6B5A4A]">مواد مقترحة ({suggestedItems.length})</span>
-                <button type="button" onClick={onOpenSuggested} className="text-[11px] text-[#2A6364] underline">تعديل</button>
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#6B5A4A]">مقترحة ({suggestedItems.length})</span>
+                <button type="button" onClick={onOpenSuggested} className="text-[10px] text-[#2A6364] underline">تعديل</button>
               </div>
               {suggestedItems.map((s, i) => (
-                <div key={i} className="flex items-center justify-between text-[12px] text-[#5A5A5A]">
-                  <span>{s.title}</span>
-                  <span className="font-bold text-[#6B5A4A]">×{s.quantity}</span>
+                <div key={i} className="flex items-center justify-between text-[11px] text-[#5A5A5A]">
+                  <span className="truncate">{s.title}</span>
+                  <span className="shrink-0 font-bold text-[#6B5A4A]">×{s.quantity}</span>
                 </div>
               ))}
             </div>
           )}
         </section>
 
-        {/* Submit panel */}
-        <aside className="rounded-[14px] border border-[#DADBD9] bg-white p-4 xl:sticky xl:top-20 xl:self-start">
-          <h3 className="text-[15px] font-extrabold text-[#2A2A2A]">ملخص الطلب</h3>
-          <div className="mt-3 space-y-2">
-            <SummaryRow label="عدد الأصناف" value={`${cartRows.length} صنف`} />
-            <SummaryRow label="إجمالي الوحدات" value={`${cartRows.reduce((s, r) => s + r.quantity, 0)}`} />
-            {suggestedItems.length > 0 && <SummaryRow label="مواد مقترحة" value={`${suggestedItems.length}`} />}
-            {selectedRooms.length > 0 && <SummaryRow label="القاعات" value={`${selectedRooms.length}`} />}
+        {/* Column 2 — Room */}
+        <section className="rounded-[14px] border border-[#DADBD9] bg-white">
+          <div className="flex items-center justify-between border-b border-[#DADBD9] px-4 py-3">
+            <h3 className="text-[14px] font-extrabold text-[#2A2A2A]">القاعة المطلوبة</h3>
+            <button type="button" onClick={goRooms} className="text-[12px] font-semibold text-[#2A6364] hover:underline">
+              {selectedRooms.length ? 'تعديل' : '+ اختيار'}
+            </button>
           </div>
-          <div className="my-4 border-t border-[#DADBD9]" />
-          <div className="text-[11px] leading-5 text-[#B5BDBE]">
-            تاريخ النهاية يُستخدم كموعد إرجاع متوقع للمواد المسترجعة.
+          {selectedRooms.length ? (
+            <div className="divide-y divide-[#f5f5f5]">
+              {selectedRooms.map(({ room, selection }) => (
+                <div key={room.id} className="px-4 py-3">
+                  <div className="text-[13px] font-bold text-[#2A2A2A]">{room.name}</div>
+                  <div className="mt-0.5 text-[11px] text-[#B5BDBE]">{room.type} · سعة {room.capacity}</div>
+                  <div className="mt-2 rounded-[8px] bg-[#F9F9F9] px-3 py-2 text-[11px]">
+                    <div className="flex items-center gap-2 text-[#5A5A5A]">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                      </svg>
+                      <span className="font-semibold text-[#2A6364]">{selection.startDate || '—'}</span>
+                      <span className="text-[#B5BDBE]">→</span>
+                      <span className="font-semibold text-[#2A6364]">{selection.endDate || '—'}</span>
+                    </div>
+                  </div>
+                  {room.equipment.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {room.equipment.slice(0, 3).map((eq) => (
+                        <span key={eq} className="rounded-full bg-[#F9F9F9] px-2 py-0.5 text-[9px] text-[#5A5A5A]">{eq}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+              <svg viewBox="0 0 24 24" fill="none" className="h-10 w-10 text-[#DADBD9]" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
+              </svg>
+              <p className="text-[12px] text-[#B5BDBE]">لم تختر قاعة بعد</p>
+              <p className="text-[10px] text-[#DADBD9]">اختيارية — يمكن الإرسال بدونها</p>
+              <button type="button" onClick={goRooms}
+                className="mt-1 rounded-[8px] border border-[#DADBD9] px-3 py-1.5 text-[12px] font-semibold text-[#2A6364] hover:border-[#2A6364]/40 hover:bg-[#eef5f4]">
+                اختيار قاعة
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* Column 3 — Summary + Submit */}
+        <aside className="rounded-[14px] border border-[#DADBD9] bg-white xl:sticky xl:top-[108px] xl:self-start">
+          <div className="border-b border-[#DADBD9] px-4 py-3">
+            <h3 className="text-[14px] font-extrabold text-[#2A2A2A]">ملخص الطلب</h3>
           </div>
-          <button type="submit" disabled={submitting || (cartRows.length === 0 && suggestedItems.length === 0)}
-            className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#2A6364] text-[14px] font-extrabold text-white shadow-[0_4px_14px_rgba(42,99,100,0.3)] hover:bg-[#1e5152] disabled:opacity-40">
-            {submitting ? (
-              <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> جاري الإرسال...</>
-            ) : (
-              <>إرسال الطلب <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg></>
+          <div className="space-y-2 px-4 py-3">
+            <SummaryRow label="المواد" value={`${cartRows.length} صنف`} />
+            <SummaryRow label="الوحدات" value={`${totalUnits}`} />
+            {suggestedItems.length > 0 && <SummaryRow label="مقترحة" value={`${suggestedItems.length}`} />}
+            <SummaryRow label="القاعة" value={selectedRooms.length > 0 ? selectedRooms[0].room.name : 'غير محددة'} />
+            {form.trainerName && <SummaryRow label="المدرب" value={form.trainerName} />}
+            {form.courseName && <SummaryRow label="الدورة" value={form.courseName} />}
+          </div>
+          <div className="px-4 pb-4 pt-2">
+            {!isReady && (
+              <div className="mb-3 rounded-[8px] border border-[#e8ddbf] bg-[#fffbf0] px-3 py-2 text-[11px] text-[#8a6a37]">
+                أكمل بيانات الدورة والمواد للإرسال
+              </div>
             )}
-          </button>
+            <button type="submit" disabled={submitting || !isReady}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-[#2A6364] text-[15px] font-extrabold text-white shadow-[0_4px_18px_rgba(42,99,100,0.35)] transition hover:bg-[#1e5152] disabled:cursor-not-allowed disabled:opacity-40">
+              {submitting ? (
+                <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> جاري الإرسال...</>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                  إرسال الطلب
+                </>
+              )}
+            </button>
+            <p className="mt-2 text-center text-[10px] text-[#B5BDBE]">تاريخ النهاية = موعد إرجاع المواد المسترجعة</p>
+          </div>
         </aside>
       </div>
     </form>
