@@ -399,10 +399,7 @@ export default function TrainingKitPage() {
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2A6364] shadow-[0_2px_8px_rgba(42,99,100,0.35)]">
                 <span className="text-[14px] font-extrabold text-white">{cartCount}</span>
               </div>
-              <div>
-                <div className="text-[13px] font-extrabold text-[#2A2A2A]">{cartRows.length} صنف · {cartCount} وحدة</div>
-                <div className="text-[10px] text-[#B5BDBE]">القاعة اختيارية</div>
-              </div>
+              <div className="text-[13px] font-extrabold text-[#2A2A2A]">{cartRows.length} صنف · {cartCount} وحدة</div>
             </div>
             {/* Action buttons */}
             <div className="flex items-center gap-2">
@@ -515,27 +512,9 @@ function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; set
           <div className="mt-0.5 text-[11px] text-[#B5BDBE]">{item.category}</div>
         </div>
 
-        {/* Stock details */}
-        {item.isOnDemand ? (
+        {item.isOnDemand && item.onDemandNote && (
           <div className="rounded-[7px] border border-[#e8ddbf] bg-[#fffbf0] px-2.5 py-1.5 text-[11px] leading-5 text-[#7f6b43]">
-            {item.onDemandNote || 'يُوفَّر عند الطلب'}
-          </div>
-        ) : (
-          <div className="rounded-[7px] border px-2.5 py-1.5 text-[11px]"
-            style={{ borderColor: `${stockColor}40`, backgroundColor: `${stockColor}0d` }}>
-            <div className="flex items-center justify-between gap-2">
-              <span style={{ color: stockColor }} className="font-bold">
-                {free === 0 ? 'نافد من المخزون' : `المتاح: ${free} ${item.unit}`}
-              </span>
-              {item.temporarilyReservedQty > 0 && (
-                <span className="text-[#B5BDBE]">محجوز: {item.temporarilyReservedQty}</span>
-              )}
-            </div>
-            {item.temporarilyReservedQty > 0 && free > 0 && (
-              <div className="mt-0.5 text-[10px] text-[#B5BDBE]">
-                إجمالي المخزون: {item.stockQty} {item.unit}
-              </div>
-            )}
+            {item.onDemandNote}
           </div>
         )}
 
@@ -564,14 +543,12 @@ function BundlesView({ bundles, traineeCount, onAdd }: { bundles: Bundle[]; trai
   return (
     <div className="space-y-3">
       {/* Info bar */}
-      <div className="flex items-start gap-3 rounded-[12px] border border-[#DADBD9] bg-white px-4 py-3">
-        <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
-        <div>
-          <p className="text-[12px] font-bold text-[#2A6364]">البكجات الجاهزة</p>
-          <p className="text-[11px] text-[#B5BDBE]">مجموعات مواد جاهزة لأنواع شائعة من الدورات — أضف بكجاً بضغطة واحدة وعدّل الكميات لاحقاً من صفحة الطلبات.</p>
-          {needsTraineeCount && <p className="mt-1 text-[11px] text-[#C7B08C]">💡 بعض البكجات تحسب الكمية حسب عدد المتدربين — أدخله في صفحة المراجعة لرؤية الكميات الدقيقة.</p>}
+      {needsTraineeCount && (
+        <div className="flex items-center gap-2 rounded-[10px] border border-[#e8ddbf] bg-[#fffbf0] px-3 py-2 text-[11px] text-[#8a6a37]">
+          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
+          بعض البكجات تحسب الكمية حسب عدد المتدربين — أدخله في صفحة المراجعة لرؤية الكميات الدقيقة.
         </div>
-      </div>
+      )}
     <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {!bundles.length && (
         <div className="col-span-3 rounded-[14px] border border-dashed border-[#DADBD9] bg-white py-16 text-center">
@@ -647,15 +624,7 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
   return (
     <div className="relative grid gap-4 xl:block xl:pl-[390px]">
       <div className="space-y-3">
-        {/* Availability note — show when no dates entered */}
-        {!form.startDate && (
-          <div className="flex items-start gap-2 rounded-[12px] border border-[#DADBD9] bg-[#F9F9F9] px-4 py-3 text-[12px] text-[#5A5A5A]">
-            <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
-            </svg>
-            <span>أدخل تواريخ الدورة في صفحة المراجعة لمعرفة <strong className="text-[#2A6364]">توفر القاعات الفعلي</strong> في تلك الفترة. الحالة المعروضة الآن هي حالة اليوم فقط.</span>
-          </div>
-        )}
+        {/* Availability context — show period only when dates are set */}
         {form.startDate && (
           <div className="flex items-center gap-2 rounded-[12px] border border-[#cce6d7] bg-[#eef8f2] px-4 py-2.5 text-[12px] text-[#1e6b4c]">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -965,7 +934,6 @@ function SuccessView({ order, onReset }: { order: SubmittedOrder; onReset: () =>
           <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-[#4F8F7A]" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
         </div>
         <h2 className="text-[22px] font-extrabold text-[#2A2A2A]">تم إرسال الطلب بنجاح</h2>
-        <p className="mt-1 text-[13px] text-[#B5BDBE]">سيراجع المنسق احتياجاتك ويتواصل معك</p>
       </div>
 
       {/* Summary card */}
