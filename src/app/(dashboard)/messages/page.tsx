@@ -176,152 +176,103 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-5">
-      <section className="rounded-[24px] border border-[#d6d7d4] bg-white px-4 py-4 shadow-sm sm:rounded-[28px] sm:px-5 sm:py-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-4" dir="rtl">
+      {/* Header */}
+      <section className="overflow-hidden rounded-[20px] bg-gradient-to-l from-[#2c4a5a] to-[#2E6F8E] p-5 text-white shadow-[0_12px_32px_rgba(46,111,142,0.25)]">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-[24px] font-extrabold leading-[1.25] text-[#016564] sm:text-[30px]">
-              المراسلات الداخلية
-            </h1>
-            <p className="mt-2 text-[13px] leading-7 text-[#61706f] sm:text-sm">
-              مراسلات داخلية حقيقية بين مستخدمي المنصة، مرتبطة بالطلبات والعمليات عند الحاجة.
-            </p>
+            <h1 className="text-[22px] font-extrabold">المراسلات الداخلية</h1>
+            <div className="mt-1 flex items-center gap-3 text-[12px] text-white/70">
+              <span>{stats.total} رسالة</span>
+              {activeBox === 'inbox' && stats.unread > 0 && (
+                <span className="rounded-full bg-[#C7B08C]/80 px-2 py-0.5 text-[11px] font-bold text-white">
+                  {stats.unread} غير مقروءة
+                </span>
+              )}
+            </div>
           </div>
-          <Button onClick={() => setComposeOpen(true)}>رسالة جديدة</Button>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveBox('inbox')}
-            className={`rounded-full px-4 py-2 text-sm ${
-              activeBox === 'inbox' ? 'bg-[#016564] text-white' : 'border border-slate-200 bg-white text-slate-600'
-            }`}
-          >
-            الوارد
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveBox('sent')}
-            className={`rounded-full px-4 py-2 text-sm ${
-              activeBox === 'sent' ? 'bg-[#016564] text-white' : 'border border-slate-200 bg-white text-slate-600'
-            }`}
-          >
-            الصادر
+          <button onClick={() => setComposeOpen(true)}
+            className="inline-flex items-center gap-2 rounded-[14px] bg-white px-4 py-2.5 text-[13px] font-extrabold text-[#2E6F8E] shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition hover:bg-[#f0f8fc]">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            رسالة جديدة
           </button>
         </div>
-        <div className="mt-4 flex flex-wrap gap-3 text-xs font-bold text-[#425554]">
-          <div className="rounded-full bg-[#f4faf9] px-4 py-2 text-[#016564]">إجمالي الرسائل: {stats.total}</div>
-          {activeBox === 'inbox' ? (
-            <div className="rounded-full bg-[#d0b284]/15 px-4 py-2 text-[#8a6a28]">غير المقروءة: {stats.unread}</div>
-          ) : null}
+
+        <div className="mt-4 flex items-center gap-2">
+          {(['inbox', 'sent'] as const).map((box) => (
+            <button key={box} onClick={() => setActiveBox(box)}
+              className={`rounded-full border px-4 py-1.5 text-[12px] font-bold transition ${activeBox === box ? 'border-white bg-white text-[#2E6F8E]' : 'border-white/30 text-white hover:border-white/60'}`}>
+              {box === 'inbox' ? 'الوارد' : 'الصادر'}
+            </button>
+          ))}
+          <div className="relative flex-1 mr-2">
+            <svg viewBox="0 0 24 24" fill="none" className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/50" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث في الرسائل..."
+              className="h-8 w-full rounded-full border border-white/20 bg-white/10 pr-8 pl-3 text-[12px] text-white placeholder-white/40 outline-none focus:border-white/40 focus:bg-white/20" />
+          </div>
         </div>
       </section>
 
-      <section className="rounded-[24px] border border-[#d6d7d4] bg-white p-4 shadow-sm sm:rounded-[28px] sm:p-5">
-        <Input
-          label="بحث"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="العنوان، النص، الرقم المرجعي، أو اسم الطرف الآخر"
-        />
-      </section>
-
-      <section className="space-y-3">
+      {/* Messages list */}
+      <div className="space-y-2.5">
         {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((item) => (
-              <Skeleton key={item} className="h-28 w-full rounded-[24px]" />
-            ))}
-          </div>
+          [1,2,3].map((i) => <div key={i} className="h-24 animate-pulse rounded-[16px] bg-[#F0F0F0]" />)
         ) : messages.length === 0 ? (
-          <Card className="rounded-[24px] border border-[#d6d7d4] p-8 text-center text-sm text-[#61706f] shadow-sm">
-            لا توجد مراسلات مطابقة
-          </Card>
+          <div className="flex flex-col items-center justify-center rounded-[20px] border border-[#DADBD9] bg-white py-16 text-center">
+            <svg viewBox="0 0 24 24" fill="none" className="h-12 w-12 text-[#DADBD9]" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <p className="mt-3 text-[13px] text-[#B5BDBE]">لا توجد رسائل</p>
+          </div>
         ) : (
           messages.map((message) => {
             const otherParty = activeBox === 'inbox' ? message.sender : message.receiver;
+            const isUnread = !message.isRead && activeBox === 'inbox';
 
             return (
-              <Card key={message.id} className="rounded-[24px] border border-[#d6d7d4] p-4 shadow-sm">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {!message.isRead && activeBox === 'inbox' ? (
-                        <span className="rounded-full bg-[#7c1e3e]/10 px-3 py-1 text-[11px] text-[#7c1e3e]">
-                          غير مقروءة
-                        </span>
-                      ) : null}
-                      {message.relatedType ? (
-                        <span className="rounded-full bg-[#016564]/10 px-3 py-1 text-[11px] text-[#016564]">
-                          {relatedTypeLabels[message.relatedType]}
-                        </span>
-                      ) : null}
-                      {message.relatedId ? (
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-700">
-                          {message.relatedId}
-                        </span>
-                      ) : null}
+              <button key={message.id} onClick={() => openMessage(message)}
+                className={`w-full rounded-[16px] border bg-white p-4 text-right transition hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] ${isUnread ? 'border-[#2E6F8E]/30 bg-[#f5f9fc]' : 'border-[#DADBD9]'}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e7eff5]">
+                      <span className="text-[13px] font-extrabold text-[#2E6F8E]">
+                        {(otherParty?.fullName || '?').charAt(0)}
+                      </span>
                     </div>
-                    <h3 className="text-lg font-bold text-[#152625]">{message.subject}</h3>
-                    <p className="text-sm leading-7 text-[#61706f] line-clamp-2">{message.body}</p>
-                    <div className="grid gap-2 text-sm text-[#425554] sm:grid-cols-2 xl:grid-cols-3">
-                      <div>
-                        <span className="font-semibold text-[#016564]">{activeBox === 'inbox' ? 'من' : 'إلى'}: </span>
-                        {otherParty?.fullName || '—'}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] font-extrabold text-[#2A2A2A]">{message.subject}</span>
+                        {isUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[#2E6F8E]" />}
                       </div>
-                      <div>
-                        <span className="font-semibold text-[#016564]">الدور: </span>
-                        {otherParty?.role || '—'}
-                      </div>
-                      <div>
-                        <span className="font-semibold text-[#016564]">التاريخ: </span>
-                        {formatDate(message.createdAt)}
+                      <p className="mt-0.5 line-clamp-1 text-[12px] text-[#B5BDBE]">{message.body}</p>
+                      <div className="mt-1 flex items-center gap-3 text-[11px] text-[#B5BDBE]">
+                        <span>{activeBox === 'inbox' ? 'من: ' : 'إلى: '}{otherParty?.fullName || '—'}</span>
+                        {message.relatedType && (
+                          <span className="rounded-full bg-[#eef5f4] px-2 py-0.5 text-[10px] font-semibold text-[#2A6364]">
+                            {relatedTypeLabels[message.relatedType]}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex w-full flex-col gap-2 lg:w-auto">
-                    <Button className="w-full lg:w-36" onClick={() => openMessage(message)}>
-                      فتح الرسالة
-                    </Button>
-                  </div>
+                  <span className="shrink-0 text-[11px] text-[#B5BDBE]">{formatDate(message.createdAt)}</span>
                 </div>
-              </Card>
+              </button>
             );
           })
         )}
-      </section>
+      </div>
 
-      {!loading && pagination.totalPages > 1 ? (
-        <section className="flex items-center justify-between rounded-[24px] border border-[#d6d7d4] bg-white px-4 py-3 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(prev.page - 1, 1) }))}
-            disabled={pagination.page <= 1}
-            className="rounded-full border border-[#d6d7d4] px-4 py-2 text-sm font-bold text-[#425554] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            السابق
-          </button>
-          <div className="text-center">
-            <div className="text-sm font-bold text-[#016564]">
-              الصفحة {pagination.page} من {pagination.totalPages}
-            </div>
-            <div className="text-xs text-slate-500">إجمالي الرسائل في هذا العرض: {pagination.total}</div>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              setPagination((prev) => ({
-                ...prev,
-                page: Math.min(prev.page + 1, prev.totalPages),
-              }))
-            }
-            disabled={pagination.page >= pagination.totalPages}
-            className="rounded-full border border-[#d6d7d4] px-4 py-2 text-sm font-bold text-[#425554] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            التالي
-          </button>
-        </section>
-      ) : null}
+      {!loading && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-[16px] border border-[#DADBD9] bg-white px-4 py-3">
+          <button onClick={() => setPagination((p) => ({ ...p, page: Math.max(p.page - 1, 1) }))} disabled={pagination.page <= 1}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">السابق</button>
+          <div className="text-[12px] font-bold text-[#2A6364]">{pagination.page} / {pagination.totalPages}</div>
+          <button onClick={() => setPagination((p) => ({ ...p, page: Math.min(p.totalPages, p.page + 1) }))} disabled={pagination.page >= pagination.totalPages}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">التالي</button>
+        </div>
+      )}
 
       <Modal isOpen={composeOpen} onClose={() => setComposeOpen(false)} title="رسالة داخلية جديدة" size="lg">
         <div className="space-y-4">

@@ -308,261 +308,206 @@ export default function CustodyPage() {
 
   const showingOverdue = useMemo(() => stats.overdue > 0, [stats.overdue]);
 
-  return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="rounded-[24px] border border-surface-border bg-white p-4 shadow-soft sm:rounded-[28px] sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-[24px] leading-[1.25] text-primary sm:text-[30px]">
-              {canManageCustody ? 'العهد لدى الموظفين' : 'عهدتي'}
-            </h1>
-            <p className="mt-2 text-[13px] leading-7 text-surface-subtle sm:text-[14px]">
-              {canManageCustody
-                ? 'متابعة واضحة لكل العهد المسجلة على الموظفين، مع اسم المستلم وحالة الإرجاع والطلب المرتبط.'
-                : 'تظهر هنا المواد المسترجعة التي ما زالت بعهدتك، ويمكنك رفع طلب إرجاعها ومتابعة حالتها.'}
-            </p>
-          </div>
+  const statusColor = (s: CustodyStatus) => s === 'OVERDUE' ? '#73384B' : s === 'RETURN_REQUESTED' ? '#8a6a37' : s === 'RETURNED' ? '#4F8F7A' : '#2A6364';
+  const statusBg = (s: CustodyStatus) => s === 'OVERDUE' ? '#f4e7eb' : s === 'RETURN_REQUESTED' ? '#f7f1e4' : s === 'RETURNED' ? '#edf4f0' : '#eef5f4';
 
-          <Link href="/materials/requests" className="w-full sm:w-auto">
-            <Button variant="ghost" className="w-full sm:w-auto">
-              طلب مادة جديدة
-            </Button>
+  return (
+    <div className="space-y-4" dir="rtl">
+      {/* Header gradient */}
+      <section className="overflow-hidden rounded-[20px] bg-gradient-to-l from-[#1a3c3c] to-[#2A6364] p-5 text-white shadow-[0_12px_32px_rgba(42,99,100,0.25)]">
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-[22px] font-extrabold">
+            {canManageCustody ? 'العهد لدى الموظفين' : 'عهدتي'}
+          </h1>
+          <Link href="/materials/requests"
+            className="inline-flex items-center gap-2 rounded-[14px] bg-white px-4 py-2.5 text-[13px] font-extrabold text-[#2A6364] shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition hover:bg-[#f0fbf9]">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            طلب مادة
           </Link>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-3 sm:mt-5 sm:gap-4">
-          <div className="rounded-[20px] border border-surface-border bg-slate-50 p-3 sm:rounded-[22px] sm:p-4">
-            <div className="text-[12px] text-surface-subtle sm:text-[13px]">إجمالي العهد الحالية</div>
-            <div className="mt-2 text-[24px] leading-none text-slate-900 sm:text-[32px]">{stats.total}</div>
-          </div>
-
-          <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-3 sm:rounded-[22px] sm:p-4">
-            <div className="text-[12px] text-emerald-700 sm:text-[13px]">عهد نشطة</div>
-            <div className="mt-2 text-[24px] leading-none text-slate-900 sm:text-[32px]">{stats.active}</div>
-          </div>
-
-          <div className="rounded-[20px] border border-amber-200 bg-amber-50 p-3 sm:col-span-2 sm:rounded-[22px] sm:p-4 xl:col-span-1">
-            <div className="text-[12px] text-amber-700 sm:text-[13px]">طلبات إرجاع مفتوحة</div>
-            <div className="mt-2 text-[24px] leading-none text-slate-900 sm:text-[32px]">{stats.returnRequested}</div>
-          </div>
+        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {[
+            { label: 'إجمالي العهد', value: stats.total },
+            { label: 'نشطة', value: stats.active },
+            { label: 'متأخرة', value: stats.overdue },
+            { label: 'طلبات إرجاع', value: stats.returnRequested },
+          ].map((s) => (
+            <div key={s.label} className="rounded-[14px] border border-white/10 bg-white/10 px-3 py-3 backdrop-blur-sm">
+              <div className="text-[11px] text-white/60">{s.label}</div>
+              <div className="mt-1 text-[24px] font-extrabold">{s.value}</div>
+            </div>
+          ))}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
-          {[
-            { key: 'ALL', label: 'الكل' },
-            { key: 'ACTIVE', label: 'نشطة' },
-            { key: 'OVERDUE', label: 'متأخرة' },
-            { key: 'RETURN_REQUESTED', label: 'طُلب إرجاعها' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveFilter(tab.key as 'ALL' | 'ACTIVE' | 'OVERDUE' | 'RETURN_REQUESTED')}
-              className={`min-h-[42px] rounded-full px-4 py-2 text-sm transition ${
-                activeFilter === tab.key
-                  ? 'bg-[#016564] text-white'
-                  : 'border border-slate-200 bg-white text-slate-700'
-              }`}
-            >
-              {tab.label}
+        {showingOverdue && (
+          <div className="mt-3 flex items-center gap-2 rounded-[12px] border border-white/20 bg-[#73384B]/40 px-3 py-2 text-[12px] text-white">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            {stats.overdue} عهدة تجاوزت تاريخ الإرجاع المحدد
+          </div>
+        )}
+      </section>
+
+      {/* Filters + search */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+          {([['ALL', 'الكل'], ['ACTIVE', 'نشطة'], ['OVERDUE', 'متأخرة'], ['RETURN_REQUESTED', 'طُلب إرجاعها']] as const).map(([key, label]) => (
+            <button key={key} onClick={() => setActiveFilter(key)}
+              className={`shrink-0 rounded-full border px-4 py-2 text-[12px] font-bold transition ${activeFilter === key ? 'border-[#2A6364] bg-[#2A6364] text-white' : 'border-[#DADBD9] bg-white text-[#5A5A5A] hover:border-[#2A6364]/30'}`}>
+              {label}
             </button>
           ))}
-          {showingOverdue ? (
-            <div className="inline-flex min-h-[42px] items-center rounded-full bg-[#7c1e3e]/10 px-4 py-2 text-sm font-bold text-[#7c1e3e]">
-              متأخرة: {stats.overdue}
-            </div>
-          ) : null}
+        </div>
+        <div className="relative flex-1">
+          <svg viewBox="0 0 24 24" fill="none" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B5BDBE]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder={canManageCustody ? 'ابحث باسم المستلم أو المادة أو الطلب...' : 'ابحث باسم المادة أو رقم الطلب...'}
+            className="h-10 w-full rounded-full border border-[#DADBD9] bg-white pr-9 pl-4 text-[13px] outline-none focus:border-[#2A6364]/50" />
         </div>
       </div>
 
-      <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[28px]">
-        <label className="block text-[12px] font-bold text-slate-600">بحث سريع داخل العهد المعروضة</label>
-        <input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={canManageCustody ? 'ابحث باسم المستلم، المادة، رقم الطلب، أو الإدارة' : 'ابحث باسم المادة أو رقم الطلب'}
-          className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#016564] focus:ring-4 focus:ring-[#016564]/10"
-        />
-      </div>
-
-      <div className="grid gap-3 xl:grid-cols-2 sm:gap-4">
+      {/* Items grid */}
+      <div className="grid gap-3 sm:grid-cols-2">
         {loading ? (
-          <Card className="rounded-[24px] p-8 text-center text-slate-500 sm:rounded-[28px] xl:col-span-2">
-            جاري تحميل العهد...
-          </Card>
+          [1,2,3,4].map((i) => <div key={i} className="h-40 animate-pulse rounded-[16px] bg-[#F0F0F0]" />)
         ) : visibleItems.length === 0 ? (
-          <Card className="rounded-[24px] p-8 text-center text-slate-500 sm:rounded-[28px] xl:col-span-2">
-            لا توجد مواد مسجلة عليك حاليًا
-          </Card>
+          <div className="col-span-2 flex flex-col items-center justify-center rounded-[20px] border border-[#DADBD9] bg-white py-16 text-center">
+            <svg viewBox="0 0 24 24" fill="none" className="h-12 w-12 text-[#DADBD9]" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2 4 6v6c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6l-8-4z"/>
+            </svg>
+            <p className="mt-3 text-[13px] text-[#B5BDBE]">لا توجد عهد مسجلة حاليًا</p>
+          </div>
         ) : (
           visibleItems.map((item) => {
             const openReturn = pendingReturnFor(item);
+            const sColor = statusColor(item.status);
+            const sBg = statusBg(item.status);
 
             return (
-              <Card
-                key={item.id}
-                className="rounded-[24px] border border-surface-border p-4 shadow-soft sm:rounded-[28px] sm:p-5"
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-3 flex flex-wrap items-center gap-2">
-                      <Badge variant={statusVariant(item.status)}>{statusLabel(item.status)}</Badge>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] leading-none text-slate-700 break-all">
-                        {item.code}
-                      </span>
+              <div key={item.id} className="overflow-hidden rounded-[16px] border border-[#DADBD9] bg-white">
+                {/* Card header */}
+                <div className="flex items-center justify-between gap-3 border-b border-[#DADBD9] px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]" style={{ backgroundColor: sBg }}>
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4.5 w-4.5" stroke={sColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2 4 6v6c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6l-8-4z"/>
+                      </svg>
                     </div>
-
-                    <div className="mb-3 rounded-[20px] border border-[#016564]/15 bg-[#016564]/5 p-3">
-                      <div className="text-[11px] font-bold text-[#61706f]">مستلم العهدة</div>
-                      <div className="mt-1 text-[17px] font-extrabold text-[#123f45]">{item.assignedToUserName}</div>
-                      <div className="mt-1 flex flex-wrap gap-2 text-[12px] text-slate-600">
-                        <span>{item.assignedToDepartment || 'بدون إدارة محددة'}</span>
-                        {item.assignedToEmail ? <span>{item.assignedToEmail}</span> : null}
-                      </div>
+                    <div>
+                      <div className="text-[14px] font-extrabold text-[#2A2A2A] leading-tight">{item.itemName}</div>
+                      <div className="font-mono text-[10px] text-[#B5BDBE]">{item.code}</div>
                     </div>
-
-                    <h3 className="text-[20px] leading-8 text-primary sm:text-[22px]">{item.itemName}</h3>
-
-                    <div className="mt-3 grid gap-2 rounded-[18px] bg-slate-50 p-3 text-[13px] leading-7 text-slate-600 sm:rounded-[20px] sm:p-4 md:grid-cols-2">
-                      <div>
-                        الكمية: <span className="text-slate-900">{item.quantity || '-'}</span>
-                      </div>
-                      <div>
-                        رقم طلب الصرف: <span className="text-slate-900">{item.requestCode || '-'}</span>
-                      </div>
-                      <div>
-                        الفئة: <span className="text-slate-900">{item.category || '-'}</span>
-                      </div>
-                      <div>
-                        تاريخ الاستلام: <span className="text-slate-900">{formatDate(item.assignedDate)}</span>
-                      </div>
-                      <div>
-                        موعد الإرجاع: <span className="text-slate-900">{formatDate(item.dueDate)}</span>
-                      </div>
-                      <div>
-                        حالة الإرجاع:{' '}
-                        <span className="text-slate-900">{openReturn ? 'تم رفع طلب إرجاع' : 'لا يوجد'}</span>
-                      </div>
-                    </div>
-
-                    {item.notes ? (
-                      <div className="mt-4 rounded-[18px] border border-surface-border bg-white p-4 text-[13px] leading-7 text-slate-700 whitespace-pre-wrap break-words">
-                        {item.notes}
-                      </div>
-                    ) : null}
                   </div>
-
-                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <Button
-                      variant="ghost"
-                      onClick={() => setSelectedItem(item)}
-                      className="w-full sm:w-auto"
-                    >
-                      عرض
-                    </Button>
-
-                    {item.status === 'RETURN_REQUESTED' || openReturn ? (
-                      <Button variant="ghost" disabled className="w-full sm:w-auto">
-                        تم رفع طلب إرجاع
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => createReturnRequest(item)}
-                        className="w-full sm:w-auto"
-                        disabled={submittingReturnId === item.id}
-                      >
-                        {submittingReturnId === item.id ? 'جاري الإرسال...' : 'طلب إرجاع'}
-                      </Button>
-                    )}
-                  </div>
+                  <span className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ backgroundColor: sBg, color: sColor }}>
+                    {statusLabel(item.status)}
+                  </span>
                 </div>
-              </Card>
+
+                {/* Card body */}
+                <div className="p-4">
+                  {canManageCustody && (
+                    <div className="mb-3 flex items-center gap-2 rounded-[10px] bg-[#eef5f4] px-3 py-2">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <div>
+                        <div className="text-[12px] font-bold text-[#2A6364]">{item.assignedToUserName}</div>
+                        {item.assignedToDepartment && <div className="text-[10px] text-[#B5BDBE]">{item.assignedToDepartment}</div>}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 text-[12px]">
+                    <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
+                      <div className="text-[10px] text-[#B5BDBE]">الكمية</div>
+                      <div className="font-bold text-[#2A2A2A]">{item.quantity}</div>
+                    </div>
+                    <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
+                      <div className="text-[10px] text-[#B5BDBE]">الفئة</div>
+                      <div className="font-bold text-[#2A2A2A] truncate">{item.category || '—'}</div>
+                    </div>
+                    <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
+                      <div className="text-[10px] text-[#B5BDBE]">تاريخ الاستلام</div>
+                      <div className="font-bold text-[#2A2A2A]">{formatDate(item.assignedDate)}</div>
+                    </div>
+                    <div className={`rounded-[8px] px-3 py-2 ${item.status === 'OVERDUE' ? 'bg-[#f4e7eb]' : 'bg-[#F9F9F9]'}`}>
+                      <div className="text-[10px] text-[#B5BDBE]">موعد الإرجاع</div>
+                      <div className={`font-bold ${item.status === 'OVERDUE' ? 'text-[#73384B]' : 'text-[#2A2A2A]'}`}>{formatDate(item.dueDate)}</div>
+                    </div>
+                  </div>
+
+                  {item.requestCode && (
+                    <div className="mt-2 flex items-center gap-2 rounded-[8px] bg-[#F9F9F9] px-3 py-2 text-[11px]">
+                      <span className="text-[#B5BDBE]">طلب الصرف:</span>
+                      <span className="font-mono font-bold text-[#2A6364]">{item.requestCode}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Card footer */}
+                <div className="flex gap-2 border-t border-[#DADBD9] px-4 pb-4 pt-3">
+                  <button onClick={() => setSelectedItem(item)}
+                    className="flex-1 rounded-[10px] border border-[#DADBD9] py-2 text-[12px] font-semibold text-[#5A5A5A] hover:bg-[#F9F9F9]">
+                    التفاصيل
+                  </button>
+                  {item.status === 'RETURN_REQUESTED' || openReturn ? (
+                    <div className="flex-1 rounded-[10px] bg-[#f7f1e4] py-2 text-center text-[12px] font-semibold text-[#8a6a37]">
+                      طلب إرجاع مفتوح
+                    </div>
+                  ) : item.status !== 'RETURNED' ? (
+                    <button onClick={() => createReturnRequest(item)} disabled={submittingReturnId === item.id}
+                      className="flex-1 rounded-[10px] bg-[#2A6364] py-2 text-[12px] font-bold text-white transition hover:bg-[#1e5152] disabled:opacity-40">
+                      {submittingReturnId === item.id ? '...' : 'طلب إرجاع'}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
             );
           })
         )}
       </div>
 
-      {!loading && pagination.totalPages > 1 ? (
-        <section className="flex items-center justify-between rounded-[24px] border border-[#d6d7d4] bg-white px-4 py-3 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(prev.page - 1, 1) }))}
-            disabled={pagination.page <= 1}
-            className="rounded-full border border-[#d6d7d4] px-4 py-2 text-sm font-bold text-[#425554] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            السابق
-          </button>
-          <div className="text-center">
-            <div className="text-sm font-bold text-[#016564]">
-              الصفحة {pagination.page} من {pagination.totalPages}
-            </div>
-            <div className="text-xs text-slate-500">إجمالي العهد في هذا العرض: {pagination.total}</div>
+      {!loading && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-[16px] border border-[#DADBD9] bg-white px-4 py-3">
+          <button onClick={() => setPagination((p) => ({ ...p, page: Math.max(p.page - 1, 1) }))} disabled={pagination.page <= 1}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">السابق</button>
+          <div className="text-[12px] font-bold text-[#2A6364]">
+            {pagination.page} / {pagination.totalPages}
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              setPagination((prev) => ({
-                ...prev,
-                page: Math.min(prev.page + 1, prev.totalPages),
-              }))
-            }
-            disabled={pagination.page >= pagination.totalPages}
-            className="rounded-full border border-[#d6d7d4] px-4 py-2 text-sm font-bold text-[#425554] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            التالي
-          </button>
-        </section>
-      ) : null}
+          <button onClick={() => setPagination((p) => ({ ...p, page: Math.min(p.page + 1, p.totalPages) }))} disabled={pagination.page >= pagination.totalPages}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">التالي</button>
+        </div>
+      )}
 
       <Modal isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} title="تفاصيل العهدة">
-        <div className="space-y-4">
-          <div className="rounded-[18px] border border-surface-border bg-slate-50 p-4 text-[14px] leading-8 text-slate-700 break-words">
-            <div>
-              مستلم العهدة: <span className="text-slate-900">{selectedItem?.assignedToUserName || '-'}</span>
-            </div>
-            <div>
-              الإدارة: <span className="text-slate-900">{selectedItem?.assignedToDepartment || '-'}</span>
-            </div>
-            <div>
-              الكمية: <span className="text-slate-900">{selectedItem?.quantity || '-'}</span>
-            </div>
-            <div>
-              رقم طلب الصرف: <span className="text-slate-900">{selectedItem?.requestCode || '-'}</span>
-            </div>
-            <div>
-              المادة: <span className="text-slate-900">{selectedItem?.itemName || '-'}</span>
-            </div>
-            <div>
-              الرقم: <span className="text-slate-900">{selectedItem?.code || '-'}</span>
-            </div>
-            <div>
-              الفئة: <span className="text-slate-900">{selectedItem?.category || '-'}</span>
-            </div>
-            <div>
-              تاريخ الاستلام: <span className="text-slate-900">{formatDate(selectedItem?.assignedDate)}</span>
-            </div>
-            <div>
-              موعد الإرجاع: <span className="text-slate-900">{formatDate(selectedItem?.dueDate)}</span>
-            </div>
-            <div>
-              الحالة: <span className="text-slate-900">{selectedItem ? statusLabel(selectedItem.status) : '-'}</span>
-            </div>
+        <div className="space-y-4" dir="rtl">
+          <div className="grid grid-cols-2 gap-2 rounded-[14px] bg-[#F9F9F9] p-4 text-[13px]">
+            {[
+              ['المستلم', selectedItem?.assignedToUserName],
+              ['الإدارة', selectedItem?.assignedToDepartment],
+              ['الكمية', String(selectedItem?.quantity ?? '—')],
+              ['رقم الطلب', selectedItem?.requestCode],
+              ['المادة', selectedItem?.itemName],
+              ['الرقم', selectedItem?.code],
+              ['الفئة', selectedItem?.category],
+              ['تاريخ الاستلام', formatDate(selectedItem?.assignedDate)],
+              ['موعد الإرجاع', formatDate(selectedItem?.dueDate)],
+              ['الحالة', selectedItem ? statusLabel(selectedItem.status) : '—'],
+            ].map(([k, v]) => (
+              <div key={k} className="rounded-[8px] bg-white px-3 py-2">
+                <div className="text-[10px] text-[#B5BDBE]">{k}</div>
+                <div className="text-[13px] font-semibold text-[#2A2A2A]">{v || '—'}</div>
+              </div>
+            ))}
           </div>
-
-          {selectedItem?.notes ? (
-            <div className="rounded-[18px] border border-surface-border bg-white p-4 text-[14px] leading-8 text-slate-700 whitespace-pre-wrap break-words sm:rounded-[20px]">
+          {selectedItem?.notes && (
+            <div className="rounded-[12px] border border-[#DADBD9] bg-white p-3 text-[13px] text-[#5A5A5A] whitespace-pre-wrap">
               {selectedItem.notes}
             </div>
-          ) : null}
-
-          <div className="flex justify-end border-t pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setSelectedItem(null)}
-              className="w-full sm:w-auto"
-            >
+          )}
+          <div className="flex justify-end pt-2">
+            <button onClick={() => setSelectedItem(null)}
+              className="rounded-[10px] border border-[#DADBD9] px-5 py-2 text-[13px] font-semibold text-[#5A5A5A] hover:bg-[#F9F9F9]">
               إغلاق
-            </Button>
+            </button>
           </div>
         </div>
       </Modal>

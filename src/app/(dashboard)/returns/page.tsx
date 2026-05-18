@@ -525,224 +525,131 @@ export default function ReturnsPage() {
     await Promise.all([fetchReturns(), fetchCustodies(), fetchReturnableRequestItems()]);
   };
 
+  function ReturnStatusPill({ ret }: { ret: ReturnItem }) {
+    if (ret.status === 'APPROVED') {
+      const c = ret.receivedType === 'GOOD' ? '#1e6b4c' : ret.receivedType ? '#73384B' : '#1e6b4c';
+      const bg = ret.receivedType === 'GOOD' ? '#e8f5ef' : ret.receivedType ? '#f4e7eb' : '#e8f5ef';
+      const label = ret.receivedType === 'GOOD' ? 'مُغلق - سليمة' : ret.receivedType === 'PARTIAL_DAMAGE' ? 'مُغلق - تلف جزئي' : ret.receivedType === 'TOTAL_DAMAGE' ? 'مُغلق - تلف كلي' : 'مُغلق';
+      return <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ backgroundColor: bg, color: c }}>{label}</span>;
+    }
+    if (ret.status === 'REJECTED') return <span className="rounded-full bg-[#f4e7eb] px-2.5 py-1 text-[11px] font-bold text-[#73384B]">مرفوض</span>;
+    return <span className="rounded-full bg-[#f7f1e4] px-2.5 py-1 text-[11px] font-bold text-[#8a6a37]">بانتظار الاستلام</span>;
+  }
+
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="rounded-[24px] border border-surface-border bg-white p-4 shadow-soft sm:rounded-[28px] sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-[24px] leading-[1.25] text-primary sm:text-[30px]">
-              {isEmployee ? 'طلبات الإرجاع' : 'الاستلام والإغلاق'}
-            </h1>
-            <p className="mt-2 text-[13px] leading-7 text-surface-subtle sm:text-[14px]">
-              {isEmployee
-                ? 'إرجاع العهد أو رفع طلب إعادة فائض المواد الاستهلاكية من الطلبات المصروفة.'
-                : 'استلام المواد الراجعة وتوثيق حالتها وإغلاق الطلبات لمسؤول المخزن.'}
-            </p>
-          </div>
-
-          {isEmployee ? (
-            <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
+    <div className="space-y-4" dir="rtl">
+      {/* Header */}
+      <section className="overflow-hidden rounded-[20px] bg-gradient-to-l from-[#1b3d5c] to-[#2E6F8E] p-5 text-white shadow-[0_12px_32px_rgba(46,111,142,0.25)]">
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-[22px] font-extrabold">
+            {isEmployee ? 'طلبات الإرجاع' : 'الاستلام والإغلاق'}
+          </h1>
+          {isEmployee && (
+            <button onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center gap-2 rounded-[14px] bg-white px-4 py-2.5 text-[13px] font-extrabold text-[#2E6F8E] shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition hover:bg-[#f0f8fc]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
               طلب إرجاع جديد
-            </Button>
-          ) : null}
+            </button>
+          )}
         </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4 sm:mt-5 sm:gap-4">
-          <Card className="rounded-[20px] border border-slate-200 bg-slate-50 p-3 sm:rounded-[22px] sm:p-4">
-            <p className="text-[12px] text-slate-600 sm:text-[13px]">إجمالي الطلبات</p>
-            <p className="mt-2 text-[24px] leading-none text-slate-900 sm:text-[32px]">
-              {stats.total}
-            </p>
-          </Card>
-
-          <Card className="rounded-[20px] border border-amber-200 bg-amber-50 p-3 sm:rounded-[22px] sm:p-4">
-            <p className="text-[12px] text-amber-700 sm:text-[13px]">بانتظار الاستلام والتوثيق</p>
-            <p className="mt-2 text-[24px] leading-none text-slate-900 sm:text-[32px]">
-              {stats.pending}
-            </p>
-          </Card>
-
-          <Card className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-3 sm:rounded-[22px] sm:p-4">
-            <p className="text-[12px] text-emerald-700 sm:text-[13px]">أُغلقت سليمة</p>
-            <p className="mt-2 text-[24px] leading-none text-slate-900 sm:text-[32px]">
-              {stats.good}
-            </p>
-          </Card>
-
-          <Card className="rounded-[20px] border border-red-200 bg-red-50 p-3 sm:rounded-[22px] sm:p-4">
-            <p className="text-[12px] text-red-700 sm:text-[13px]">أُغلقت غير سليمة</p>
-            <p className="mt-2 text-[24px] leading-none text-slate-900 sm:text-[32px]">
-              {stats.damaged}
-            </p>
-          </Card>
+        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {[
+            { label: 'إجمالي الطلبات', value: stats.total },
+            { label: 'بانتظار الاستلام', value: stats.pending },
+            { label: 'أُغلقت سليمة', value: stats.good },
+            { label: 'أُغلقت غير سليمة', value: stats.damaged },
+          ].map((s) => (
+            <div key={s.label} className="rounded-[14px] border border-white/10 bg-white/10 px-3 py-3 backdrop-blur-sm">
+              <div className="text-[11px] text-white/60">{s.label}</div>
+              <div className="mt-1 text-[24px] font-extrabold">{s.value}</div>
+            </div>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {pageError ? (
-        <Card className="rounded-[24px] border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:rounded-[28px]">
-          {pageError}
-        </Card>
-      ) : null}
+      {pageError && (
+        <div className="rounded-[12px] border border-[#ecd0d8] bg-[#fff7f8] px-4 py-3 text-[13px] text-[#73384B]">{pageError}</div>
+      )}
 
-      <div className="space-y-3 sm:space-y-4">
+      {/* Returns list */}
+      <div className="space-y-3">
         {isLoading ? (
-          <Card className="rounded-[24px] p-8 text-center text-slate-500 sm:rounded-[28px]">
-            جارٍ تحميل طلبات الإرجاع...
-          </Card>
+          [1,2,3].map((i) => <div key={i} className="h-28 animate-pulse rounded-[16px] bg-[#F0F0F0]" />)
         ) : returns.length === 0 ? (
-          <Card className="rounded-[24px] p-8 text-center text-slate-500 sm:rounded-[28px]">
-            لا توجد طلبات إرجاع حالياً
-          </Card>
+          <div className="flex flex-col items-center justify-center rounded-[20px] border border-[#DADBD9] bg-white py-16 text-center">
+            <svg viewBox="0 0 24 24" fill="none" className="h-12 w-12 text-[#DADBD9]" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 9H5V5"/><path d="M5 9C6.8 6.6 9 5.5 12 5.5c4.7 0 8 3.3 8 8s-3.3 8-8 8c-3.3 0-5.8-1.3-7.5-4"/>
+            </svg>
+            <p className="mt-3 text-[13px] text-[#B5BDBE]">لا توجد طلبات إرجاع</p>
+          </div>
         ) : (
           returns.map((ret) => (
-            <Card
-              key={ret.id}
-              className="rounded-[24px] border border-surface-border p-4 shadow-soft sm:rounded-[28px] sm:p-5"
-            >
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-3 flex flex-wrap items-center gap-2">
-                    {statusBadge(ret)}
-
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] leading-none text-slate-700">
-                      المسار: {sourceTypeLabel(ret.sourceType)}
-                    </span>
-
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] leading-none text-slate-700">
-                      الحالة المبلّغ عنها: {conditionLabel(ret.returnType)}
-                    </span>
-
-                    {ret.status === 'APPROVED' ? (
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] leading-none text-emerald-700">
-                        الحالة الموثقة عند الاستلام: {conditionLabel(ret.receivedType)}
-                      </span>
-                    ) : null}
+            <div key={ret.id} className="overflow-hidden rounded-[16px] border border-[#DADBD9] bg-white">
+              <div className="flex items-center justify-between gap-3 border-b border-[#DADBD9] px-4 py-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#e7eff5]">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4.5 w-4.5 text-[#1b4f68]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 9H5V5"/><path d="M5 9C6.8 6.6 9 5.5 12 5.5c4.7 0 8 3.3 8 8s-3.3 8-8 8c-3.3 0-5.8-1.3-7.5-4"/>
+                    </svg>
                   </div>
-
-                  <h3 className="text-[18px] leading-8 text-primary sm:text-[20px]">{ret.code}</h3>
-
-                  <div className="mt-3 grid gap-2 rounded-[20px] bg-slate-50 p-3 text-[13px] leading-7 text-slate-600 md:grid-cols-2 sm:p-4">
-                    <div>
-                      المادة: <span className="text-slate-900">{getReturnItemName(ret, language)}</span>
-                    </div>
-                    <div>
-                      المستخدم:{' '}
-                      <span className="text-slate-900">{getReturnRequesterName(ret)}</span>
-                    </div>
-                    <div>
-                      رقم المادة:{' '}
-                      <span className="text-slate-900">{getReturnItemCode(ret)}</span>
-                    </div>
-                    <div>
-                      الكمية: <span className="text-slate-900">{getReturnQuantity(ret)}</span>
-                    </div>
-                    <div>
-                      تاريخ الطلب: <span className="text-slate-900">{formatDate(ret.createdAt)}</span>
-                    </div>
-                    <div>
-                      تاريخ الاستلام والتوثيق:{' '}
-                      <span className="text-slate-900">{formatDate(ret.processedAt)}</span>
-                    </div>
-                    {ret.requestItem?.request?.code ? (
-                      <div>
-                        رقم الطلب: <span className="text-slate-900">{ret.requestItem.request.code}</span>
-                      </div>
-                    ) : null}
-                    {ret.requestItem?.request?.purpose ? (
-                      <div>
-                        الغرض: <span className="text-slate-900">{ret.requestItem.request.purpose}</span>
-                      </div>
-                    ) : null}
+                  <div>
+                    <div className="text-[14px] font-extrabold text-[#2A2A2A]">{getReturnItemName(ret, language)}</div>
+                    <div className="font-mono text-[10px] text-[#B5BDBE]">{ret.code}</div>
                   </div>
+                </div>
+                <ReturnStatusPill ret={ret} />
+              </div>
 
-                  <div className="mt-3 rounded-[20px] border border-surface-border bg-white p-3 text-[13px] leading-7 text-slate-700 sm:p-4">
-                    <div>
-                      ملاحظات طالب الإرجاع:{' '}
-                      <span className="text-slate-900">
-                        {ret.damageDetails || ret.conditionNote || '-'}
-                      </span>
-                    </div>
-
-                    {ret.status === 'APPROVED' ? (
-                      <div className="mt-2">
-                        ملاحظات الاستلام والتوثيق:{' '}
-                        <span className="text-slate-900">{ret.receivedNotes || '-'}</span>
-                      </div>
-                    ) : null}
-
-                    {ret.status === 'REJECTED' ? (
-                      <div className="mt-2">
-                        سبب الرفض:{' '}
-                        <span className="text-slate-900">{ret.rejectionReason || '-'}</span>
-                      </div>
-                    ) : null}
+              <div className="px-4 py-3">
+                <div className="grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-4">
+                  <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
+                    <div className="text-[10px] text-[#B5BDBE]">الكمية</div>
+                    <div className="font-bold text-[#2A2A2A]">{getReturnQuantity(ret)}</div>
                   </div>
-
-                  {ret.damageImages ? (
-                    <div className="mt-3 break-words text-[12px] leading-6 text-slate-500">
-                      صور مرفقة من طالب الإرجاع: {ret.damageImages}
-                    </div>
-                  ) : null}
-
-                  {ret.receivedImages ? (
-                    <div className="mt-2 break-words text-[12px] leading-6 text-slate-500">
-                      صور مرفقة عند الاستلام: {ret.receivedImages}
-                    </div>
-                  ) : null}
+                  <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
+                    <div className="text-[10px] text-[#B5BDBE]">المسار</div>
+                    <div className="font-bold text-[#2A2A2A]">{sourceTypeLabel(ret.sourceType)}</div>
+                  </div>
+                  <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
+                    <div className="text-[10px] text-[#B5BDBE]">تاريخ الطلب</div>
+                    <div className="font-bold text-[#2A2A2A]">{formatDate(ret.createdAt)}</div>
+                  </div>
+                  <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
+                    <div className="text-[10px] text-[#B5BDBE]">حالة المادة</div>
+                    <div className="font-bold text-[#2A2A2A]">{conditionLabel(ret.returnType)}</div>
+                  </div>
                 </div>
 
-                {canProcessReturns && ret.status === 'PENDING' ? (
-                  <div className="flex w-full shrink-0 flex-col gap-2 lg:w-auto">
-                    <Button
-                      className="w-full lg:w-auto"
-                      onClick={() => {
-                        setSelectedReturn(ret);
-                        setReceivedType(ret.returnType || 'GOOD');
-                        setReceivedNotes('');
-                        setReceivedImages([]);
-                      }}
-                    >
-                      استلام وتوثيق الحالة
-                    </Button>
+                {(ret.damageDetails || ret.conditionNote || ret.rejectionReason) && (
+                  <div className="mt-2 rounded-[8px] bg-[#F9F9F9] px-3 py-2 text-[11px] text-[#5A5A5A]">
+                    {ret.rejectionReason ? <span className="text-[#73384B]">سبب الرفض: {ret.rejectionReason}</span> : (ret.damageDetails || ret.conditionNote)}
                   </div>
-                ) : null}
+                )}
               </div>
-            </Card>
+
+              {canProcessReturns && ret.status === 'PENDING' && (
+                <div className="border-t border-[#DADBD9] px-4 pb-3 pt-2.5">
+                  <button
+                    onClick={() => { setSelectedReturn(ret); setReceivedType(ret.returnType || 'GOOD'); setReceivedNotes(''); setReceivedImages([]); }}
+                    className="h-9 w-full rounded-[10px] bg-[#2A6364] text-[12px] font-bold text-white transition hover:bg-[#1e5152]">
+                    استلام وتوثيق الحالة
+                  </button>
+                </div>
+              )}
+            </div>
           ))
         )}
       </div>
 
-      {!isLoading && pagination.totalPages > 1 ? (
-        <div className="flex flex-col items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm sm:flex-row sm:rounded-[28px] sm:px-5">
-          <div className="text-sm font-bold text-primary">
-            الصفحة {pagination.page} من {pagination.totalPages}
-          </div>
-          <div className="text-xs text-slate-500">إجمالي الطلبات في هذا العرض: {pagination.total}</div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-              disabled={pagination.page <= 1}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              السابق
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setPagination((prev) => ({
-                  ...prev,
-                  page: Math.min(prev.totalPages, prev.page + 1),
-                }))
-              }
-              disabled={pagination.page >= pagination.totalPages}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              التالي
-            </button>
-          </div>
+      {!isLoading && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-[16px] border border-[#DADBD9] bg-white px-4 py-3">
+          <button onClick={() => setPagination((p) => ({ ...p, page: Math.max(1, p.page - 1) }))} disabled={pagination.page <= 1}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">السابق</button>
+          <div className="text-[12px] font-bold text-[#2A6364]">{pagination.page} / {pagination.totalPages}</div>
+          <button onClick={() => setPagination((p) => ({ ...p, page: Math.min(p.totalPages, p.page + 1) }))} disabled={pagination.page >= pagination.totalPages}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">التالي</button>
         </div>
-      ) : null}
+      )}
 
       <Modal isOpen={isCreateOpen} onClose={closeCreateModal} title="طلب إرجاع جديد" size="lg">
         <form onSubmit={handleCreateReturn} className="space-y-4">
