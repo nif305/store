@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/hooks/useI18n';
 import { translateStaticUiText } from '@/lib/i18n';
 import { EmployeeDashboard } from './EmployeeDashboard';
+import { WarehouseDashboard } from './WarehouseDashboard';
 
 type SummaryMetrics = {
   totalInventory: number;
@@ -272,6 +273,11 @@ export default function MaterialsDashboardPage() {
       delayedCustody: metrics?.delayedCustody ?? 0,
       returnRequestsTotal: metrics?.returnRequestsTotal ?? metrics?.pendingReturns ?? 0,
     }} />;
+  }
+
+  // ── Warehouse gets operations command center ──
+  if ((user?.role as string) === 'warehouse') {
+    return <WarehouseDashboard />;
   }
 
   return (
