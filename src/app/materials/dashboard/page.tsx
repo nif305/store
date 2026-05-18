@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/hooks/useI18n';
 import { translateStaticUiText } from '@/lib/i18n';
+import { EmployeeDashboard } from './EmployeeDashboard';
 
 type SummaryMetrics = {
   totalInventory: number;
@@ -262,27 +263,30 @@ export default function MaterialsDashboardPage() {
   ];
   const workflowMax = Math.max(...workflow.map((item) => item.value), 1);
 
+  // ── Employee gets their own dedicated dashboard ──
+  if (isEmployee) {
+    return <EmployeeDashboard metrics={{
+      pendingRequests: metrics?.pendingRequests ?? 0,
+      issuedRequests: metrics?.issuedRequests ?? 0,
+      activeCustody: metrics?.activeCustody ?? 0,
+      delayedCustody: metrics?.delayedCustody ?? 0,
+      returnRequestsTotal: metrics?.returnRequestsTotal ?? metrics?.pendingReturns ?? 0,
+    }} />;
+  }
+
   return (
     <div className="space-y-5">
+      {/* Training kit quick links — for managers/coordinators only */}
       <section className="overflow-hidden rounded-[20px] border border-[#dce6e3] bg-white shadow-[0_16px_34px_-32px_rgba(15,23,42,0.2)]">
-        <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-4">
-            <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-[#eef5f4] text-[#2A6364]">
-              <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[#eef5f4] text-[#2A6364]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />
                 <path d="M6 12v5c3.5 3 8.5 3 12 0v-5" />
               </svg>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="text-[12px] font-bold text-[#2A6364]">رابط المدربين</div>
-                <span className="rounded-full bg-[#eef5f4] px-2 py-0.5 text-[10px] font-bold text-[#2A6364]">متاح للجميع</span>
-              </div>
-              <h2 className="mt-1 text-[20px] font-extrabold text-[#223738]">مساعد تجهيز الدورة</h2>
-              <p className="mt-1.5 max-w-[700px] text-[13px] leading-7 text-[#70807e]">
-                متجر تشغيلي لاختيار مستلزمات التدريب، ثم تنتقل الاحتياجات لقسم احتياجات المدربين للحجز الذكي والتحويل إلى طلب مواد.
-              </p>
-            </div>
+            <div className="text-[16px] font-extrabold text-[#223738]">مساعد تجهيز الدورة</div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <a
@@ -372,38 +376,6 @@ export default function MaterialsDashboardPage() {
           <div className="mt-1.5 text-[28px] font-extrabold text-[#223738]">{metrics?.totalTrainingRooms ?? 0}</div>
         </a>
       </section>
-      ) : null}
-      {isEmployee ? (
-        <section className="rounded-[26px] border border-white/80 bg-white p-5 shadow-[0_18px_38px_-34px_rgba(15,23,42,0.2)]">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="text-[12px] font-semibold text-[#8a9a98]">{ui('إجراءات النظام')}</div>
-            <h2 className="mt-1.5 text-[22px] font-extrabold text-[#223738]">{sectionTitle}</h2>
-          </div>
-          <a
-            href={primaryAction.href}
-            className="inline-flex items-center justify-center rounded-[16px] bg-[#163e44] px-4 py-2.5 text-[13px] font-bold text-white transition hover:bg-[#0f3337]"
-          >
-            {primaryAction.label}
-          </a>
-        </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {requestActions.map((action) => (
-            <a
-              key={action.title}
-              href={action.href}
-              className="group rounded-[20px] border border-[#dde6e4] bg-[#fbfcfc] p-4 transition hover:-translate-y-0.5 hover:border-[#cfe0dc] hover:bg-white"
-            >
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#eef5f4] text-[#0f5e61]">
-                {action.icon}
-              </div>
-              <div className="mt-3 text-[18px] font-extrabold text-[#223738]">{action.title}</div>
-              <div className="mt-1.5 text-[12px] leading-6 text-[#70807e]">{action.hint}</div>
-            </a>
-          ))}
-        </div>
-        </section>
       ) : null}
 
       <section className="overflow-hidden rounded-[26px] border border-white/80 bg-white shadow-[0_20px_44px_-36px_rgba(15,23,42,0.22)]">
