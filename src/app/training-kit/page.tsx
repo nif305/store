@@ -29,7 +29,8 @@ type Bundle = {
   items: { catalogItemId: string; quantity: number; quantityMode?: 'FIXED' | 'PER_TRAINEE'; title: string; imageUrl?: string | null }[];
 };
 type TrainingRoom = {
-  id: string; name: string; type: string; capacity: number;
+  id: string; name: string; type: string;
+  capacity: number; maxCapacity?: number | null;
   location?: string | null; description?: string | null;
   equipment: string[]; layoutOptions: string[];
   imageUrl?: string | null; isAvailable: boolean; capacityFit: boolean;
@@ -657,7 +658,13 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="text-[14px] font-bold text-[#2A2A2A]">{room.name}</div>
-                      <div className="mt-0.5 text-[11px] text-[#B5BDBE]">{room.type} · سعة {room.capacity}</div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="text-[11px] text-[#B5BDBE]">{room.type}</span>
+                        <span className="flex items-center gap-1 rounded-full bg-[#F9F9F9] px-2 py-0.5 text-[10px] text-[#5A5A5A]">
+                          <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                          {room.maxCapacity && room.maxCapacity !== room.capacity ? `${room.capacity}–${room.maxCapacity}` : room.capacity}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${room.isAvailable ? 'bg-[#eef8f2] text-[#4F8F7A]' : 'bg-[#fff0f3] text-[#73384B]'}`}>
@@ -831,7 +838,12 @@ function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, se
               {selectedRooms.map(({ room, selection }) => (
                 <div key={room.id} className="px-4 py-3">
                   <div className="text-[13px] font-bold text-[#2A2A2A]">{room.name}</div>
-                  <div className="mt-0.5 text-[11px] text-[#B5BDBE]">{room.type} · سعة {room.capacity}</div>
+                  <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#B5BDBE]">
+                    {room.type}
+                    <span>·</span>
+                    <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    {room.maxCapacity && room.maxCapacity !== room.capacity ? `${room.capacity}–${room.maxCapacity}` : room.capacity}
+                  </div>
                   <div className="mt-2 rounded-[8px] bg-[#F9F9F9] px-3 py-2 text-[11px]">
                     <div className="flex items-center gap-2 text-[#5A5A5A]">
                       <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

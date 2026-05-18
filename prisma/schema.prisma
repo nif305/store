@@ -544,7 +544,8 @@ model TrainingRoom {
   id              String                @id @default(cuid())
   name            String
   type            String
-  capacity        Int
+  capacity        Int                   // السعة الأساسية
+  maxCapacity     Int?                  // السعة القصوى (يساوي capacity إذا لم يُحدَّد)
   location        String?
   description     String?
   equipment       String[]              @default([])

@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 /* ─── Types ─── */
 type Room = {
-  id: string; name: string; type: string; capacity: number;
+  id: string; name: string; type: string;
+  capacity: number;     // السعة الأساسية
+  maxCapacity?: number | null; // السعة القصوى
   location?: string | null; description?: string | null;
   equipment: string[]; layoutOptions: string[];
   imageUrl?: string | null; isVisible: boolean; internalNotes?: string | null;
@@ -415,7 +417,12 @@ export default function RoomsAdminPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[12px] font-bold text-[#2A2A2A]">{room.name}</div>
-                        <div className="text-[10px] text-[#B5BDBE]">سعة {room.capacity} · {room.isVisible ? 'ظاهرة' : 'مخفية'}</div>
+                        <div className="text-[10px] text-[#B5BDBE]">
+                          {room.maxCapacity && room.maxCapacity !== room.capacity
+                            ? `${room.capacity}–${room.maxCapacity}`
+                            : room.capacity > 0 ? room.capacity : '—'} متدرب
+                          {' · '}{room.isVisible ? 'ظاهرة' : 'مخفية'}
+                        </div>
                       </div>
                     </button>
                   ))}
@@ -464,6 +471,7 @@ export default function RoomsAdminPage() {
                       </select>
                     </div>
                     <F label="السعة الأساسية" type="number" value={String(selected.capacity)} onChange={(v) => updateSelected({ capacity: Number(v || 1) })} />
+                    <F label="السعة القصوى" type="number" value={String(selected.maxCapacity ?? selected.capacity)} onChange={(v) => updateSelected({ maxCapacity: Number(v || selected.capacity) })} />
                     <div>
                       <span className="mb-1 block text-[11px] font-bold text-[#5A5A5A]">الموقع</span>
                       <select value={selected.location || ''} onChange={(e) => updateSelected({ location: e.target.value })} className="h-9 w-full rounded-[8px] border border-[#DADBD9] bg-white px-2 text-[13px] outline-none focus:border-[#2A6364]/40">
