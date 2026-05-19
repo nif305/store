@@ -1418,6 +1418,14 @@ function buildNormalizedDictionary(dictionary: Record<string, string>) {
 const STATIC_UI_EN_NORMALIZED = buildNormalizedDictionary(STATIC_UI_EN);
 const STATIC_UI_AR_NORMALIZED = buildNormalizedDictionary(STATIC_UI_AR);
 
+function isArabicLetter(char: string | undefined): boolean {
+  if (!char) return false;
+  const code = char.charCodeAt(0);
+  return (code >= 0x0600 && code <= 0x06FF) ||
+    (code >= 0xFB50 && code <= 0xFDFF) ||
+    (code >= 0xFE70 && code <= 0xFEFF);
+}
+
 function replaceKnownSegments(source: string, dictionary: Record<string, string>) {
   let translated = source;
   const entries = Object.entries(dictionary)
@@ -1425,8 +1433,17 @@ function replaceKnownSegments(source: string, dictionary: Record<string, string>
     .sort((a, b) => b[0].length - a[0].length);
 
   for (const [key, value] of entries) {
-    if (translated.includes(key)) {
-      translated = translated.split(key).join(value);
+    let idx = translated.indexOf(key);
+    while (idx !== -1) {
+      const charBefore = translated[idx - 1];
+      const charAfter = translated[idx + key.length];
+      // Only replace when not embedded inside a longer Arabic word
+      if (!isArabicLetter(charBefore) && !isArabicLetter(charAfter)) {
+        translated = translated.slice(0, idx) + value + translated.slice(idx + key.length);
+        idx = translated.indexOf(key, idx + value.length);
+      } else {
+        idx = translated.indexOf(key, idx + 1);
+      }
     }
   }
 

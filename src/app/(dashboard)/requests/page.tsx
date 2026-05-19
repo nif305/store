@@ -276,6 +276,8 @@ function FormShell({
 export default function RequestsPage() {
   const { user } = useAuth();
   const { language } = useI18n();
+  const en = language === 'en';
+  const tx = (ar: string, eng: string) => en ? eng : ar;
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -748,7 +750,7 @@ export default function RequestsPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-[22px] font-extrabold">
-              {isEmployee ? 'طلباتي' : isWarehouse ? 'الطلبات التشغيلية' : 'متابعة الطلبات'}
+              {isEmployee ? tx('طلباتي', 'My Requests') : isWarehouse ? tx('الطلبات التشغيلية', 'Operational Requests') : tx('متابعة الطلبات', 'Request Tracking')}
             </h1>
           </div>
           {isEmployee && (
