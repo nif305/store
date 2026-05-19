@@ -460,128 +460,65 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-5">
-      <section className="overflow-hidden rounded-[24px] border border-[#d6d7d4] bg-white shadow-sm sm:rounded-[28px]">
-        <div className="border-b border-[#edf1f0] bg-[linear-gradient(135deg,rgba(1,101,100,0.06),rgba(208,178,132,0.08))] px-4 py-5 sm:px-6 sm:py-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <h1 className="text-[24px] font-extrabold leading-[1.2] text-[#016564] sm:text-[30px]">
-                إدارة المستخدمين
-              </h1>
-              <p className="max-w-3xl text-[13px] leading-7 text-[#536463] sm:text-sm">
-                لوحة أكثر وضوحًا لإدارة الحسابات، مع إبراز أن المدير ومسؤول المخزن يحتفظان دائمًا
-                بدور الموظف داخل المنصة.
-              </p>
+    <div className="space-y-4" dir="rtl">
+      {/* Hero Header */}
+      <section className="overflow-hidden rounded-[20px] bg-gradient-to-l from-[#3a1c2c] to-[#73384B] p-5 text-white shadow-[0_12px_32px_rgba(115,56,75,0.25)]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-white/15">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-white" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="7" r="3"/><path d="M3 21v-2a7 7 0 0 1 11-5.8"/><circle cx="17" cy="15" r="3"/><path d="M21 21v-1a3 3 0 0 0-5.7-1.3"/>
+              </svg>
             </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-              <StatCard
-                title="إجمالي الحسابات"
-                value={stats.total}
-                accent="bg-[#016564]"
-                active={roleFilter === 'ALL' && statusFilter === 'ALL'}
-                onClick={() => {
-                  setRoleFilter('ALL');
-                  setStatusFilter('ALL');
-                }}
-              />
-              <StatCard
-                title="المديرون"
-                value={stats.managers}
-                accent="bg-[#d0b284]"
-                active={roleFilter === 'manager'}
-                onClick={() => setRoleFilter('manager')}
-              />
-              <StatCard
-                title="مسؤولو المخزن"
-                value={stats.warehouses}
-                accent="bg-[#498983]"
-                active={roleFilter === 'warehouse'}
-                onClick={() => setRoleFilter('warehouse')}
-              />
-              <StatCard
-                title="الموظفون فقط"
-                value={stats.usersOnly}
-                accent="bg-[#98aaaa]"
-                active={roleFilter === 'user'}
-                onClick={() => setRoleFilter('user')}
-              />
-              <StatCard
-                title="الحسابات النشطة"
-                value={stats.active}
-                accent="bg-emerald-500"
-                active={statusFilter === 'active'}
-                onClick={() => setStatusFilter('active')}
-              />
-              <StatCard
-                title="الحسابات الموقوفة"
-                value={stats.disabled}
-                accent="bg-rose-600"
-                active={statusFilter === 'disabled'}
-                onClick={() => setStatusFilter('disabled')}
-              />
+            <div>
+              <h1 className="text-[20px] font-extrabold">إدارة المستخدمين</h1>
+              <div className="text-[11px] text-white/50">{stats.total} حساب · {stats.active} نشط</div>
             </div>
           </div>
-        </div>
-
-        <div className="p-4 sm:p-5">
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_220px_220px_auto]">
-            <Input
-              label="بحث"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="الاسم، البريد، الجوال، التحويلة، أو المشروع"
-            />
-
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">الدور</label>
-              <select
-                value={roleFilter}
-                onChange={(e) =>
-                  setRoleFilter(e.target.value as 'ALL' | 'manager' | 'warehouse' | 'user')
-                }
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#016564] focus:ring-4 focus:ring-[#016564]/10"
-              >
-                <option value="ALL">الكل</option>
-                <option value="manager">يملك صلاحية مدير</option>
-                <option value="warehouse">يملك صلاحية مسؤول مخزن</option>
-                <option value="user">موظف فقط</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700">الحالة</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'active' | 'disabled')}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#016564] focus:ring-4 focus:ring-[#016564]/10"
-              >
-                <option value="ALL">الكل</option>
-                <option value="active">نشط</option>
-                <option value="disabled">موقوف</option>
-              </select>
-            </div>
-
-            <div className="flex items-end">
-              <Button variant="ghost" className="w-full xl:w-auto" onClick={clearFilters}>
-                إعادة الضبط
-              </Button>
-            </div>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {[
+              { label: 'الكل', value: stats.total, active: roleFilter === 'ALL' && statusFilter === 'ALL', onClick: () => { setRoleFilter('ALL'); setStatusFilter('ALL'); } },
+              { label: 'مدراء', value: stats.managers, active: roleFilter === 'manager', onClick: () => setRoleFilter('manager') },
+              { label: 'مستودع', value: stats.warehouses, active: roleFilter === 'warehouse', onClick: () => setRoleFilter('warehouse') },
+              { label: 'موظفون', value: stats.usersOnly, active: roleFilter === 'user', onClick: () => setRoleFilter('user') },
+              { label: 'نشط', value: stats.active, active: statusFilter === 'active', onClick: () => setStatusFilter('active') },
+              { label: 'موقوف', value: stats.disabled, active: statusFilter === 'disabled', onClick: () => setStatusFilter('disabled') },
+            ].map((s) => (
+              <button key={s.label} onClick={s.onClick}
+                className={`rounded-[12px] border px-3 py-2 text-center transition hover:scale-[1.03] ${s.active ? 'border-white/40 bg-white/20' : 'border-white/10 bg-white/8 hover:bg-white/15'}`}>
+                <div className="text-[20px] font-extrabold text-white">{s.value}</div>
+                <div className="text-[10px] text-white/60">{s.label}</div>
+              </button>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="rounded-[24px] border border-[#d6d7d4] bg-white shadow-sm sm:rounded-[28px]">
-        <div className="flex flex-col gap-2 border-b border-[#edf1f0] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div>
-            <div className="text-[18px] font-bold text-[#152625]">قائمة الحسابات</div>
-            <div className="mt-1 text-sm text-[#61706f]">
-              {loading ? 'جارٍ تحميل البيانات...' : `إجمالي النتائج المطابقة: ${pagination.total}`}
-            </div>
+      {/* Filters + list */}
+      <section className="overflow-hidden rounded-[20px] border border-[#DADBD9] bg-white shadow-sm">
+        {/* Filter bar */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-[#DADBD9] px-4 py-3">
+          <div className="relative flex-1 min-w-[160px]">
+            <svg viewBox="0 0 24 24" fill="none" className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#B5BDBE]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="الاسم أو البريد أو الجوال..."
+              className="h-9 w-full rounded-full border border-[#DADBD9] bg-[#F9F9F9] pr-8 pl-3 text-[12px] outline-none focus:border-[#73384B]/40 focus:bg-white" />
           </div>
-          <div className="text-xs text-[#61706f]">
-            الصلاحيات الإضافية تظهر فوق صلاحية الموظف الأساسية.
-          </div>
+          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as 'ALL'|'manager'|'warehouse'|'user')}
+            className="h-9 rounded-full border border-[#DADBD9] bg-white px-3 text-[12px] outline-none">
+            <option value="ALL">كل الأدوار</option>
+            <option value="manager">مدراء</option>
+            <option value="warehouse">مستودع</option>
+            <option value="user">موظفون</option>
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as 'ALL'|'active'|'disabled')}
+            className="h-9 rounded-full border border-[#DADBD9] bg-white px-3 text-[12px] outline-none">
+            <option value="ALL">كل الحالات</option>
+            <option value="active">نشط</option>
+            <option value="disabled">موقوف</option>
+          </select>
+          <button onClick={clearFilters} className="h-9 rounded-full border border-[#DADBD9] px-3 text-[12px] text-[#5A5A5A] hover:bg-[#F9F9F9]">
+            إعادة الضبط
+          </button>
         </div>
 
         <div className="hidden xl:block">

@@ -105,35 +105,37 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="space-y-5" dir="rtl">
+    <div className="space-y-4" dir="rtl">
       {/* Header */}
-      <section className="overflow-hidden rounded-[20px] border border-[#dce6e3] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-[#2A6364]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 20V10M12 20V4M6 20v-6" />
+      <section className="overflow-hidden rounded-[20px] bg-gradient-to-l from-[#1c3a2c] to-[#2A6364] p-5 text-white shadow-[0_12px_32px_rgba(42,99,100,0.25)]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-white/15">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-white" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 20V10M12 20V4M6 20v-6"/>
               </svg>
-              <h1 className="text-[24px] font-extrabold text-[#223738]">
+            </div>
+            <div>
+              <h1 className="text-[20px] font-extrabold text-white">
                 {system === 'services' ? 'تقارير الخدمات' : 'تقارير المواد والمخزون'}
               </h1>
+              <div className="text-[11px] text-white/50">لوحة تحليلية شاملة</div>
             </div>
-            <p className="mt-1 text-[13px] text-[#6d7b78]">لوحة تشغيلية شاملة — المخزون، الطلبات، العهد، المرتجعات</p>
           </div>
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="flex items-center gap-2">
             <div className="relative">
-              <svg viewBox="0 0 24 24" fill="none" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aacaa]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              <svg viewBox="0 0 24 24" fill="none" className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/40" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث في التقارير..."
-                className="h-10 w-full rounded-[10px] border border-[#dce6e3] bg-[#f8fbfb] pr-9 pl-4 text-[13px] outline-none placeholder:text-[#9aacaa] focus:border-[#2A6364]/50 focus:bg-white lg:w-[240px]" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث..."
+                className="h-9 rounded-full border border-white/20 bg-white/10 pr-8 pl-3 text-[12px] text-white placeholder-white/30 outline-none focus:border-white/40 w-40" />
             </div>
             <select value={period} onChange={(e) => setPeriod(e.target.value)}
-              className="h-10 rounded-[10px] border border-[#dce6e3] bg-white px-3 text-[13px] outline-none focus:border-[#2A6364]/50">
-              <option value="year">من بداية السنة</option>
-              <option value="30d">آخر 30 يوم</option>
-              <option value="90d">آخر 90 يوم</option>
-              <option value="all">كل الفترات</option>
+              className="h-9 rounded-full border border-white/20 bg-white/10 px-3 text-[12px] text-white outline-none focus:border-white/40">
+              <option value="year" className="bg-white text-black">من بداية السنة</option>
+              <option value="30d" className="bg-white text-black">آخر 30 يوم</option>
+              <option value="90d" className="bg-white text-black">آخر 90 يوم</option>
+              <option value="all" className="bg-white text-black">كل الفترات</option>
             </select>
           </div>
         </div>

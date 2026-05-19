@@ -456,6 +456,85 @@ export function ManagerDashboard() {
         </div>
       </div>
 
+      {/* ══ Trainer Needs + Rooms ══ */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {/* Trainer Needs */}
+        <div className="rounded-[20px] border border-[#DADBD9] bg-white p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#f4e7eb]">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#73384B]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z"/><path d="M6 12v5c3.5 3 8.5 3 12 0v-5"/>
+                </svg>
+              </div>
+              <span className="text-[14px] font-extrabold text-[#2A2A2A]">احتياجات المدربين</span>
+            </div>
+            <a href="/materials/trainer-needs" className="text-[11px] font-semibold text-[#73384B] hover:underline">إدارة</a>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'احتياجات نشطة', value: data?.trainerNeeds.pending ?? 0, color: '#73384B', bg: '#f4e7eb', sub: 'بحاجة إلى مراجعة' },
+              { label: 'محوّلة لطلبات', value: data?.trainerNeeds.converted ?? 0, color: '#1e6b4c', bg: '#e8f5ef', sub: 'تمت معالجتها' },
+            ].map((s) => (
+              <div key={s.label} className="rounded-[14px] p-4 text-center" style={{ backgroundColor: s.bg }}>
+                <div className="text-[28px] font-extrabold" style={{ color: s.color }}>{s.value}</div>
+                <div className="mt-0.5 text-[11px] font-semibold" style={{ color: `${s.color}aa` }}>{s.label}</div>
+                <div className="mt-0.5 text-[10px]" style={{ color: `${s.color}66` }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+          {(data?.trainerNeeds.pending ?? 0) > 0 && (
+            <div className="mt-3 flex items-center gap-2 rounded-[10px] bg-[#f4e7eb] px-3 py-2 text-[11px] text-[#73384B]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+              {data?.trainerNeeds.pending} احتياج بانتظار المراجعة والتحويل
+              <a href="/materials/trainer-needs" className="mr-auto font-bold underline">عرض</a>
+            </div>
+          )}
+        </div>
+
+        {/* Rooms */}
+        <div className="rounded-[20px] border border-[#DADBD9] bg-white p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#e7eff5]">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-[#1b4f68]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/>
+                </svg>
+              </div>
+              <span className="text-[14px] font-extrabold text-[#2A2A2A]">القاعات والحجوزات</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <a href="/materials/rooms-schedule" className="text-[11px] font-semibold text-[#1b4f68] hover:underline">الجدول</a>
+              <span className="text-[#DADBD9]">·</span>
+              <a href="/materials/rooms-admin" className="text-[11px] font-semibold text-[#2A6364] hover:underline">الإدارة</a>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Donut size={100} stroke={15}
+              center={{ top: String(data?.rooms.total ?? 0), bottom: 'قاعة' }}
+              segments={[
+                { color: '#1e6b4c', value: data?.rooms.approved ?? 0, label: 'محجوزة' },
+                { color: '#C7B08C', value: data?.rooms.pending ?? 0, label: 'بانتظار الاعتماد' },
+                { color: '#EAEAEA', value: Math.max((data?.rooms.total ?? 0) - (data?.rooms.approved ?? 0) - (data?.rooms.pending ?? 0), 0), label: 'متاحة' },
+              ]}
+            />
+            <div className="flex-1 space-y-2">
+              {[
+                { label: 'محجوزة ومعتمدة', value: data?.rooms.approved ?? 0, color: '#1e6b4c', bg: '#e8f5ef' },
+                { label: 'بانتظار الاعتماد', value: data?.rooms.pending ?? 0, color: '#8a6a37', bg: '#f7f1e4', urgent: (data?.rooms.pending ?? 0) > 0 },
+                { label: 'إجمالي القاعات', value: data?.rooms.total ?? 0, color: '#1b4f68', bg: '#e7eff5' },
+              ].map((s) => (
+                <div key={s.label} className={`flex items-center justify-between rounded-[9px] px-3 py-2 ${s.urgent ? 'ring-1 ring-[#C7B08C]/40' : ''}`}
+                  style={{ backgroundColor: s.bg }}>
+                  <span className="text-[11px] font-semibold" style={{ color: s.color }}>{s.label}</span>
+                  <span className="text-[16px] font-extrabold" style={{ color: s.color }}>{s.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ══ Bottom Row: Top Requesters + Audit Log ══ */}
       <div className="grid gap-4 lg:grid-cols-2">
 

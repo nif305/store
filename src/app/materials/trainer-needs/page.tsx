@@ -386,96 +386,105 @@ export default function TrainerNeedsPage() {
   }
 
   return (
-    <div className="space-y-5" dir="rtl">
-      <section className="rounded-[8px] border border-[#dce6e3] bg-white p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="text-[12px] font-bold text-[#2A6364]">طلبات تجهيز الدورات</div>
-            <h1 className="mt-1 text-[24px] font-extrabold text-[#223738]">طلبات المدربين</h1>
-            <p className="mt-2 text-[13px] text-[#71817f]">
-              افتح الطلب، عدل البنود غير المناسبة، ثم اعتمد الكميات المتوفرة فقط ليتم تحويلها إلى طلب مواد للمخزن.
-            </p>
+    <div className="space-y-4" dir="rtl">
+      {/* Header */}
+      <section className="overflow-hidden rounded-[20px] bg-gradient-to-l from-[#3a1c2c] to-[#73384B] p-5 text-white shadow-[0_12px_32px_rgba(115,56,75,0.22)]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-white/15">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-white" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z"/><path d="M6 12v5c3.5 3 8.5 3 12 0v-5"/>
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-[20px] font-extrabold">احتياجات المدربين</h1>
+              <div className="text-[11px] text-white/50">{bucketCounts.pending + bucketCounts.active} طلب نشط</div>
+            </div>
           </div>
-          <a href="/training-kit" target="_blank" className="rounded-[8px] bg-[#2A6364] px-4 py-2.5 text-[13px] font-extrabold text-white">
-            فتح مساعد تجهيز الدورة
-          </a>
+          <div className="flex items-center gap-3">
+            <div className="grid grid-cols-3 gap-2">
+              {(['pending', 'active', 'done'] as RequestBucket[]).map((key) => {
+                const colors = { pending: 'border-[#C7B08C]/40 bg-[#C7B08C]/15', active: 'border-green-400/30 bg-green-400/10', done: 'border-white/10 bg-white/8' };
+                return (
+                  <button key={key} type="button" onClick={() => { setBucket(key); setPagination((p) => ({ ...p, page: 1 })); }}
+                    className={`rounded-[12px] border px-3 py-2 text-center transition hover:scale-[1.04] ${bucket === key ? 'border-white/40 bg-white/20' : colors[key]}`}>
+                    <div className="text-[18px] font-extrabold text-white">{bucketCounts[key]}</div>
+                    <div className="text-[10px] text-white/60">{bucketLabel[key]}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <a href="/training-kit" target="_blank"
+              className="shrink-0 rounded-[12px] bg-white px-4 py-2.5 text-[12px] font-extrabold text-[#73384B] shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:bg-[#fff0f3]">
+              مساعد تجهيز الدورة ↗
+            </a>
+          </div>
         </div>
       </section>
 
-      {error ? <div className="rounded-[8px] bg-[#fff1f3] px-4 py-3 text-[13px] font-bold text-[#7c1e3e]">{error}</div> : null}
-      {notice ? <div className="rounded-[8px] bg-[#eef8f2] px-4 py-3 text-[13px] font-bold text-[#1e6b4c]">{notice}</div> : null}
+      {error && <div className="rounded-[12px] border border-[#ecd0d8] bg-[#fff7f8] px-4 py-3 text-[13px] text-[#73384B]">{error}</div>}
+      {notice && <div className="rounded-[12px] border border-[#cce6d7] bg-[#e8f5ef] px-4 py-3 text-[13px] text-[#1e6b4c]">{notice}</div>}
 
-      <div className="space-y-5">
-        <section className={opened ? 'hidden' : 'rounded-[8px] border border-[#dce6e3] bg-white p-4'}>
+      <div className="space-y-4">
+        <section className={opened ? 'hidden' : 'rounded-[20px] border border-[#DADBD9] bg-white p-4'}>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-extrabold">الطلبات الواردة</h2>
-            <button onClick={() => load(pagination.page, bucket, pagination.limit)} className="rounded-[8px] border border-[#dce6e3] px-3 py-1.5 text-[12px] font-bold">تحديث</button>
-          </div>
-          <div className="mb-4 grid grid-cols-3 gap-2">
-            {(['pending', 'active', 'done'] as RequestBucket[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => {
-                  setBucket(key);
-                  setPagination((prev) => ({ ...prev, page: 1 }));
-                }}
-                className={`rounded-[8px] border px-2 py-2 text-[12px] transition ${
-                  bucket === key ? 'border-[#2A6364] bg-[#2A6364] text-white' : 'border-[#dce6e3] bg-white text-[#536866]'
-                }`}
-              >
-                <span className="block font-bold">{bucketLabel[key]}</span>
-                <span className="mt-1 block text-[15px] font-extrabold">{bucketCounts[key]}</span>
-              </button>
-            ))}
+            <div className="text-[14px] font-extrabold text-[#2A2A2A]">الطلبات الواردة</div>
+            <button onClick={() => load(pagination.page, bucket, pagination.limit)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[#DADBD9] text-[#5A5A5A] hover:bg-[#F9F9F9]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
           </div>
           {loading ? (
             <div className="py-12 text-center text-[#71817f]">جاري التحميل...</div>
           ) : filteredNeeds.length === 0 ? (
             <div className="py-12 text-center text-[#71817f]">لا توجد طلبات ضمن هذا التصنيف حالياً</div>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+            <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
               {filteredNeeds.map((need) => (
-                <div
-                  key={need.id}
-                  className={`rounded-[8px] border p-4 transition ${
-                    selected?.id === need.id ? 'border-[#2A6364] bg-[#eef6f5]' : 'border-[#dce6e3] bg-white'
-                  }`}
-                >
-                  <button type="button" onClick={() => openNeed(need.id)} className="w-full text-right">
+                <div key={need.id}
+                  className={`overflow-hidden rounded-[16px] border transition ${selected?.id === need.id ? 'border-[#73384B]/30 bg-[#fff7f8]' : 'border-[#DADBD9] bg-white'}`}>
+                  <button type="button" onClick={() => openNeed(need.id)} className="w-full p-4 text-right">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="font-extrabold">{need.courseName}</div>
-                        <div className="mt-1 text-[12px] text-[#71817f]">{need.code} - {need.trainerName}</div>
+                        <div className="text-[14px] font-extrabold text-[#2A2A2A]">{need.courseName}</div>
+                        <div className="mt-0.5 font-mono text-[11px] text-[#B5BDBE]">{need.code} · {need.trainerName}</div>
                       </div>
-                      <span className="shrink-0 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-[#2A6364]">{statusLabel[need.status] || need.status}</span>
+                      <span className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold"
+                        style={{
+                          backgroundColor: need.status === 'NEW' ? '#f7f1e4' : need.status === 'CONVERTED_TO_REQUEST' ? '#e8f5ef' : need.status === 'CANCELLED' ? '#f4e7eb' : '#eef5f4',
+                          color: need.status === 'NEW' ? '#8a6a37' : need.status === 'CONVERTED_TO_REQUEST' ? '#1e6b4c' : need.status === 'CANCELLED' ? '#73384B' : '#2A6364',
+                        }}>
+                        {statusLabel[need.status] || need.status}
+                      </span>
                     </div>
                   </button>
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[12px] text-[#536866]">
-                    <MiniStat label="مواد" value={need.items.length} />
-                    <MiniStat label="متدربين" value={need.traineeCount} />
-                    <MiniStat label="تاريخ الدورة" value={formatDate(need.startDate)} />
+                  <div className="grid grid-cols-3 gap-2 border-t border-[#F0F0F0] px-4 pb-3 pt-3 text-center text-[12px]">
+                    <div className="rounded-[8px] bg-[#F9F9F9] py-1.5">
+                      <div className="text-[13px] font-extrabold text-[#2A6364]">{need.items.length}</div>
+                      <div className="text-[10px] text-[#B5BDBE]">مادة</div>
+                    </div>
+                    <div className="rounded-[8px] bg-[#F9F9F9] py-1.5">
+                      <div className="text-[13px] font-extrabold text-[#2A6364]">{need.traineeCount}</div>
+                      <div className="text-[10px] text-[#B5BDBE]">متدرب</div>
+                    </div>
+                    <div className="rounded-[8px] bg-[#F9F9F9] py-1.5">
+                      <div className="text-[11px] font-bold text-[#2A6364]">{formatDate(need.startDate)}</div>
+                      <div className="text-[10px] text-[#B5BDBE]">تاريخ البدء</div>
+                    </div>
                   </div>
-                  <label className="mt-3 block rounded-[8px] bg-[#f6f9f8] px-3 py-2 text-[12px] text-[#536866]">
-                    <span className="mb-1 block">إسناد الطلب</span>
-                    <select
-                      value={need.assignedToId || ''}
-                      onChange={(event) => action(need.id, 'assign', { assignedToId: event.target.value || null })}
-                      className="h-9 w-full rounded-[8px] border border-[#dce6e3] bg-white px-2 text-[12px] outline-none"
-                    >
+                  <div className="border-t border-[#F0F0F0] px-4 pb-4 pt-3">
+                    <label className="mb-1.5 block text-[10px] font-bold text-[#B5BDBE]">إسناد الطلب</label>
+                    <select value={need.assignedToId || ''}
+                      onChange={(e) => action(need.id, 'assign', { assignedToId: e.target.value || null })}
+                      className="mb-2.5 h-9 w-full rounded-[10px] border border-[#DADBD9] bg-[#F9F9F9] px-2 text-[12px] outline-none focus:border-[#73384B]/40">
                       <option value="">غير مسند</option>
-                      {assignees.map((user) => (
-                        <option key={user.id} value={user.id}>{user.fullName}</option>
-                      ))}
+                      {assignees.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
                     </select>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => openNeed(need.id)}
-                    className="mt-3 h-10 w-full rounded-[8px] bg-[#2A6364] text-[13px] font-bold text-white"
-                  >
-                    فتح الطلب ومراجعته
-                  </button>
+                    <button type="button" onClick={() => openNeed(need.id)}
+                      className="h-9 w-full rounded-[10px] bg-[#73384B] text-[12px] font-bold text-white hover:bg-[#5c2a3a]">
+                      فتح الطلب ومراجعته
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

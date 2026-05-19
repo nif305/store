@@ -305,187 +305,142 @@ export default function ArchivePage() {
     );
   }
 
+  const FOLDER_COLORS: Record<string, { color: string; bg: string }> = {
+    'service-correspondence': { color: '#2A6364', bg: '#eef5f4' },
+    'service-maintenance': { color: '#1b4f68', bg: '#e7eff5' },
+    'service-cleaning': { color: '#4F8F7A', bg: '#edf4f0' },
+    'service-purchase': { color: '#8a6a37', bg: '#f7f1e4' },
+    'service-other': { color: '#5A5A5A', bg: '#F0F0F0' },
+    'material-consumable': { color: '#73384B', bg: '#f4e7eb' },
+    'material-returnable': { color: '#2A6364', bg: '#eef5f4' },
+    'material-custody-returned': { color: '#4F8F7A', bg: '#edf4f0' },
+  };
+
   return (
-    <div className="space-y-4 sm:space-y-5">
-      <section className="rounded-[24px] border border-[#d6d7d4] bg-white px-4 py-4 shadow-sm sm:rounded-[28px] sm:px-5 sm:py-5">
-        <div className="space-y-2">
-          <h1 className="text-[24px] font-extrabold leading-[1.25] text-[#016564] sm:text-[30px]">
-            {systemSource === 'service' ? 'أرشيف طلبات الخدمات' : 'أرشيف طلبات المواد'}
-          </h1>
-          <p className="text-[13px] leading-7 text-[#61706f] sm:text-sm">
-            {systemSource === 'service'
-              ? 'أرشيف منظم بمجلدات مستقلة للمراسلات الخارجية وطلبات الصيانة والنظافة والمشتريات والطلبات الأخرى.'
-              : 'أرشيف منظم بمجلدات مستقلة للطلبات المستهلكة والطلبات المسترجعة والعهد المعادة.'}
-          </p>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 xl:max-w-[540px] xl:grid-cols-3">
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none">
-            <div className="text-[12px] text-[#6f7b7a]">إجمالي السجلات</div>
-            <div className="mt-1 text-[22px] font-extrabold text-[#016564]">{stats.total}</div>
-          </Card>
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none">
-            <div className="text-[12px] text-[#6f7b7a]">عدد المجلدات</div>
-            <div className="mt-1 text-[22px] font-extrabold text-[#498983]">{stats.folders}</div>
-          </Card>
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none">
-            <div className="text-[12px] text-[#6f7b7a]">محتوى المجلد الحالي</div>
-            <div className="mt-1 text-[22px] font-extrabold text-[#d0b284]">
-              {stats.activeFolderCount}
+    <div className="space-y-4" dir="rtl">
+      {/* Header */}
+      <section className="overflow-hidden rounded-[20px] bg-gradient-to-l from-[#2c3a4a] to-[#3d5a6b] p-5 text-white shadow-[0_12px_32px_rgba(0,0,0,0.2)]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-white/15">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-white" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/><path d="M10 12h4"/>
+              </svg>
             </div>
-          </Card>
-        </div>
-      </section>
-
-      <section className="rounded-[24px] border border-[#d6d7d4] bg-white p-4 shadow-sm sm:rounded-[28px] sm:p-5">
-        <div className="mb-4 text-[16px] font-extrabold text-[#152625]">مجلدات الأرشيف</div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {visibleFolders.map((folder) => {
-            const isActive = folder.key === activeFolder;
-
-            return (
-              <button
-                key={folder.key}
-                type="button"
-                onClick={() => setActiveFolder(folder.key)}
-                className={`rounded-[22px] border p-4 text-right transition ${
-                  isActive
-                    ? 'border-[#c7d9d5] bg-[#f4faf9] shadow-[0_16px_30px_-28px_rgba(1,101,100,0.28)]'
-                    : 'border-[#d6d7d4] bg-white hover:border-[#cfd9d6] hover:bg-[#fbfcfc]'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className={`text-[16px] font-extrabold ${folder.tone}`}>
-                      {folder.title}
-                    </div>
-                    <div className="mt-1 text-[12px] leading-6 text-[#6b7b79]">
-                      {folder.subtitle}
-                    </div>
-                  </div>
-                  <div
-                    className={`inline-flex h-12 w-12 items-center justify-center rounded-[16px] ${
-                      isActive
-                        ? 'bg-[#e4f0ee] text-[#016564]'
-                        : 'bg-[#f5f7f7] text-[#6f7b7a]'
-                    }`}
-                  >
-                    <FolderIcon />
-                  </div>
-                </div>
-                <div className="mt-4 inline-flex rounded-full bg-white px-3 py-1 text-[12px] font-bold text-[#425554]">
-                  {folderCounts[folder.key] || 0} سجل
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="rounded-[24px] border border-[#d6d7d4] bg-white p-4 shadow-sm sm:rounded-[28px] sm:p-5">
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
-          <Input
-            label="بحث داخل المجلد"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="الرمز، العنوان، مقدم الطلب، أو وصف الحالة"
-          />
-          <div className="self-end rounded-full bg-[#f5f8f7] px-4 py-2 text-xs font-bold text-[#425554]">
-            {activeFolderMeta?.title || 'المجلد'}
+            <div>
+              <h1 className="text-[20px] font-extrabold">
+                {systemSource === 'service' ? 'أرشيف الخدمات' : 'أرشيف المواد'}
+              </h1>
+              <div className="text-[11px] text-white/50">{stats.total} سجل مؤرشف</div>
+            </div>
           </div>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((item) => (
-              <Skeleton key={item} className="h-32 w-full rounded-[24px]" />
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: 'إجمالي السجلات', value: stats.total },
+              { label: 'عدد المجلدات', value: stats.folders },
+              { label: 'المجلد الحالي', value: stats.activeFolderCount },
+            ].map((s) => (
+              <div key={s.label} className="rounded-[12px] border border-white/10 bg-white/8 px-3 py-2 text-center">
+                <div className="text-[20px] font-extrabold text-white">{s.value}</div>
+                <div className="text-[10px] text-white/50">{s.label}</div>
+              </div>
             ))}
           </div>
-        ) : rows.length === 0 ? (
-          <Card className="rounded-[24px] border border-[#d6d7d4] p-8 text-center text-sm text-[#61706f] shadow-sm">
-            لا توجد سجلات مطابقة
-          </Card>
-        ) : (
-          rows.map((row) => (
-            <Card key={row.id} className="rounded-[24px] border border-[#d6d7d4] p-4 shadow-sm">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full px-3 py-1 text-[11px] ${
-                        row.source === 'materials'
-                          ? 'bg-[#498983]/10 text-[#498983]'
-                          : 'bg-[#d0b284]/15 text-[#8a6a28]'
-                      }`}
-                    >
-                      {row.source === 'materials' ? 'مواد' : 'خدمي'}
-                    </span>
-                    <span className="rounded-full bg-[#016564]/10 px-3 py-1 text-[11px] text-[#016564]">
-                      {row.code}
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-700">
-                      {row.status}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-bold text-[#152625]">{row.title}</h3>
-                  <p className="text-sm leading-7 text-[#61706f]">{row.description}</p>
-                  <div className="grid gap-2 text-sm text-[#425554] sm:grid-cols-2 xl:grid-cols-3">
-                    <div>
-                      <span className="font-semibold text-[#016564]">مقدم الطلب: </span>
-                      {row.requesterName}
-                    </div>
-                    <div>
-                      <span className="font-semibold text-[#016564]">الإدارة: </span>
-                      {row.requesterDepartment}
-                    </div>
-                    <div>
-                      <span className="font-semibold text-[#016564]">التاريخ: </span>
-                      {formatDate(row.createdAt)}
-                    </div>
-                    {row.extra ? (
-                      <div className="sm:col-span-2 xl:col-span-3">
-                        <span className="font-semibold text-[#016564]">معلومة إضافية: </span>
-                        {row.extra}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="flex w-full flex-col gap-2 lg:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => setSelected(row)}
-                    className="rounded-full bg-[#016564] px-5 py-2 text-sm font-bold text-white"
-                  >
-                    فتح التفاصيل
-                  </button>
-                </div>
-              </div>
-            </Card>
-          ))
-        )}
+        </div>
+
+        {/* Folder tabs */}
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          {visibleFolders.map((folder) => (
+            <button key={folder.key} type="button" onClick={() => setActiveFolder(folder.key)}
+              className={`shrink-0 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${activeFolder === folder.key ? 'border-white/40 bg-white/20 text-white' : 'border-white/15 text-white/60 hover:border-white/30 hover:text-white/80'}`}>
+              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h4l1.8 2H18a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 18 19H6a2.5 2.5 0 0 1-2.5-2.5v-9Z"/>
+              </svg>
+              {folder.title}
+              <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${activeFolder === folder.key ? 'bg-white/25 text-white' : 'bg-white/10 text-white/50'}`}>
+                {folderCounts[folder.key] || 0}
+              </span>
+            </button>
+          ))}
+        </div>
       </section>
 
-      {!loading && pagination.totalPages > 1 ? (
-        <section className="flex items-center justify-between rounded-[24px] border border-[#d6d7d4] bg-white px-4 py-3 shadow-sm">
-          <button
-            type="button"
-            onClick={() =>
-              setPagination((prev) => ({ ...prev, page: Math.max(prev.page - 1, 1) }))
-            }
-            disabled={pagination.page <= 1}
-            className="rounded-full border border-[#d6d7d4] px-4 py-2 text-sm font-bold text-[#425554] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            السابق
-          </button>
-          <div className="text-center">
-            <div className="text-sm font-bold text-[#016564]">
-              الصفحة {pagination.page} من {pagination.totalPages}
-            </div>
-            <div className="text-xs text-slate-500">
-              إجمالي السجلات في هذا المجلد: {pagination.total}
-            </div>
+      {/* Search */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <svg viewBox="0 0 24 24" fill="none" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B5BDBE]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث بالرمز أو الاسم أو مقدم الطلب..."
+            className="h-10 w-full rounded-full border border-[#DADBD9] bg-white pr-9 pl-4 text-[13px] outline-none focus:border-[#2A6364]/40" />
+        </div>
+        <div className="shrink-0 rounded-full border border-[#DADBD9] bg-[#F9F9F9] px-3 py-2 text-[12px] font-semibold text-[#5A5A5A]">
+          {activeFolderMeta?.title}
+        </div>
+      </div>
+
+      {/* Records */}
+      <div className="space-y-3">
+        {loading ? (
+          [1,2,3].map((i) => <div key={i} className="h-28 animate-pulse rounded-[16px] bg-[#F0F0F0]" />)
+        ) : rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-[20px] border border-[#DADBD9] bg-white py-16 text-center">
+            <svg viewBox="0 0 24 24" fill="none" className="h-14 w-14 text-[#DADBD9]" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20l-6-4z"/><path d="M10 12h4"/>
+            </svg>
+            <p className="mt-3 text-[14px] font-bold text-[#B5BDBE]">لا توجد سجلات في هذا المجلد</p>
+            <p className="mt-1 text-[12px] text-[#B5BDBE]">تظهر السجلات بعد اكتمال العمليات وإغلاقها</p>
           </div>
+        ) : (
+          rows.map((row) => {
+            const fc = FOLDER_COLORS[row.folder] || { color: '#2A6364', bg: '#eef5f4' };
+            return (
+              <div key={row.id} className="overflow-hidden rounded-[16px] border border-[#DADBD9] bg-white">
+                <div className="flex items-center gap-3 border-b border-[#F0F0F0] px-4 py-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]" style={{ backgroundColor: fc.bg }}>
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke={fc.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h4l1.8 2H18a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 18 19H6a2.5 2.5 0 0 1-2.5-2.5v-9Z"/>
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] font-extrabold text-[#2A2A2A] truncate">{row.title}</div>
+                    <div className="flex items-center gap-2 text-[11px] text-[#B5BDBE]">
+                      <span className="font-mono">{row.code}</span>
+                      <span>·</span>
+                      <span>{row.requesterName}</span>
+                    </div>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-2">
+                    <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: fc.bg, color: fc.color }}>{row.status}</span>
+                    <button type="button" onClick={() => setSelected(row)}
+                      className="rounded-[8px] bg-[#2A6364] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#1e5152]">
+                      تفاصيل
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 px-4 py-3 sm:grid-cols-4">
+                  {[
+                    ['الإدارة', row.requesterDepartment],
+                    ['التاريخ', formatDate(row.createdAt)],
+                    ['المصدر', row.source === 'materials' ? 'مواد' : 'خدمي'],
+                    ['ملاحظات', row.extra || row.description?.slice(0, 40) || '—'],
+                  ].map(([k, v]) => (
+                    <div key={k as string} className="rounded-[8px] bg-[#F9F9F9] px-2.5 py-1.5">
+                      <div className="text-[10px] text-[#B5BDBE]">{k as string}</div>
+                      <div className="text-[12px] font-semibold text-[#2A2A2A] truncate">{v as string || '—'}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {!loading && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-[16px] border border-[#DADBD9] bg-white px-4 py-3">
+          <button onClick={() => setPagination((p) => ({ ...p, page: Math.max(p.page - 1, 1) }))} disabled={pagination.page <= 1}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">السابق</button>
+          <div className="text-[12px] font-bold text-[#2A6364]">{pagination.page} / {pagination.totalPages} · {pagination.total} سجل</div>
           <button
             type="button"
             onClick={() =>
@@ -495,12 +450,11 @@ export default function ArchivePage() {
               }))
             }
             disabled={pagination.page >= pagination.totalPages}
-            className="rounded-full border border-[#d6d7d4] px-4 py-2 text-sm font-bold text-[#425554] disabled:cursor-not-allowed disabled:opacity-40"
-          >
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">
             التالي
           </button>
-        </section>
-      ) : null}
+        </div>
+      )}
 
       <Modal
         isOpen={!!selected}

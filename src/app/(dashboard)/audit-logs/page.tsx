@@ -1,67 +1,89 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Modal } from '@/components/ui/Modal';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuth } from '@/context/AuthContext';
 
 type AuditRow = {
-  id: string;
-  source: string;
-  action: string;
-  entity: string;
-  entityId?: string | null;
-  details?: string | null;
-  ipAddress?: string | null;
+  id: string; source: string; action: string; entity: string;
+  entityId?: string | null; details?: string | null; ipAddress?: string | null;
   createdAt: string;
   user?: { id: string; fullName?: string; role?: string | null; roles?: string[]; email?: string | null } | null;
 };
 
 function formatDate(value?: string | null) {
   if (!value) return '—';
-  try {
-    return new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
-  } catch { return '—'; }
+  try { return new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)); }
+  catch { return '—'; }
 }
-
-function normalizeArabic(value: string) {
-  return (value || '').toLowerCase().trim().replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي').replace(/ء/g, '').replace(/\s+/g, ' ');
-}
-
-function actionVariant(action: string): 'neutral' | 'success' | 'warning' | 'danger' | 'info' {
-  const a = action.toLowerCase();
-  if (a.includes('delete') || a.includes('remove') || a.includes('reject') || a.includes('cancel') || a.includes('unassigned')) return 'danger';
-  if (a.includes('approve') || a.includes('issue') || a.includes('close') || a.includes('return') || a.includes('complete') || a.includes('converted')) return 'success';
-  if (a.includes('update') || a.includes('edit') || a.includes('adjust') || a.includes('assigned')) return 'warning';
-  if (a.includes('create') || a.includes('add') || a.includes('new') || a.includes('created')) return 'info';
-  return 'neutral';
+function formatTimeAgo(date: string) {
+  const diff = Date.now() - new Date(date).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'الآن';
+  if (m < 60) return `منذ ${m} د`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `منذ ${h} س`;
+  return `منذ ${Math.floor(h / 24)} ي`;
 }
 
 const ACTION_LABELS: Record<string, string> = {
-  TRAINER_NEED_CREATED: 'إنشاء احتياج مدرب',
-  TRAINER_NEED_ASSIGNED: 'تعيين المنسق',
-  TRAINER_NEED_UNASSIGNED: 'إلغاء التعيين',
-  TRAINER_NEED_CONVERTED_TO_REQUEST: 'تحويل إلى طلب مواد',
-  TRAINER_NEED_EXTERNAL_SOURCING: 'تأمين خارجي',
-  TRAINER_NEED_UPDATED: 'تعديل الاحتياج',
-  TRAINER_NEED_CANCELLED: 'إلغاء الاحتياج',
+  TRAINER_NEED_CREATED: 'إنشاء احتياج مدرب', TRAINER_NEED_ASSIGNED: 'تعيين منسق',
+  TRAINER_NEED_UNASSIGNED: 'إلغاء تعيين', TRAINER_NEED_CONVERTED_TO_REQUEST: 'تحويل لطلب مواد',
+  TRAINER_NEED_EXTERNAL_SOURCING: 'تأمين خارجي', TRAINER_NEED_UPDATED: 'تعديل احتياج',
+  TRAINER_NEED_CANCELLED: 'إلغاء احتياج', CREATE_REQUEST: 'طلب جديد',
+  ISSUE_REQUEST: 'صرف طلب', REJECT_REQUEST: 'رفض طلب', CANCEL_REQUEST: 'إلغاء طلب',
+  APPROVE_RETURN: 'قبول مرتجع', REJECT_RETURN: 'رفض مرتجع', CREATE_RETURN: 'طلب إرجاع',
+  UPDATE_INVENTORY: 'تحديث مخزون', SYNC_INVENTORY: 'مزامنة المخزون',
+  ASSIGN_CUSTODY: 'تعيين عهدة', RETURN_CUSTODY: 'إعادة عهدة',
+  SYNC_SMART_ALERTS: 'مزامنة تنبيهات', CREATE_USER: 'إنشاء مستخدم',
+  UPDATE_USER: 'تعديل مستخدم', TOGGLE_USER_STATUS: 'تغيير حالة مستخدم',
 };
 
-function actionLabel(action: string) {
-  return ACTION_LABELS[action] || action;
+const ENTITY_LABELS: Record<string, string> = {
+  TrainerNeed: 'احتياج مدرب', Request: 'طلب مواد', ReturnRequest: 'طلب إرجاع',
+  CustodyRecord: 'عهدة', InventoryItem: 'مادة مخزون', Notification: 'إشعار',
+  User: 'مستخدم', AuditLog: 'سجل تدقيق',
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  name: 'الاسم', quantity: 'الكمية', availableQty: 'المتاح', category: 'الفئة',
+  type: 'النوع', code: 'الرمز', status: 'الحالة', purpose: 'الغرض',
+  notes: 'ملاحظات', fullName: 'اسم المنفذ', department: 'الجهة',
+  source: 'المصدر', intervalMinutes: 'الفاصل الزمني (دقيقة)',
+  role: 'الدور', before: 'قبل', after: 'بعد',
+};
+
+function actionLabel(action: string) { return ACTION_LABELS[action] || action.replace(/_/g, ' '); }
+function entityLabel(entity: string) { return ENTITY_LABELS[entity] || entity; }
+
+function actionColor(action: string): { color: string; bg: string } {
+  const a = action.toUpperCase();
+  if (/DELETE|REMOVE|REJECT|CANCEL|UNASSIGN/.test(a)) return { color: '#73384B', bg: '#f4e7eb' };
+  if (/APPROVE|ISSUE|CLOSE|RETURN|COMPLETE|CONVERT/.test(a)) return { color: '#1e6b4c', bg: '#e8f5ef' };
+  if (/UPDATE|EDIT|ADJUST|ASSIGN|SYNC/.test(a)) return { color: '#8a6a37', bg: '#f7f1e4' };
+  if (/CREATE|ADD|NEW/.test(a)) return { color: '#2A6364', bg: '#eef5f4' };
+  return { color: '#5A5A5A', bg: '#F0F0F0' };
 }
 
-function isTrainingKitEvent(action: string) {
-  return action.startsWith('TRAINER_NEED');
+function parseDetails(raw?: string | null): { summary: string; fields: [string, string][]; hasDiff: boolean; before?: Record<string, unknown>; after?: Record<string, unknown> } {
+  if (!raw) return { summary: '', fields: [], hasDiff: false };
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const hasDiff = 'before' in parsed || 'after' in parsed;
+    const before = typeof parsed.before === 'object' && parsed.before ? parsed.before as Record<string, unknown> : undefined;
+    const after = typeof parsed.after === 'object' && parsed.after ? parsed.after as Record<string, unknown> : undefined;
+    const summary = typeof parsed.name === 'string' ? parsed.name : typeof parsed.purpose === 'string' ? parsed.purpose : '';
+    const fields: [string, string][] = Object.entries(parsed)
+      .filter(([k]) => !['before', 'after', 'source'].includes(k))
+      .map(([k, v]) => [FIELD_LABELS[k] || k, typeof v === 'object' ? JSON.stringify(v) : String(v ?? '—')]);
+    return { summary, fields, hasDiff, before, after };
+  } catch {
+    return { summary: raw.slice(0, 80), fields: [], hasDiff: false };
+  }
 }
+
+const entityOptions = ['TrainerNeed', 'Request', 'ReturnRequest', 'CustodyRecord', 'InventoryItem', 'User'];
 
 export default function AuditLogsPage() {
-  const pathname = usePathname();
   const { user } = useAuth();
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,19 +93,13 @@ export default function AuditLogsPage() {
   const [actionFilter, setActionFilter] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
-  const system = 'materials';
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({
-          limit: '50',
-          page: String(pagination.page),
-          system,
-          days,
-        });
+        const params = new URLSearchParams({ limit: '50', page: String(pagination.page), system: 'materials', days });
         if (actionFilter) params.set('action', actionFilter);
         if (entityFilter) params.set('entity', entityFilter);
         if (search.trim()) params.set('search', search.trim());
@@ -91,155 +107,235 @@ export default function AuditLogsPage() {
         const json = await res.json().catch(() => null);
         if (mounted) {
           setRows(Array.isArray(json?.data) ? json.data : []);
-          setPagination({
-            page: Number(json?.pagination?.page || 1),
-            totalPages: Number(json?.pagination?.totalPages || 1),
-            total: Number(json?.pagination?.total || 0),
-          });
+          setPagination({ page: Number(json?.pagination?.page || 1), totalPages: Number(json?.pagination?.totalPages || 1), total: Number(json?.pagination?.total || 0) });
         }
-      } catch {
-        if (mounted) setRows([]);
-      } finally {
-        if (mounted) setLoading(false);
-      }
+      } catch { if (mounted) setRows([]); }
+      finally { if (mounted) setLoading(false); }
     })();
     return () => { mounted = false; };
-  }, [system, days, actionFilter, entityFilter, search, pagination.page]);
-
-  const filteredRows = useMemo(() => {
-    return rows;
-  }, [rows]);
+  }, [days, actionFilter, entityFilter, search, pagination.page]);
 
   const stats = useMemo(() => ({
     total: pagination.total,
-    creates: rows.filter((row) => /create|add|new/i.test(row.action)).length,
-    updates: rows.filter((row) => /update|edit|adjust/i.test(row.action)).length,
-    decisions: rows.filter((row) => /approve|reject|issue|close|return|complete/i.test(row.action)).length,
+    creates: rows.filter((r) => /create|add|new/i.test(r.action)).length,
+    updates: rows.filter((r) => /update|edit|adjust|sync/i.test(r.action)).length,
+    decisions: rows.filter((r) => /approve|reject|issue|close|return|complete|convert/i.test(r.action)).length,
   }), [rows, pagination.total]);
 
-  const entityOptions = ['TrainerNeed', 'Request', 'ReturnRequest', 'CustodyRecord', 'InventoryItem'];
-
-  function prettyDetails(value?: string | null) {
-    if (!value) return '—';
-    try {
-      const parsed = JSON.parse(value);
-      return Object.entries(parsed).map(([key, val]) => `${key}: ${typeof val === 'object' ? JSON.stringify(val) : String(val)}`).join('\n');
-    } catch {
-      return value;
-    }
-  }
-
-  function goToPage(nextPage: number) {
-    setPagination((prev) => ({ ...prev, page: Math.min(Math.max(1, nextPage), Math.max(1, prev.totalPages)) }));
-  }
-
   if (user?.role !== 'manager') {
-    return <div className="rounded-[22px] border border-red-200 bg-red-50 p-6 text-center text-red-700">غير مصرح لك بالوصول لهذه الصفحة</div>;
+    return <div className="rounded-[16px] border border-[#ecd0d8] bg-[#fff7f8] p-6 text-center text-[13px] text-[#73384B]">غير مصرح لك بالوصول لهذه الصفحة</div>;
   }
+
+  function goToPage(n: number) { setPagination((p) => ({ ...p, page: Math.min(Math.max(1, n), Math.max(1, p.totalPages)) })); }
 
   return (
-    <div className="space-y-4 sm:space-y-5">
-      <section className="rounded-[24px] border border-[#d6d7d4] bg-white px-4 py-4 shadow-sm sm:rounded-[28px] sm:px-5 sm:py-5">
-        <div className="space-y-2">
-          <h1 className="text-[24px] font-extrabold leading-[1.25] text-[#016564] sm:text-[30px]">سجل تدقيق المواد</h1>
-          <p className="text-[13px] leading-7 text-[#61706f] sm:text-sm">سجل تدقيق محسّن مع تصفية حسب النظام والزمن والكيان والإجراء، لعرض السجلات الصحيحة فقط دون ضوضاء.</p>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none"><div className="text-[12px] text-[#6f7b7a]">إجمالي السجلات</div><div className="mt-1 text-[22px] font-extrabold text-[#016564]">{stats.total}</div></Card>
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none"><div className="text-[12px] text-[#6f7b7a]">عمليات الإنشاء</div><div className="mt-1 text-[22px] font-extrabold text-[#016564]">{stats.creates}</div></Card>
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none"><div className="text-[12px] text-[#6f7b7a]">عمليات التعديل</div><div className="mt-1 text-[22px] font-extrabold text-[#d0b284]">{stats.updates}</div></Card>
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none"><div className="text-[12px] text-[#6f7b7a]">القرارات والإقفالات</div><div className="mt-1 text-[22px] font-extrabold text-[#498983]">{stats.decisions}</div></Card>
-        </div>
-      </section>
-
-      <section className="rounded-[24px] border border-[#d6d7d4] bg-white p-4 shadow-sm sm:rounded-[28px] sm:p-5">
-        <div className="grid gap-3 xl:grid-cols-4">
-          <Input label="بحث في السجل" value={search} onChange={(e) => { setPagination((prev) => ({ ...prev, page: 1 })); setSearch(e.target.value); }} placeholder="الإجراء، الكيان، الرقم المرجعي، اسم المستخدم، أو الملاحظات" />
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-slate-700">الفترة</label>
-            <select value={days} onChange={(e) => { setPagination((prev) => ({ ...prev, page: 1 })); setDays(e.target.value); }} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#016564] focus:ring-4 focus:ring-[#016564]/10">
-              <option value="7">آخر 7 أيام</option>
-              <option value="30">آخر 30 يومًا</option>
-              <option value="90">آخر 90 يومًا</option>
-              <option value="0">كل الفترات</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-slate-700">الإجراء</label>
-            <input value={actionFilter} onChange={(e) => { setPagination((prev) => ({ ...prev, page: 1 })); setActionFilter(e.target.value); }} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#016564] focus:ring-4 focus:ring-[#016564]/10" placeholder="مثل APPROVE أو CREATE" />
-          </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-slate-700">الكيان</label>
-            <select value={entityFilter} onChange={(e) => { setPagination((prev) => ({ ...prev, page: 1 })); setEntityFilter(e.target.value); }} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#016564] focus:ring-4 focus:ring-[#016564]/10">
-              <option value="">كل الكيانات</option>
-              {entityOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        {loading ? <div className="space-y-3">{[1,2,3].map((item) => <Skeleton key={item} className="h-32 w-full rounded-[24px]" />)}</div> : filteredRows.length === 0 ? (
-          <Card className="rounded-[24px] border border-[#d6d7d4] p-8 text-center text-sm text-[#61706f] shadow-sm">لا توجد سجلات مطابقة</Card>
-        ) : filteredRows.map((row) => (
-          <Card key={row.id} className="rounded-[24px] border border-[#d6d7d4] p-4 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={actionVariant(row.action)}>{actionLabel(row.action)}</Badge>
-                  {isTrainingKitEvent(row.action) && (
-                    <span className="rounded-full border border-[#d9c99f] bg-[#fffaf0] px-2.5 py-0.5 text-[10px] font-bold text-[#8a6a37]">مساعد تجهيز الدورة</span>
-                  )}
-                  {row.entity ? <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-700">{row.entity}</span> : null}
-                  {row.entityId ? <span className="rounded-full bg-[#016564]/10 px-3 py-1 text-[11px] text-[#016564]">{row.entityId}</span> : null}
-                </div>
-                <div className="grid gap-2 text-sm text-[#425554] sm:grid-cols-2 xl:grid-cols-3">
-                  <div><span className="font-semibold text-[#016564]">المنفذ: </span>{row.user?.fullName || 'غير معروف'}</div>
-                  <div><span className="font-semibold text-[#016564]">الدور: </span>{row.user?.role || '—'}</div>
-                  <div><span className="font-semibold text-[#016564]">الوقت: </span>{formatDate(row.createdAt)}</div>
-                </div>
-                {row.details ? <p className="text-sm leading-7 text-[#61706f] whitespace-pre-wrap">{prettyDetails(row.details)}</p> : null}
-              </div>
-              <div className="flex w-full flex-col gap-2 lg:w-auto"><Button className="w-full lg:w-36" onClick={() => setSelected(row)}>فتح التفاصيل</Button></div>
+    <div className="space-y-4" dir="rtl">
+      {/* Header */}
+      <section className="overflow-hidden rounded-[20px] bg-gradient-to-l from-[#1c2b3a] to-[#2E4A6A] p-5 text-white shadow-[0_12px_32px_rgba(0,0,0,0.2)]">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-white/15">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-white" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+              </svg>
             </div>
-          </Card>
-        ))}
-      </section>
-
-      {!loading && pagination.totalPages > 1 ? (
-        <section className="flex items-center justify-between rounded-[24px] border border-[#d6d7d4] bg-white px-4 py-3 shadow-sm">
-          <button type="button" onClick={() => goToPage(pagination.page - 1)} disabled={pagination.page <= 1} className="rounded-full border border-[#d6d7d4] px-4 py-2 text-sm font-bold text-[#425554] disabled:cursor-not-allowed disabled:opacity-40">السابق</button>
-          <div className="text-sm font-bold text-[#016564]">الصفحة {pagination.page} من {pagination.totalPages}</div>
-          <button type="button" onClick={() => goToPage(pagination.page + 1)} disabled={pagination.page >= pagination.totalPages} className="rounded-full border border-[#d6d7d4] px-4 py-2 text-sm font-bold text-[#425554] disabled:cursor-not-allowed disabled:opacity-40">التالي</button>
-        </section>
-      ) : null}
-
-      <Modal isOpen={!!selected} onClose={() => setSelected(null)} title={selected ? `تفاصيل السجل: ${selected.action}` : 'تفاصيل السجل'} maxWidth="4xl">
-        {selected ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              ['الإجراء', selected.action],
-              ['الكيان', selected.entity || '—'],
-              ['الرقم المرجعي', selected.entityId || '—'],
-              ['المصدر', selected.source || 'SERVER'],
-              ['المنفذ', selected.user?.fullName || '—'],
-              ['البريد الإلكتروني', selected.user?.email || '—'],
-              ['الدور', selected.user?.role || '—'],
-              ['الوقت', formatDate(selected.createdAt)],
-              ['عنوان IP', selected.ipAddress || '—'],
-            ].map(([label, value]) => (
-              <div key={String(label)} className="rounded-2xl border border-[#e7ebea] bg-[#fcfdfd] p-3">
-                <div className="text-xs font-bold text-[#016564]">{label}</div>
-                <div className="mt-1 break-words text-sm text-[#425554]">{value}</div>
+            <div>
+              <h1 className="text-[20px] font-extrabold">سجل التدقيق</h1>
+              <div className="text-[11px] text-white/50">{stats.total} سجل في هذه الفترة</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            {[['إنشاء', stats.creates, '#4ade80'], ['تعديل', stats.updates, '#fbbf24'], ['قرارات', stats.decisions, '#60a5fa']].map(([l, v, c]) => (
+              <div key={l as string} className="rounded-[10px] border border-white/10 bg-white/8 px-3 py-2">
+                <div className="text-[18px] font-extrabold" style={{ color: c as string }}>{v as number}</div>
+                <div className="text-[10px] text-white/40">{l as string}</div>
               </div>
             ))}
-            <div className="sm:col-span-2 rounded-2xl border border-[#e7ebea] bg-[#fcfdfd] p-3">
-              <div className="text-xs font-bold text-[#016564]">التفاصيل</div>
-              <div className="mt-1 whitespace-pre-wrap break-words text-sm leading-7 text-[#425554]">{prettyDetails(selected.details)}</div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="mt-4 grid gap-2 sm:grid-cols-4">
+          <div className="relative sm:col-span-1">
+            <svg viewBox="0 0 24 24" fill="none" className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/40" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input value={search} onChange={(e) => { setPagination((p) => ({ ...p, page: 1 })); setSearch(e.target.value); }}
+              placeholder="بحث باسم المستخدم أو الكيان..."
+              className="h-9 w-full rounded-full border border-white/20 bg-white/10 pr-8 pl-3 text-[12px] text-white placeholder-white/30 outline-none focus:border-white/40" />
+          </div>
+          {[
+            { value: days, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setDays(v); }, options: [['7','آخر 7 أيام'],['30','آخر 30 يوماً'],['90','آخر 90 يوماً'],['0','كل الفترات']] },
+            { value: entityFilter, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setEntityFilter(v); }, options: [['','كل الكيانات'], ...entityOptions.map((e) => [e, ENTITY_LABELS[e] || e])] },
+            { value: actionFilter, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setActionFilter(v); }, options: [['','كل الإجراءات'], ...Object.entries(ACTION_LABELS).map(([k,v]) => [k, v])] },
+          ].map((sel, i) => (
+            <select key={i} value={sel.value} onChange={(e) => sel.onChange(e.target.value)}
+              className="h-9 rounded-full border border-white/20 bg-white/10 px-3 text-[12px] text-white outline-none focus:border-white/40">
+              {(sel.options as [string,string][]).map(([v,l]) => <option key={v} value={v} className="text-black bg-white">{l}</option>)}
+            </select>
+          ))}
+        </div>
+      </section>
+
+      {/* Log entries */}
+      <div className="overflow-hidden rounded-[16px] border border-[#DADBD9] bg-white">
+        {loading ? (
+          <div className="space-y-0">
+            {[1,2,3,4,5].map((i) => (
+              <div key={i} className="flex items-center gap-3 border-b border-[#F0F0F0] px-4 py-4">
+                <div className="h-8 w-8 animate-pulse rounded-full bg-[#F0F0F0]" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-32 animate-pulse rounded bg-[#F0F0F0]" />
+                  <div className="h-2.5 w-48 animate-pulse rounded bg-[#F0F0F0]" />
+                </div>
+                <div className="h-2.5 w-12 animate-pulse rounded bg-[#F0F0F0]" />
+              </div>
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <svg viewBox="0 0 24 24" fill="none" className="h-12 w-12 text-[#DADBD9]" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+            </svg>
+            <p className="mt-3 text-[13px] text-[#B5BDBE]">لا توجد سجلات مطابقة</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#F0F0F0]">
+            {rows.map((row) => {
+              const ac = actionColor(row.action);
+              const parsed = parseDetails(row.details);
+              const userRole = row.user?.roles?.[0] || row.user?.role || '';
+              const roleLabel = userRole === 'MANAGER' ? 'مدير' : userRole === 'WAREHOUSE' ? 'مستودع' : userRole === 'USER' ? 'موظف' : '';
+              return (
+                <div key={row.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-[#FAFAFA]">
+                  {/* Action badge */}
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: ac.bg }}>
+                    <span className="text-[9px] font-extrabold" style={{ color: ac.color }}>
+                      {actionLabel(row.action).slice(0, 2)}
+                    </span>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ backgroundColor: ac.bg, color: ac.color }}>
+                        {actionLabel(row.action)}
+                      </span>
+                      <span className="rounded-full bg-[#F0F0F0] px-2 py-0.5 text-[10px] text-[#5A5A5A]">
+                        {entityLabel(row.entity)}
+                      </span>
+                      {row.entityId && (
+                        <span className="font-mono text-[10px] text-[#B5BDBE]">
+                          #{row.entityId.slice(-8)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-[#B5BDBE]">
+                      <span className="font-semibold text-[#5A5A5A]">{row.user?.fullName || 'النظام'}</span>
+                      {roleLabel && <span className="rounded-full bg-[#F0F0F0] px-1.5 py-0.5 text-[9px]">{roleLabel}</span>}
+                      {parsed.summary && <><span>·</span><span className="truncate max-w-[200px]">{parsed.summary}</span></>}
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-[11px] text-[#B5BDBE]">{formatTimeAgo(row.createdAt)}</span>
+                    <button onClick={() => setSelected(row)}
+                      className="rounded-[8px] border border-[#DADBD9] px-2.5 py-1 text-[11px] font-semibold text-[#5A5A5A] hover:bg-[#F9F9F9]">
+                      تفاصيل
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {!loading && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-[16px] border border-[#DADBD9] bg-white px-4 py-3">
+          <button onClick={() => goToPage(pagination.page - 1)} disabled={pagination.page <= 1}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">السابق</button>
+          <div className="text-[12px] font-bold text-[#2A6364]">{pagination.page} / {pagination.totalPages} · {pagination.total} سجل</div>
+          <button onClick={() => goToPage(pagination.page + 1)} disabled={pagination.page >= pagination.totalPages}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">التالي</button>
+        </div>
+      )}
+
+      {/* Detail modal */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" dir="rtl">
+          <div className="w-full max-w-2xl overflow-hidden rounded-[20px] bg-white shadow-2xl">
+            <div className="flex items-center justify-between gap-3 border-b border-[#DADBD9] px-5 py-4">
+              <div>
+                <div className="text-[15px] font-extrabold text-[#2A2A2A]">{actionLabel(selected.action)}</div>
+                <div className="text-[11px] text-[#B5BDBE]">{entityLabel(selected.entity)} · {formatDate(selected.createdAt)}</div>
+              </div>
+              <button onClick={() => setSelected(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F9F9F9] text-[#5A5A5A] hover:bg-[#DADBD9]">✕</button>
+            </div>
+
+            <div className="max-h-[70vh] overflow-y-auto p-5">
+              {/* Meta */}
+              <div className="grid grid-cols-2 gap-2 text-[12px]">
+                {[
+                  ['المنفذ', selected.user?.fullName || 'النظام'],
+                  ['البريد', selected.user?.email || '—'],
+                  ['الدور', selected.user?.roles?.[0] || selected.user?.role || '—'],
+                  ['الكيان', entityLabel(selected.entity)],
+                  ['الرمز المرجعي', selected.entityId ? `#${selected.entityId.slice(-12)}` : '—'],
+                  ['عنوان IP', selected.ipAddress || '—'],
+                ].map(([k, v]) => (
+                  <div key={k as string} className="rounded-[10px] bg-[#F9F9F9] px-3 py-2">
+                    <div className="text-[10px] text-[#B5BDBE]">{k as string}</div>
+                    <div className="font-semibold text-[#2A2A2A] break-all">{v as string}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Details */}
+              {selected.details && (() => {
+                const p = parseDetails(selected.details);
+                return (
+                  <div className="mt-4">
+                    {p.hasDiff && p.before && p.after ? (
+                      <div>
+                        <div className="mb-2 text-[12px] font-bold text-[#2A2A2A]">التغييرات</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="rounded-[10px] border border-[#ecd0d8] bg-[#fff7f8] p-3">
+                            <div className="mb-1 text-[10px] font-bold text-[#73384B]">قبل</div>
+                            {Object.entries(p.before).filter(([k]) => !['id', 'updatedAt', 'createdAt'].includes(k)).slice(0, 6).map(([k, v]) => (
+                              <div key={k} className="text-[11px] text-[#5A5A5A]">
+                                <span className="font-semibold">{FIELD_LABELS[k] || k}:</span> {String(v ?? '—')}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="rounded-[10px] border border-[#cce4e4] bg-[#eef5f4] p-3">
+                            <div className="mb-1 text-[10px] font-bold text-[#2A6364]">بعد</div>
+                            {Object.entries(p.after).filter(([k]) => !['id', 'updatedAt', 'createdAt'].includes(k)).slice(0, 6).map(([k, v]) => (
+                              <div key={k} className="text-[11px] text-[#5A5A5A]">
+                                <span className="font-semibold">{FIELD_LABELS[k] || k}:</span> {String(v ?? '—')}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : p.fields.length > 0 ? (
+                      <div>
+                        <div className="mb-2 text-[12px] font-bold text-[#2A2A2A]">بيانات إضافية</div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {p.fields.slice(0, 10).map(([k, v]) => (
+                            <div key={k} className="rounded-[8px] bg-[#F9F9F9] px-2.5 py-1.5 text-[11px]">
+                              <span className="text-[#B5BDBE]">{k}: </span>
+                              <span className="font-semibold text-[#2A2A2A]">{v.length > 50 ? `${v.slice(0, 50)}...` : v}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })()}
             </div>
           </div>
-        ) : null}
-      </Modal>
+        </div>
+      )}
     </div>
   );
 }
