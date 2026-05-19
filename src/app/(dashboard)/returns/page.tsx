@@ -583,61 +583,116 @@ export default function ReturnsPage() {
             <p className="mt-3 text-[13px] text-[#B5BDBE]">لا توجد طلبات إرجاع</p>
           </div>
         ) : (
-          returns.map((ret) => (
-            <div key={ret.id} className="overflow-hidden rounded-[16px] border border-[#DADBD9] bg-white">
-              <div className="flex items-center justify-between gap-3 border-b border-[#DADBD9] px-4 py-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#e7eff5]">
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4.5 w-4.5 text-[#1b4f68]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 9H5V5"/><path d="M5 9C6.8 6.6 9 5.5 12 5.5c4.7 0 8 3.3 8 8s-3.3 8-8 8c-3.3 0-5.8-1.3-7.5-4"/>
-                    </svg>
+          returns.map((ret) => {
+            const requesterName = getReturnRequesterName(ret);
+            const reqCode = ret.requestItem?.request?.code || null;
+            const reqPurpose = ret.requestItem?.request?.purpose || null;
+            const isApproved = ret.status === 'APPROVED';
+            const isRejected = ret.status === 'REJECTED';
+            const hasDamage = ret.returnType === 'PARTIAL_DAMAGE' || ret.returnType === 'TOTAL_DAMAGE';
+            const receivedDiffersFromReported = isApproved && ret.receivedType && ret.receivedType !== ret.returnType;
+            return (
+              <div key={ret.id} className={`overflow-hidden rounded-[16px] border bg-white ${isRejected ? 'border-[#ecd0d8]' : hasDamage ? 'border-[#C7B08C]/30' : 'border-[#DADBD9]'}`}>
+                {/* Card header */}
+                <div className="flex items-center justify-between gap-3 border-b border-[#F0F0F0] px-4 py-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${hasDamage ? 'bg-[#f7f1e4]' : 'bg-[#e7eff5]'}`}>
+                      <svg viewBox="0 0 24 24" fill="none" className={`h-4 w-4 ${hasDamage ? 'text-[#8a6a37]' : 'text-[#1b4f68]'}`} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 9H5V5"/><path d="M5 9C6.8 6.6 9 5.5 12 5.5c4.7 0 8 3.3 8 8s-3.3 8-8 8c-3.3 0-5.8-1.3-7.5-4"/>
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[14px] font-extrabold text-[#2A2A2A] truncate">{getReturnItemName(ret, language)}</div>
+                      <div className="flex items-center gap-2 text-[10px] text-[#B5BDBE]">
+                        <span className="font-mono">{ret.code}</span>
+                        {requesterName !== '-' && <><span>·</span><span>{requesterName}</span></>}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[14px] font-extrabold text-[#2A2A2A]">{getReturnItemName(ret, language)}</div>
-                    <div className="font-mono text-[10px] text-[#B5BDBE]">{ret.code}</div>
-                  </div>
-                </div>
-                <ReturnStatusPill ret={ret} />
-              </div>
-
-              <div className="px-4 py-3">
-                <div className="grid grid-cols-2 gap-2 text-[12px] sm:grid-cols-4">
-                  <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
-                    <div className="text-[10px] text-[#B5BDBE]">الكمية</div>
-                    <div className="font-bold text-[#2A2A2A]">{getReturnQuantity(ret)}</div>
-                  </div>
-                  <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
-                    <div className="text-[10px] text-[#B5BDBE]">المسار</div>
-                    <div className="font-bold text-[#2A2A2A]">{sourceTypeLabel(ret.sourceType)}</div>
-                  </div>
-                  <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
-                    <div className="text-[10px] text-[#B5BDBE]">تاريخ الطلب</div>
-                    <div className="font-bold text-[#2A2A2A]">{formatDate(ret.createdAt)}</div>
-                  </div>
-                  <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
-                    <div className="text-[10px] text-[#B5BDBE]">حالة المادة</div>
-                    <div className="font-bold text-[#2A2A2A]">{conditionLabel(ret.returnType)}</div>
-                  </div>
+                  <ReturnStatusPill ret={ret} />
                 </div>
 
-                {(ret.damageDetails || ret.conditionNote || ret.rejectionReason) && (
-                  <div className="mt-2 rounded-[8px] bg-[#F9F9F9] px-3 py-2 text-[11px] text-[#5A5A5A]">
-                    {ret.rejectionReason ? <span className="text-[#73384B]">سبب الرفض: {ret.rejectionReason}</span> : (ret.damageDetails || ret.conditionNote)}
+                {/* Info grid */}
+                <div className="px-4 py-3">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
+                      <div className="text-[10px] text-[#B5BDBE]">الكمية</div>
+                      <div className="text-[13px] font-bold text-[#2A2A2A]">{getReturnQuantity(ret)}</div>
+                    </div>
+                    <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
+                      <div className="text-[10px] text-[#B5BDBE]">المسار</div>
+                      <div className="text-[12px] font-bold text-[#2A2A2A]">{sourceTypeLabel(ret.sourceType)}</div>
+                    </div>
+                    <div className={`rounded-[8px] px-3 py-2 ${hasDamage ? 'bg-[#f7f1e4]' : 'bg-[#F9F9F9]'}`}>
+                      <div className="text-[10px] text-[#B5BDBE]">حالة المادة (الموظف)</div>
+                      <div className={`text-[12px] font-bold ${hasDamage ? 'text-[#8a6a37]' : 'text-[#2A2A2A]'}`}>{conditionLabel(ret.returnType)}</div>
+                    </div>
+                    <div className="rounded-[8px] bg-[#F9F9F9] px-3 py-2">
+                      <div className="text-[10px] text-[#B5BDBE]">تاريخ الطلب</div>
+                      <div className="text-[12px] font-bold text-[#2A2A2A]">{formatDate(ret.createdAt)}</div>
+                    </div>
+                  </div>
+
+                  {/* Linked request */}
+                  {(reqCode || reqPurpose) && (
+                    <div className="mt-2 flex items-center gap-2 rounded-[8px] bg-[#eef5f4] px-3 py-2 text-[11px]">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/></svg>
+                      <span className="text-[#B5BDBE]">طلب الصرف:</span>
+                      {reqCode && <span className="font-mono font-bold text-[#2A6364]">{reqCode}</span>}
+                      {reqPurpose && <span className="text-[#5A5A5A] truncate">{reqPurpose}</span>}
+                    </div>
+                  )}
+
+                  {/* Damage details from employee */}
+                  {(ret.damageDetails || ret.conditionNote) && (
+                    <div className="mt-2 rounded-[8px] border border-[#C7B08C]/30 bg-[#fffdf5] px-3 py-2 text-[11px]">
+                      <span className="font-semibold text-[#8a6a37]">ملاحظات الموظف: </span>
+                      <span className="text-[#5A5A5A]">{ret.damageDetails || ret.conditionNote}</span>
+                    </div>
+                  )}
+
+                  {/* Warehouse received assessment */}
+                  {isApproved && ret.receivedType && (
+                    <div className={`mt-2 rounded-[8px] px-3 py-2 text-[11px] ${receivedDiffersFromReported ? 'border border-[#ecd0d8] bg-[#fff7f8]' : 'bg-[#e8f5ef]'}`}>
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 24 24" fill="none" className={`h-3.5 w-3.5 shrink-0 ${receivedDiffersFromReported ? 'text-[#73384B]' : 'text-[#1e6b4c]'}`} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+                        <span className={`font-semibold ${receivedDiffersFromReported ? 'text-[#73384B]' : 'text-[#1e6b4c]'}`}>
+                          تقييم المخزن: {conditionLabel(ret.receivedType)}
+                        </span>
+                        {receivedDiffersFromReported && <span className="text-[#73384B]">— يختلف عن بلاغ الموظف</span>}
+                      </div>
+                      {ret.receivedNotes && <div className="mt-0.5 text-[#5A5A5A]">{ret.receivedNotes}</div>}
+                      {ret.processedAt && <div className="mt-0.5 text-[#B5BDBE]">أُغلق: {formatDate(ret.processedAt)}</div>}
+                    </div>
+                  )}
+
+                  {/* Rejection reason */}
+                  {isRejected && ret.rejectionReason && (
+                    <div className="mt-2 rounded-[8px] border border-[#ecd0d8] bg-[#fff7f8] px-3 py-2 text-[11px]">
+                      <span className="font-semibold text-[#73384B]">سبب الرفض: </span>
+                      <span className="text-[#73384B]">{ret.rejectionReason}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                {canProcessReturns && ret.status === 'PENDING' && (
+                  <div className="flex gap-2 border-t border-[#DADBD9] px-4 pb-3 pt-2.5">
+                    <button
+                      onClick={() => { setSelectedReturn(ret); setReceivedType(ret.returnType || 'GOOD'); setReceivedNotes(''); setReceivedImages([]); }}
+                      className="flex-1 rounded-[10px] bg-[#2A6364] py-2 text-[12px] font-bold text-white hover:bg-[#1e5152]">
+                      استلام وتوثيق الحالة
+                    </button>
+                    <button
+                      onClick={() => { setSelectedReturn(ret); setReceivedType('GOOD'); setReceivedNotes(''); }}
+                      className="rounded-[10px] bg-[#f4e7eb] px-3 py-2 text-[12px] font-bold text-[#73384B] hover:bg-[#ecd0d8]">
+                      رفض
+                    </button>
                   </div>
                 )}
               </div>
-
-              {canProcessReturns && ret.status === 'PENDING' && (
-                <div className="border-t border-[#DADBD9] px-4 pb-3 pt-2.5">
-                  <button
-                    onClick={() => { setSelectedReturn(ret); setReceivedType(ret.returnType || 'GOOD'); setReceivedNotes(''); setReceivedImages([]); }}
-                    className="h-9 w-full rounded-[10px] bg-[#2A6364] text-[12px] font-bold text-white transition hover:bg-[#1e5152]">
-                    استلام وتوثيق الحالة
-                  </button>
-                </div>
-              )}
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -844,17 +899,36 @@ export default function ReturnsPage() {
         title="استلام وتوثيق حالة المادة"
         size="lg"
       >
-        <div className="space-y-4">
-          <div className="rounded-[18px] border border-surface-border bg-slate-50 p-4 text-[14px] leading-7 text-slate-700">
-            المسار: <span className="text-slate-900">{sourceTypeLabel(selectedReturn?.sourceType)}</span>
-            <br />
-            المادة: <span className="text-slate-900">{getReturnItemName(selectedReturn, language)}</span>
-            <br />
-            الكمية: <span className="text-slate-900">{getReturnQuantity(selectedReturn)}</span>
-            <br />
-            الحالة المبلّغ عنها:{' '}
-            <span className="text-slate-900">{conditionLabel(selectedReturn?.returnType)}</span>
+        <div className="space-y-4" dir="rtl">
+          {/* Summary */}
+          <div className="grid grid-cols-2 gap-2 rounded-[14px] bg-[#F9F9F9] p-3 text-[12px]">
+            {[
+              ['المادة', getReturnItemName(selectedReturn, language)],
+              ['الكمية', String(getReturnQuantity(selectedReturn))],
+              ['المسار', sourceTypeLabel(selectedReturn?.sourceType)],
+              ['حالة الموظف', conditionLabel(selectedReturn?.returnType)],
+              ['مقدم الطلب', getReturnRequesterName(selectedReturn)],
+              ['رقم الطلب', selectedReturn?.requestItem?.request?.code || selectedReturn?.code || '—'],
+            ].map(([k, v]) => (
+              <div key={k as string} className="rounded-[8px] bg-white px-2.5 py-2">
+                <div className="text-[10px] text-[#B5BDBE]">{k as string}</div>
+                <div className="font-semibold text-[#2A2A2A]">{v as string || '—'}</div>
+              </div>
+            ))}
           </div>
+
+          {/* Employee notes */}
+          {(selectedReturn?.damageDetails || selectedReturn?.conditionNote) && (
+            <div className="rounded-[10px] border border-[#C7B08C]/30 bg-[#fffdf5] px-3 py-2.5 text-[12px]">
+              <div className="text-[10px] font-bold text-[#8a6a37]">ملاحظات الموظف</div>
+              <div className="mt-0.5 text-[#5A5A5A]">{selectedReturn.damageDetails || selectedReturn.conditionNote}</div>
+            </div>
+          )}
+          {selectedReturn?.damageImages && (
+            <div className="text-[11px] text-[#B5BDBE]">
+              📎 صور الموظف: {selectedReturn.damageImages}
+            </div>
+          )}
 
           <div>
             <label className="mb-2 block text-sm text-primary">الحالة الموثقة عند الاستلام</label>
