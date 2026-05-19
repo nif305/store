@@ -883,108 +883,142 @@ export default function InventoryPage() {
   );
 
   return (
-    <div className="space-y-5" dir="rtl">
-      <section className="rounded-[14px] border border-[#dce6e3] bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="text-[26px] font-extrabold text-[#203634]">إدارة مواد المخزن</h1>
-            <div className="mt-1.5 flex items-start gap-2 text-[12px] text-[#6f817f]">
-              <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-[#2A6364]" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
-              </svg>
-              <span>المتجر = المخزون تماماً. أي مادة تُضيفها هنا تظهر في المتجر تلقائياً، وأي مادة تحذفها تختفي من المتجر. اضغط <strong className="text-[#7c1e3e]">"مزامنة المتجر الآن"</strong> لإزالة أي تعارضات قديمة.</span>
+    <div className="space-y-4" dir="rtl">
+
+      {/* ══ Hero Header ══ */}
+      <section className="overflow-hidden rounded-[20px] bg-gradient-to-l from-[#0d2e20] via-[#1a4a35] to-[#2A6364] shadow-[0_16px_40px_rgba(42,99,100,0.3)]">
+        <div className="p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-white/15">
+                <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-white" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                  <path d="M3.3 7 12 12l8.7-5M12 22V12"/>
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-[22px] font-extrabold text-white">إدارة مواد المخزن</h1>
+                <div className="text-[12px] text-white/50">{formatNumber(stats.totalItems)} صنف · قيمة تقديرية {formatCurrency(stats.totalEstimatedValue)}</div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {(imageGenProgress || syncResult) && (
+                <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] text-white">
+                  {syncResult || imageGenProgress}
+                </span>
+              )}
+              <button onClick={() => window.open('/training-kit', '_blank')}
+                className="flex items-center gap-1.5 rounded-[10px] border border-white/20 bg-white/10 px-3 py-2 text-[12px] font-semibold text-white hover:bg-white/20">
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>
+                معاينة المتجر
+              </button>
+              {canModify && (
+                <button onClick={syncStore} disabled={syncing}
+                  className="flex items-center gap-1.5 rounded-[10px] border border-[#C7B08C]/40 bg-[#C7B08C]/20 px-3 py-2 text-[12px] font-semibold text-[#C7B08C] hover:bg-[#C7B08C]/30 disabled:opacity-50">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  {syncing ? 'مزامنة...' : 'مزامنة المتجر'}
+                </button>
+              )}
+              {canModify && (
+                <button onClick={() => setShowBulkUpload(true)}
+                  className="flex items-center gap-1.5 rounded-[10px] border border-white/20 bg-white/10 px-3 py-2 text-[12px] font-semibold text-white hover:bg-white/20">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  رفع صور دفعي
+                </button>
+              )}
+              {canModify && stats.missingImagesCount > 0 && (
+                <button onClick={applyGeneratedImages} disabled={generatingImages}
+                  className="flex items-center gap-1.5 rounded-[10px] border border-white/20 bg-white/10 px-3 py-2 text-[12px] font-semibold text-white hover:bg-white/20 disabled:opacity-50">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  {generatingImages ? 'جاري...' : `توليد صور (${stats.missingImagesCount})`}
+                </button>
+              )}
+              {canModify && (
+                <button onClick={openCreateModal}
+                  className="flex items-center gap-1.5 rounded-[10px] bg-white px-4 py-2 text-[13px] font-extrabold text-[#2A6364] shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:bg-[#f0fbf9]">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  إضافة مادة
+                </button>
+              )}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {(imageGenProgress || syncResult) && (
-              <span className="rounded-full border border-[#dce6e3] bg-[#f4f8f7] px-3 py-1 text-[12px] text-[#2A6364]">{syncResult || imageGenProgress}</span>
-            )}
-            <Button variant="ghost" className="border border-slate-200" onClick={() => window.open('/training-kit', '_blank')}>معاينة المتجر</Button>
-            {canModify ? (
-              <Button
-                variant="ghost"
-                className="border border-[#7c1e3e]/25 bg-[#fff7f8] text-[#7c1e3e] hover:bg-[#fee8ec]"
-                disabled={syncing}
-                onClick={syncStore}
-                title="يُزامن المتجر مع المخزون ويُخفي المواد الزائدة"
-              >
-                {syncing ? 'جاري المزامنة...' : 'مزامنة المتجر الآن'}
-              </Button>
-            ) : null}
-            {canModify ? (
-              <Button
-                variant="ghost"
-                className="border border-[#2A6364]/30 bg-[#eef5f4] text-[#2A6364] hover:bg-[#e0f0ef]"
-                onClick={() => setShowBulkUpload(true)}
-              >
-                رفع صور دفعي
-              </Button>
-            ) : null}
-            {canModify && stats.missingImagesCount > 0 ? (
-              <Button
-                variant="ghost"
-                className="border border-[#d9c99f] bg-[#fffaf0] text-[#7f6030] hover:bg-[#f5edd8]"
-                disabled={generatingImages}
-                onClick={applyGeneratedImages}
-              >
-                {generatingImages ? 'جاري التوليد...' : `توليد صور تلقائية (${stats.missingImagesCount})`}
-              </Button>
-            ) : null}
-            {canModify ? <Button className="bg-[#2A6364] text-white hover:bg-[#214f50]" onClick={openCreateModal}>+ إضافة مادة</Button> : null}
+
+          {/* KPI Strip */}
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {[
+              { label: 'إجمالي الأصناف', value: formatNumber(stats.totalItems), accent: false, onClick: () => { clearFilters(); setActiveTab('items'); } },
+              { label: 'متاح', value: formatNumber(stats.availableCount), accent: false, onClick: () => { setStatusFilter('AVAILABLE'); setActiveTab('items'); } },
+              { label: 'منخفض المخزون', value: formatNumber(stats.lowStockCount), accent: stats.lowStockCount > 0, onClick: () => { setStatusFilter('LOW_STOCK'); setActiveTab('items'); } },
+              { label: 'نافد من المخزون', value: formatNumber(stats.outOfStockCount), accent: stats.outOfStockCount > 0, onClick: () => { setStatusFilter('OUT_OF_STOCK'); setActiveTab('items'); } },
+              { label: 'بدون صورة', value: formatNumber(stats.missingImagesCount), accent: stats.missingImagesCount > 0, onClick: () => setActiveTab('alerts') },
+            ].map((kpi) => (
+              <button key={kpi.label} onClick={kpi.onClick}
+                className={`rounded-[13px] border px-3 py-2.5 text-right transition hover:scale-[1.02] ${kpi.accent ? 'border-[#C7B08C]/40 bg-[#C7B08C]/15' : 'border-white/10 bg-white/8'}`}>
+                <div className={`text-[22px] font-extrabold ${kpi.accent ? 'text-[#C7B08C]' : 'text-white'}`}>{kpi.value}</div>
+                <div className={`text-[10px] ${kpi.accent ? 'text-[#C7B08C]/80' : 'text-white/50'}`}>{kpi.label}</div>
+              </button>
+            ))}
           </div>
         </div>
       </section>
 
-      {error ? <div className="rounded-[8px] border border-[#eed9df] bg-[#fff7f8] px-4 py-3 text-[13px] text-[#7a3147]">{error}</div> : null}
+      {error && (
+        <div className="flex items-center gap-2 rounded-[12px] border border-[#ecd0d8] bg-[#fff7f8] px-4 py-3 text-[13px] text-[#73384B]">
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          {error}
+        </div>
+      )}
 
-      {showBulkUpload ? (
+      {showBulkUpload && (
         <BulkUploadModal
           onClose={() => setShowBulkUpload(false)}
           onDone={async () => { await fetchInventory(); await fetchBundles(); }}
         />
-      ) : null}
+      )}
 
-      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="إجمالي المواد" value={stats.totalItems} tone="teal" onClick={() => { clearFilters(); setActiveTab('items'); }} />
-        <StatCard label="مواد نشطة" value={stats.availableCount} tone="green" onClick={() => { setStatusFilter('AVAILABLE'); setActiveTab('items'); }} />
-        <StatCard label="مواد منخفضة" value={stats.lowStockCount} tone="amber" onClick={() => { setStatusFilter('LOW_STOCK'); setActiveTab('items'); }} />
-        <StatCard label="مواد نفدت" value={stats.outOfStockCount} tone="rose" onClick={() => { setStatusFilter('OUT_OF_STOCK'); setActiveTab('items'); }} />
-        <StatCard label="بدون صور" value={stats.missingImagesCount} tone="blue" onClick={() => setActiveTab('alerts')} />
-        <Card className={`${statCardClass} border-[#d8c59c] bg-[#fffaf0]`}><div className="text-[12px] text-slate-500">القيمة التقديرية</div><div className="mt-2 text-[18px] text-[#203634]">{formatCurrency(stats.totalEstimatedValue)}</div></Card>
-      </div>
-
-      <Card className="rounded-[14px] border border-[#dce6e3] bg-white p-3">
+      {/* ══ Tabs + Filters ══ */}
+      <div className="rounded-[16px] border border-[#DADBD9] bg-white p-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex flex-wrap gap-2">
-            <TabButton active={activeTab === 'items'} onClick={() => setActiveTab('items')}>المواد</TabButton>
-            <TabButton active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>ملخص المواد</TabButton>
-            <TabButton active={activeTab === 'bundles'} onClick={() => setActiveTab('bundles')}>البكجات</TabButton>
-            <TabButton active={activeTab === 'alerts'} onClick={() => setActiveTab('alerts')}>تنبيهات المخزون</TabButton>
+          <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+            {([['items','المواد'],['summary','ملخص المواد'],['bundles','البكجات'],['alerts','التنبيهات']] as const).map(([tab, label]) => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`shrink-0 rounded-full border px-4 py-2 text-[12px] font-bold transition ${activeTab === tab ? 'border-[#2A6364] bg-[#2A6364] text-white' : 'border-[#DADBD9] bg-white text-[#5A5A5A] hover:border-[#2A6364]/30'}`}>
+                {label}
+                {tab === 'alerts' && stats.outOfStockCount + stats.lowStockCount > 0 && (
+                  <span className="mr-1.5 rounded-full bg-[#73384B] px-1.5 py-0.5 text-[9px] text-white">
+                    {stats.outOfStockCount + stats.lowStockCount}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
-          <div className="grid gap-2 md:grid-cols-[minmax(180px,280px)_160px_150px_140px_110px]">
-            <Input placeholder="بحث عن مادة" value={search} onChange={(event) => { setSearch(event.target.value); setPagination((prev) => ({ ...prev, page: 1 })); }} />
-            <select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setPagination((prev) => ({ ...prev, page: 1 })); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm">
-              <option value="">كل الفئات</option>
-              {categories.map((category) => <option key={category} value={category}>{category}</option>)}
-            </select>
-            <select value={typeFilter} onChange={(event) => { setTypeFilter(event.target.value); setPagination((prev) => ({ ...prev, page: 1 })); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm">
-              <option value="">كل الأنواع</option>
-              <option value="RETURNABLE">مسترجعة</option>
-              <option value="CONSUMABLE">مستهلكة</option>
-            </select>
-            <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPagination((prev) => ({ ...prev, page: 1 })); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm">
-              <option value="">كل الحالات</option>
-              <option value="AVAILABLE">متاح</option>
-              <option value="LOW_STOCK">منخفض</option>
-              <option value="OUT_OF_STOCK">نافد</option>
-            </select>
-            <select value={pagination.limit} onChange={(event) => setPagination((prev) => ({ ...prev, page: 1, limit: Number(event.target.value) }))} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm">
+          <div className="flex flex-wrap gap-2">
+            <div className="relative">
+              <svg viewBox="0 0 24 24" fill="none" className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#B5BDBE]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input placeholder="بحث عن مادة" value={search}
+                onChange={(e) => { setSearch(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
+                className="h-9 w-48 rounded-full border border-[#DADBD9] bg-[#F9F9F9] pr-8 pl-3 text-[12px] outline-none focus:border-[#2A6364]/50 focus:bg-white" />
+            </div>
+            {[
+              { value: categoryFilter, onChange: (v: string) => { setCategoryFilter(v); setPagination((p) => ({ ...p, page: 1 })); }, options: [['','كل الفئات'], ...categories.map((c) => [c, c] as [string, string])] },
+              { value: typeFilter, onChange: (v: string) => { setTypeFilter(v); setPagination((p) => ({ ...p, page: 1 })); }, options: [['','كل الأنواع'],['RETURNABLE','مسترجعة'],['CONSUMABLE','مستهلكة']] },
+              { value: statusFilter, onChange: (v: string) => { setStatusFilter(v); setPagination((p) => ({ ...p, page: 1 })); }, options: [['','كل الحالات'],['AVAILABLE','متاح'],['LOW_STOCK','منخفض'],['OUT_OF_STOCK','نافد']] },
+            ].map((sel, i) => (
+              <select key={i} value={sel.value} onChange={(e) => sel.onChange(e.target.value)}
+                className="h-9 rounded-full border border-[#DADBD9] bg-white px-3 text-[12px] outline-none focus:border-[#2A6364]/50">
+                {(sel.options as [string, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            ))}
+            <select value={pagination.limit} onChange={(e) => setPagination((p) => ({ ...p, page: 1, limit: Number(e.target.value) }))}
+              className="h-9 rounded-full border border-[#DADBD9] bg-white px-3 text-[12px] outline-none focus:border-[#2A6364]/50">
               <option value={10}>10 مواد</option>
               <option value={20}>20 مادة</option>
+              <option value={50}>50 مادة</option>
             </select>
           </div>
         </div>
-      </Card>
+      </div>
 
       {activeTab === 'items' ? (
         <InventoryTable
@@ -1116,35 +1150,10 @@ export default function InventoryPage() {
   );
 }
 
-const statTones: Record<string, string> = {
-  teal: 'border-[#c9dfdc] bg-[#f4fbfa] text-[#2A6364]',
-  green: 'border-[#cce6d7] bg-[#f3fbf6] text-[#2f6f4f]',
-  amber: 'border-[#ead8aa] bg-[#fffaf0] text-[#80622a]',
-  rose: 'border-[#efd0d8] bg-[#fff7f8] text-[#8a3650]',
-  blue: 'border-[#cfddea] bg-[#f5f9fd] text-[#365f82]',
-};
-
-function StatCard({ label, value, tone, onClick }: { label: string; value: number; tone: string; onClick?: () => void }) {
-  return (
-    <Card className={`${statCardClass} ${statTones[tone] || statTones.teal}`} onClick={onClick}>
-      <div className="text-[12px] text-slate-500">{label}</div>
-      <div className="mt-2 text-[24px] text-[#203634]">{formatNumber(value)}</div>
-    </Card>
-  );
-}
-
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" onClick={onClick} className={`rounded-[10px] border px-4 py-2 text-sm ${active ? 'border-[#2A6364] bg-[#e9f2f1] text-[#203634]' : 'border-slate-200 bg-white text-slate-600'}`}>
-      {children}
-    </button>
-  );
-}
-
 function StatusBadge({ status }: { status: InventoryItem['status'] }) {
-  if (status === 'LOW_STOCK') return <Badge variant="warning">منخفض</Badge>;
-  if (status === 'OUT_OF_STOCK') return <Badge variant="danger">نافد</Badge>;
-  return <Badge variant="success">متاح</Badge>;
+  if (status === 'LOW_STOCK') return <span className="rounded-full bg-[#f7f1e4] px-2 py-0.5 text-[10px] font-bold text-[#8a6a37]">منخفض</span>;
+  if (status === 'OUT_OF_STOCK') return <span className="rounded-full bg-[#f4e7eb] px-2 py-0.5 text-[10px] font-bold text-[#73384B]">نافد</span>;
+  return <span className="rounded-full bg-[#e8f5ef] px-2 py-0.5 text-[10px] font-bold text-[#1e6b4c]">متاح</span>;
 }
 
 function TypeBadge({ type }: { type: 'RETURNABLE' | 'CONSUMABLE' }) {
@@ -1184,87 +1193,121 @@ function InventoryTable({
   onVisibility: (item: InventoryItem, checked: boolean) => void;
 }) {
   if (loading) {
-    return <Card className="space-y-3 p-4">{[1, 2, 3, 4, 5].map((row) => <Skeleton key={row} className="h-14 w-full" />)}</Card>;
+    return (
+      <div className="space-y-2">
+        {[1,2,3,4,5].map((i) => <div key={i} className="h-16 animate-pulse rounded-[12px] bg-[#F0F0F0]" />)}
+      </div>
+    );
   }
-  if (!items.length) return <Card className="p-8 text-center text-sm text-slate-500">لا توجد مواد مطابقة</Card>;
+  if (!items.length) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-[16px] border border-[#DADBD9] bg-white py-16 text-center">
+        <svg viewBox="0 0 24 24" fill="none" className="h-12 w-12 text-[#DADBD9]" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+        </svg>
+        <p className="mt-3 text-[13px] text-[#B5BDBE]">لا توجد مواد مطابقة</p>
+      </div>
+    );
+  }
 
   return (
-    <Card className="overflow-hidden rounded-[14px] border border-[#dce6e3] bg-white">
+    <div className="overflow-hidden rounded-[16px] border border-[#DADBD9] bg-white">
       <div className="mobile-scroll-x">
-        <table className="min-w-[1180px] text-right">
-          <thead className="bg-[#f4f8f8]">
-            <tr>
-              {showImages ? <th className="p-3 text-sm text-primary">الصورة</th> : null}
-              <th className="p-3 text-sm text-primary">المادة</th>
-              <th className="p-3 text-sm text-primary">الفئة</th>
-              <th className="p-3 text-sm text-primary">النوع</th>
-              <th className="p-3 text-sm text-primary">الكمية</th>
-              <th className="p-3 text-sm text-primary">المتاح</th>
-              <th className="p-3 text-sm text-primary">محجوز</th>
-              <th className="p-3 text-sm text-primary">عهد نشطة</th>
-              <th className="p-3 text-sm text-primary">السعر</th>
-              <th className="p-3 text-sm text-primary">الحالة</th>
-              <th className="p-3 text-sm text-primary">إظهار/إخفاء</th>
-              {canModify ? <th className="p-3 text-sm text-primary">الإجراءات</th> : null}
+        <table className="min-w-[1100px] text-right">
+          <thead>
+            <tr className="border-b border-[#DADBD9] bg-[#F9F9F9] text-[11px] font-bold text-[#2A6364]">
+              {showImages && <th className="px-3 py-3">الصورة</th>}
+              <th className="px-3 py-3">المادة</th>
+              <th className="px-3 py-3">الفئة</th>
+              <th className="px-3 py-3">النوع</th>
+              <th className="px-3 py-3">الكمية</th>
+              <th className="px-3 py-3">المتاح</th>
+              <th className="px-3 py-3">محجوز</th>
+              <th className="px-3 py-3">عهد</th>
+              <th className="px-3 py-3">السعر</th>
+              <th className="px-3 py-3">الحالة</th>
+              <th className="px-3 py-3">ظهور</th>
+              {canModify && <th className="px-3 py-3">إجراء</th>}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-[#F0F0F0]">
             {items.map((item) => {
               const visible = getStoreMeta(item)?.isVisible ?? true;
               const image = getItemImage(item);
+              const isLow = item.status === 'LOW_STOCK';
+              const isOut = item.status === 'OUT_OF_STOCK';
               return (
-                <tr key={item.id} className="border-t border-slate-100 hover:bg-[#f8fbfb]">
-                  {showImages ? (
-                    <td className="p-3">
-                      <div className="flex h-14 w-16 items-center justify-center overflow-hidden rounded-[8px] border border-slate-200 bg-[#f7faf9] text-[11px] text-slate-400">
-                        {image ? <img src={image} alt={item.name} className="h-full w-full object-cover" /> : 'بدون صورة'}
+                <tr key={item.id} className={`hover:bg-[#FAFAFA] ${isOut ? 'bg-[#fff9fa]' : isLow ? 'bg-[#fffdf5]' : ''}`}>
+                  {showImages && (
+                    <td className="px-3 py-2.5">
+                      <div className="flex h-12 w-14 items-center justify-center overflow-hidden rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9]">
+                        {image
+                          ? <img src={image} alt={item.name} className="h-full w-full object-cover" />
+                          : <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-[#DADBD9]" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        }
                       </div>
                     </td>
-                  ) : null}
-                  <td className="p-3">
-                    <div className="max-w-[240px]">
-                      <div className="text-sm text-slate-900">{getInventoryDisplayName(item, 'ar')}</div>
-                      <div className="mt-1 text-[11px] text-slate-400">{item.code}</div>
+                  )}
+                  <td className="px-3 py-2.5">
+                    <div className="max-w-[220px]">
+                      <div className="text-[13px] font-semibold text-[#2A2A2A] leading-snug">{getInventoryDisplayName(item, 'ar')}</div>
+                      <div className="font-mono text-[10px] text-[#B5BDBE]">{item.code}</div>
                     </div>
                   </td>
-                  <td className="p-3 text-sm text-slate-700">{getInventoryDisplayCategory(item, 'ar')}</td>
-                  <td className="p-3"><TypeBadge type={item.type} /></td>
-                  <td className="p-3 text-sm text-slate-800">{formatNumber(item.quantity)} {getInventoryDisplayUnit(item, 'ar')}</td>
-                  <td className="p-3 text-sm text-slate-700">{formatNumber(item.availableQty)}</td>
-                  <td className="p-3 text-sm text-slate-700">{formatNumber(item.reservedQty)}</td>
-                  <td className="p-3 text-sm text-slate-700">{formatNumber(item._count?.custodyRecords || 0)}</td>
-                  <td className="p-3 text-sm text-slate-700">{compact ? formatCurrency(item.totalPrice) : formatCurrency(item.unitPrice)}</td>
-                  <td className="p-3"><StatusBadge status={item.status} /></td>
-                  <td className="p-3">
-                    <input type="checkbox" checked={visible} disabled={!canModify} onChange={(event) => onVisibility(item, event.target.checked)} className="h-5 w-5 accent-[#2A6364]" />
+                  <td className="px-3 py-2.5 text-[12px] text-[#5A5A5A]">{getInventoryDisplayCategory(item, 'ar')}</td>
+                  <td className="px-3 py-2.5"><TypeBadge type={item.type} /></td>
+                  <td className="px-3 py-2.5 text-[12px] font-semibold text-[#2A2A2A]">{formatNumber(item.quantity)}</td>
+                  <td className="px-3 py-2.5">
+                    <span className={`text-[13px] font-bold ${isOut ? 'text-[#73384B]' : isLow ? 'text-[#8a6a37]' : 'text-[#1e6b4c]'}`}>
+                      {formatNumber(item.availableQty)}
+                    </span>
                   </td>
-                  {canModify ? (
-                    <td className="p-3">
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="ghost" className="border border-slate-200" onClick={() => onEdit(item)}>تعديل</Button>
-                        <Button size="sm" variant="ghost" className="border border-red-200 text-red-600 hover:bg-red-50" onClick={() => onDelete(item.id)}>حذف</Button>
+                  <td className="px-3 py-2.5 text-[12px] text-[#B5BDBE]">{formatNumber(item.reservedQty)}</td>
+                  <td className="px-3 py-2.5 text-[12px] text-[#5A5A5A]">{formatNumber(item._count?.custodyRecords || 0)}</td>
+                  <td className="px-3 py-2.5 text-[12px] text-[#5A5A5A]">{compact ? formatCurrency(item.totalPrice) : formatCurrency(item.unitPrice)}</td>
+                  <td className="px-3 py-2.5"><StatusBadge status={item.status} /></td>
+                  <td className="px-3 py-2.5">
+                    <input type="checkbox" checked={visible} disabled={!canModify}
+                      onChange={(e) => onVisibility(item, e.target.checked)}
+                      className="h-4 w-4 accent-[#2A6364]" />
+                  </td>
+                  {canModify && (
+                    <td className="px-3 py-2.5">
+                      <div className="flex gap-1.5">
+                        <button onClick={() => onEdit(item)}
+                          className="rounded-[7px] bg-[#eef5f4] px-2.5 py-1 text-[11px] font-bold text-[#2A6364] hover:bg-[#cce4e4]">
+                          تعديل
+                        </button>
+                        <button onClick={() => onDelete(item.id)}
+                          className="rounded-[7px] bg-[#f4e7eb] px-2.5 py-1 text-[11px] font-bold text-[#73384B] hover:bg-[#ecd0d8]">
+                          حذف
+                        </button>
                       </div>
                     </td>
-                  ) : null}
+                  )}
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
   );
 }
 
 function Pagination({ page, totalPages, total, onPage }: { page: number; totalPages: number; total: number; onPage: (page: number) => void }) {
+  if (totalPages <= 1) return null;
   return (
-    <div className="flex flex-col gap-3 rounded-[14px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="text-sm text-slate-600">إجمالي النتائج: {formatNumber(total)}</div>
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" disabled={page <= 1} onClick={() => onPage(Math.max(page - 1, 1))}>السابق</Button>
-        <div className="rounded-xl bg-[#f4f8f8] px-4 py-2 text-sm text-[#203634]">{page} / {totalPages}</div>
-        <Button variant="ghost" disabled={page >= totalPages} onClick={() => onPage(Math.min(page + 1, totalPages))}>التالي</Button>
-      </div>
+    <div className="flex items-center justify-between rounded-[16px] border border-[#DADBD9] bg-white px-4 py-3">
+      <button disabled={page <= 1} onClick={() => onPage(Math.max(page - 1, 1))}
+        className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">
+        السابق
+      </button>
+      <div className="text-[12px] font-bold text-[#2A6364]">{page} / {totalPages} · {formatNumber(total)} نتيجة</div>
+      <button disabled={page >= totalPages} onClick={() => onPage(Math.min(page + 1, totalPages))}
+        className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">
+        التالي
+      </button>
     </div>
   );
 }
