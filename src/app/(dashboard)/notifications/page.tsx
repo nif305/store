@@ -364,217 +364,217 @@ export default function NotificationsPage() {
     }
   };
 
+  const severityConfig = {
+    critical: { color: '#73384B', bg: '#f4e7eb', border: '#ecd0d8', label: 'حرج', dot: 'bg-[#73384B]' },
+    action:   { color: '#8a6a37', bg: '#f7f1e4', border: '#e8ddbf', label: 'إجراء', dot: 'bg-[#C7B08C]' },
+    info:     { color: '#2A6364', bg: '#eef5f4', border: '#cce4e4', label: 'معلوماتي', dot: 'bg-[#2A6364]' },
+  };
+
   return (
-    <div className="space-y-4 sm:space-y-5" aria-busy={loading}>
+    <div className="space-y-4" aria-busy={loading} dir="rtl">
       <div className="sr-only" role="status" aria-live="polite">
         {loading ? a11y.loading : `${a11y.updated}. ${a11y.total}: ${stats.total}. ${a11y.unread}: ${stats.unread}.`}
       </div>
 
-      <section
-        className="rounded-[24px] border border-[#d6d7d4] bg-white px-4 py-4 shadow-sm sm:rounded-[28px] sm:px-5 sm:py-5"
-        aria-labelledby="notifications-heading"
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
-            <h1 id="notifications-heading" className="text-[24px] font-extrabold leading-[1.25] text-[#016564] sm:text-[30px]">
-              الإشعارات والتنبيهات
-            </h1>
-            <p className="mt-2 text-[13px] leading-7 text-[#61706f] sm:text-sm">
-              سجل موحد يوضح ما يخصك من مستجدات تشغيلية واعتمادات ورسائل وتنبيهات مرتبطة بالمخزون أو العهد أو المسارات الخدمية.
-            </p>
-          </div>
+      {/* ══ Hero Header ══ */}
+      <section className="overflow-hidden rounded-[20px] bg-gradient-to-l from-[#1c2b45] to-[#2E4A7A] shadow-[0_12px_32px_rgba(0,0,0,0.2)]" aria-labelledby="notifications-heading">
+        <div className="p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-[14px] bg-white/15">
+                <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-white" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                {stats.unread > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#C7B08C] text-[9px] font-extrabold text-[#3a2a10]">
+                    {stats.unread > 9 ? '9+' : stats.unread}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h1 id="notifications-heading" className="text-[20px] font-extrabold text-white">الإشعارات والتنبيهات</h1>
+                <div className="text-[11px] text-white/50">{stats.total} إشعار</div>
+              </div>
+            </div>
 
-          <Button variant="secondary" onClick={handleMarkAllRead} disabled={stats.unread <= 0} aria-disabled={stats.unread <= 0} className="w-full sm:w-auto">
-            تعليم الكل كمقروء
-          </Button>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-5" role="group" aria-label={a11y.stats}>
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none sm:rounded-2xl" aria-label={`${a11y.total}: ${stats.total}`}>
-            <div className="text-[12px] text-[#6f7b7a]">إجمالي الإشعارات</div>
-            <div className="mt-1 text-[22px] font-extrabold leading-none text-[#016564]">{stats.total}</div>
-          </Card>
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none sm:rounded-2xl" aria-label={`${a11y.unread}: ${stats.unread}`}>
-            <div className="text-[12px] text-[#6f7b7a]">غير المقروءة</div>
-            <div className="mt-1 text-[22px] font-extrabold leading-none text-[#d0b284]">{stats.unread}</div>
-          </Card>
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none sm:rounded-2xl" aria-label={`${a11y.alerts}: ${stats.alerts}`}>
-            <div className="text-[12px] text-[#6f7b7a]">التنبيهات</div>
-            <div className="mt-1 text-[22px] font-extrabold leading-none text-[#8a6a28]">{stats.alerts}</div>
-          </Card>
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none sm:rounded-2xl" aria-label={`${a11y.critical}: ${stats.critical}`}>
-            <div className="text-[12px] text-[#6f7b7a]">الحرجة</div>
-            <div className="mt-1 text-[22px] font-extrabold leading-none text-[#7c1e3e]">{stats.critical}</div>
-          </Card>
-          <Card className="rounded-[20px] border border-[#d6d7d4] p-3 shadow-none sm:rounded-2xl" aria-label={`${a11y.actions}: ${stats.actions}`}>
-            <div className="text-[12px] text-[#6f7b7a]">تحتاج إجراء</div>
-            <div className="mt-1 text-[22px] font-extrabold leading-none text-[#016564]">{stats.actions}</div>
-          </Card>
-        </div>
-      </section>
-
-      {feedback ? (
-        <section
-          role={feedback.type === 'error' ? 'alert' : 'status'}
-          aria-live={feedback.type === 'error' ? 'assertive' : 'polite'}
-          className={`rounded-[24px] border px-4 py-3 text-sm shadow-sm sm:rounded-[28px] ${
-            feedback.type === 'error'
-              ? 'border-red-200 bg-red-50 text-red-700'
-              : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-          }`}
-        >
-          {feedback.message}
-        </section>
-      ) : null}
-
-      {loadError ? (
-        <section
-          role="alert"
-          className="rounded-[24px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm sm:rounded-[28px]"
-        >
-          {loadError}
-        </section>
-      ) : null}
-
-      <section className="rounded-[24px] border border-[#d6d7d4] bg-white p-4 shadow-sm sm:rounded-[28px] sm:p-5" aria-label={a11y.filters}>
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
-          <Input
-            label="بحث"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="العنوان، المحتوى، أو نوع الإشعار"
-          />
-
-          <div className="flex flex-wrap gap-2 self-end" role="group" aria-label={a11y.filters}>
-            {[
-              ['ALL', 'الكل'],
-              ['UNREAD', 'غير المقروءة'],
-              ['ALERT', 'التنبيهات'],
-              ['NOTIFICATION', 'الإشعارات'],
-              ['CRITICAL', 'الحرجة'],
-              ['ACTION', 'تحتاج إجراء'],
-            ].map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setFilter(key as FilterKey)}
-                aria-pressed={filter === key}
-                className={`rounded-full px-4 py-2 text-xs transition ${
-                  filter === key
-                    ? 'bg-[#016564] text-white'
-                    : 'border border-slate-200 bg-white text-slate-600'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-3" role={!loading && items.length > 0 ? 'list' : undefined} aria-label={a11y.list}>
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((item) => (
-              <Skeleton key={item} className="h-36 w-full rounded-[24px]" />
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          <Card className="rounded-[24px] border border-[#d6d7d4] p-8 text-center text-sm text-[#61706f] shadow-sm sm:rounded-[28px]">
-            لا توجد إشعارات مطابقة
-          </Card>
-        ) : (
-          items.map((item) => (
-            <Card
-              key={item.id}
-              role="listitem"
-              aria-label={item.title}
-              className={`rounded-[24px] border p-4 shadow-sm transition sm:rounded-[28px] sm:p-5 ${itemClasses(item)}`}
+            <button
+              onClick={handleMarkAllRead}
+              disabled={stats.unread <= 0}
+              aria-disabled={stats.unread <= 0}
+              className="flex items-center gap-2 rounded-[12px] bg-white/15 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-white/25 disabled:opacity-40"
             >
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full px-3 py-1 text-[11px] ${badgeClasses(item)}`}>{typeLabel(item)}</span>
-                    <span className={`rounded-full px-3 py-1 text-[11px] ${badgeClasses(item)}`}>{severityLabel(item)}</span>
-                    {!item.isRead ? (
-                      <span className="rounded-full bg-[#d0b284]/15 px-3 py-1 text-[11px] text-[#8a6a28]">
-                        جديد
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              تعليم الكل كمقروء
+            </button>
+          </div>
+
+          {/* KPI strip */}
+          <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-5" role="group" aria-label={a11y.stats}>
+            {[
+              { label: 'إجمالي', value: stats.total, color: '#60a5fa' },
+              { label: 'غير مقروءة', value: stats.unread, color: '#fbbf24', urgent: stats.unread > 0 },
+              { label: 'تنبيهات', value: stats.alerts, color: '#fbbf24' },
+              { label: 'حرجة', value: stats.critical, color: '#f87171', urgent: stats.critical > 0 },
+              { label: 'تحتاج إجراء', value: stats.actions, color: '#34d399', urgent: stats.actions > 0 },
+            ].map((s) => (
+              <div key={s.label} className={`rounded-[13px] border px-3 py-2.5 ${s.urgent ? 'border-white/20 bg-white/15' : 'border-white/8 bg-white/6'}`} aria-label={`${s.label}: ${s.value}`}>
+                <div className="text-[22px] font-extrabold" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-[10px] text-white/50">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Filter + search bar */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-white/10 px-5 py-3" role="group" aria-label={a11y.filters}>
+          {([
+            ['ALL', 'الكل'],
+            ['UNREAD', 'غير مقروءة'],
+            ['CRITICAL', 'حرجة'],
+            ['ACTION', 'إجراء'],
+            ['ALERT', 'تنبيهات'],
+          ] as [FilterKey, string][]).map(([key, label]) => (
+            <button key={key} type="button" onClick={() => setFilter(key)} aria-pressed={filter === key}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${filter === key ? 'border-white/40 bg-white/20 text-white' : 'border-white/15 text-white/60 hover:border-white/30 hover:text-white/80'}`}>
+              {label}
+            </button>
+          ))}
+          <div className="relative flex-1 min-w-[150px]">
+            <svg viewBox="0 0 24 24" fill="none" className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/40" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث في الإشعارات..."
+              className="h-8 w-full rounded-full border border-white/20 bg-white/10 pr-8 pl-3 text-[11px] text-white placeholder-white/30 outline-none focus:border-white/40" />
+          </div>
+        </div>
+      </section>
+
+      {/* Feedback / error banners */}
+      {feedback && (
+        <div role={feedback.type === 'error' ? 'alert' : 'status'} aria-live={feedback.type === 'error' ? 'assertive' : 'polite'}
+          className={`flex items-center gap-2 rounded-[12px] border px-4 py-3 text-[13px] ${feedback.type === 'error' ? 'border-[#ecd0d8] bg-[#fff7f8] text-[#73384B]' : 'border-[#cce6d7] bg-[#e8f5ef] text-[#1e6b4c]'}`}>
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          {feedback.message}
+        </div>
+      )}
+      {loadError && (
+        <div role="alert" className="flex items-center gap-2 rounded-[12px] border border-[#ecd0d8] bg-[#fff7f8] px-4 py-3 text-[13px] text-[#73384B]">
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          {loadError}
+        </div>
+      )}
+
+      {/* ══ Notifications List ══ */}
+      <div className="space-y-2.5" role={!loading && items.length > 0 ? 'list' : undefined} aria-label={a11y.list}>
+        {loading ? (
+          [1,2,3,4].map((i) => (
+            <div key={i} className="flex animate-pulse gap-3 rounded-[16px] border border-[#F0F0F0] bg-white p-4">
+              <div className="h-10 w-10 shrink-0 rounded-full bg-[#F0F0F0]" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-2/3 rounded bg-[#F0F0F0]" />
+                <div className="h-2.5 w-full rounded bg-[#F0F0F0]" />
+                <div className="h-2.5 w-1/3 rounded bg-[#F0F0F0]" />
+              </div>
+            </div>
+          ))
+        ) : items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-[20px] border border-[#DADBD9] bg-white py-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F9F9F9]">
+              <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-[#DADBD9]" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </div>
+            <p className="mt-3 text-[14px] font-semibold text-[#B5BDBE]">لا توجد إشعارات</p>
+          </div>
+        ) : (
+          items.map((item) => {
+            const sev = item.severity || 'info';
+            const cfg = severityConfig[sev as keyof typeof severityConfig] || severityConfig.info;
+            const hasLink = !!resolveItemLinkForRole(item, user?.role);
+
+            return (
+              <div key={item.id} role="listitem" aria-label={item.title}
+                className={`overflow-hidden rounded-[16px] border bg-white transition ${!item.isRead ? 'border-[#C7B08C]/30 shadow-[0_2px_12px_rgba(199,176,140,0.1)]' : 'border-[#DADBD9]'}`}>
+                <div className="flex items-start gap-3 p-4">
+                  {/* Severity indicator */}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: cfg.bg }}>
+                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke={cfg.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      {sev === 'critical'
+                        ? <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>
+                        : sev === 'action'
+                        ? <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></>
+                        : <><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></>
+                      }
+                    </svg>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    {/* Badges row */}
+                    <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: cfg.bg, color: cfg.color }}>
+                        {cfg.label}
                       </span>
-                    ) : null}
+                      {!item.isRead && (
+                        <span className="flex items-center gap-1 rounded-full bg-[#f7f1e4] px-2 py-0.5 text-[10px] font-bold text-[#8a6a37]">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#C7B08C]" />
+                          جديد
+                        </span>
+                      )}
+                      <span className="text-[10px] text-[#B5BDBE]">{formatDate(item.createdAt)}</span>
+                    </div>
+
+                    {/* Title */}
+                    <div className="text-[14px] font-extrabold leading-snug text-[#2A2A2A]">{item.title}</div>
+
+                    {/* Message */}
+                    <div className="mt-1 text-[12px] leading-relaxed text-[#5A5A5A]">{item.message}</div>
+
+                    {/* Actions */}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {hasLink && (
+                        <button onClick={() => handleOpenItem(item)} aria-label={`${a11y.page}: ${item.title}`}
+                          className="rounded-[8px] px-3 py-1.5 text-[11px] font-bold text-white transition hover:opacity-90"
+                          style={{ backgroundColor: cfg.color }}>
+                          فتح العنصر
+                        </button>
+                      )}
+                      {canCreateManagerRequest(item, user?.roles || []) && (
+                        <button onClick={() => handleCreateManagerRequest(item.id)} disabled={busyId === item.id} aria-label={`${a11y.actions}: ${item.title}`}
+                          className="rounded-[8px] bg-[#2A6364] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#1e5152] disabled:opacity-40">
+                          {busyId === item.id ? '...' : 'إنشاء طلب للمدير'}
+                        </button>
+                      )}
+                      {!item.isRead && (
+                        <button onClick={() => handleMarkRead(item.id)} aria-label={`${a11y.unread}: ${item.title}`}
+                          className="rounded-[8px] border border-[#DADBD9] px-3 py-1.5 text-[11px] font-semibold text-[#5A5A5A] hover:bg-[#F9F9F9]">
+                          تعليم كمقروء
+                        </button>
+                      )}
+                    </div>
                   </div>
-
-                  <div className="break-words text-[15px] font-bold leading-7 text-[#152625] sm:text-base">
-                    {item.title}
-                  </div>
-
-                  <div className="break-words text-sm leading-7 text-[#304342]">{item.message}</div>
-
-                  <div className="text-[12px] text-[#61706f]">{formatDate(item.createdAt)}</div>
-                </div>
-
-                <div className="flex w-full flex-col gap-2 sm:w-auto">
-                  {canCreateManagerRequest(item, user?.roles || []) ? (
-                    <Button
-                      loading={busyId === item.id}
-                      onClick={() => handleCreateManagerRequest(item.id)}
-                      aria-label={`${a11y.actions}: ${item.title}`}
-                      className="w-full sm:w-auto"
-                    >
-                      إنشاء طلب للمدير
-                    </Button>
-                  ) : null}
-
-                  {!item.isRead ? (
-                    <Button variant="ghost" onClick={() => handleMarkRead(item.id)} aria-label={`${a11y.unread}: ${item.title}`} className="w-full sm:w-auto">
-                      تعليم كمقروء
-                    </Button>
-                  ) : null}
-
-                  {resolveItemLinkForRole(item, user?.role) ? (
-                    <Button onClick={() => handleOpenItem(item)} aria-label={`${a11y.page}: ${item.title}`} className="w-full sm:w-auto">
-                      فتح العنصر
-                    </Button>
-                  ) : null}
                 </div>
               </div>
-            </Card>
-          ))
+            );
+          })
         )}
-      </section>
+      </div>
 
-      {!loading && pagination.totalPages > 1 ? (
-        <section className="flex items-center justify-between rounded-[24px] border border-[#d6d7d4] bg-white px-4 py-3 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setPagination((prev) => ({ ...prev, page: Math.max(prev.page - 1, 1) }))}
-            disabled={pagination.page <= 1}
-            aria-label={a11y.previous}
-            className="rounded-full border border-[#d6d7d4] px-4 py-2 text-sm font-bold text-[#425554] disabled:cursor-not-allowed disabled:opacity-40"
-          >
+      {/* Pagination */}
+      {!loading && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between rounded-[16px] border border-[#DADBD9] bg-white px-4 py-3">
+          <button type="button" onClick={() => setPagination((p) => ({ ...p, page: Math.max(p.page - 1, 1) }))}
+            disabled={pagination.page <= 1} aria-label={a11y.previous}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">
             السابق
           </button>
-          <div className="text-center">
-            <div className="text-sm font-bold text-[#016564]">
-              الصفحة {pagination.page} من {pagination.totalPages}
-            </div>
-            <div className="text-xs text-slate-500">إجمالي الإشعارات في هذا العرض: {pagination.total}</div>
+          <div className="text-[12px] font-bold text-[#2A6364]">
+            {pagination.page} / {pagination.totalPages} · {pagination.total} إشعار
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              setPagination((prev) => ({
-                ...prev,
-                page: Math.min(prev.page + 1, prev.totalPages),
-              }))
-            }
-            disabled={pagination.page >= pagination.totalPages}
-            aria-label={a11y.next}
-            className="rounded-full border border-[#d6d7d4] px-4 py-2 text-sm font-bold text-[#425554] disabled:cursor-not-allowed disabled:opacity-40"
-          >
+          <button type="button" onClick={() => setPagination((p) => ({ ...p, page: Math.min(p.totalPages, p.page + 1) }))}
+            disabled={pagination.page >= pagination.totalPages} aria-label={a11y.next}
+            className="rounded-full border border-[#DADBD9] px-4 py-1.5 text-[12px] font-bold text-[#5A5A5A] disabled:opacity-40">
             التالي
           </button>
-        </section>
-      ) : null}
+        </div>
+      )}
     </div>
   );
 }
