@@ -26,11 +26,13 @@ export function WorkspaceShell({ workspace, children }: { workspace: WorkspaceKe
     }
   }, [loading, user, role, workspace, router]);
 
+  const loadingText = language === 'en' ? 'Preparing workspace...' : 'جاري تجهيز بيئة العمل...';
+
   if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f7f7]">
         <div className="rounded-3xl border border-[#dde6e4] bg-white px-8 py-6 text-center shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
-          جاري تجهيز بيئة العمل...
+          {loadingText}
         </div>
       </div>
     );

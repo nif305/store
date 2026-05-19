@@ -99,6 +99,11 @@ export const translations = {
       reports: 'التقارير',
       archive: 'الأرشيف',
       auditLogs: 'سجل التدقيق',
+      trainerNeeds: 'احتياجات المدربين',
+      roomsSchedule: 'جدول القاعات',
+      roomsAdmin: 'إدارة القاعات',
+      roleSwitcher: 'الدور',
+      greeting: 'مرحبًا',
     },
     users: {
       preferredLanguage: 'لغة الواجهة',
@@ -109,7 +114,7 @@ export const translations = {
   en: {
     common: {
       language: 'Language',
-      arabic: 'العربية',
+      arabic: 'Arabic',
       english: 'English',
       chooseSystem: 'Choose System',
       notifications: 'Notifications',
@@ -204,6 +209,11 @@ export const translations = {
       reports: 'Reports',
       archive: 'Archive',
       auditLogs: 'Audit Log',
+      trainerNeeds: 'Trainer Needs',
+      roomsSchedule: 'Rooms Schedule',
+      roomsAdmin: 'Rooms Management',
+      roleSwitcher: 'Role',
+      greeting: 'Welcome',
     },
     users: {
       preferredLanguage: 'Interface language',

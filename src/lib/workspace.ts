@@ -95,12 +95,12 @@ export function getWorkspaceGroups(
             ? [
                 {
                   href: '/materials/trainer-needs',
-                  label: 'احتياجات المدربين',
+                  label: label(language, 'workspace.trainerNeeds'),
                   roles: ['manager', 'warehouse', 'user'] as AppRole[],
                 },
                 {
                   href: '/materials/rooms-schedule',
-                  label: 'جدول القاعات',
+                  label: label(language, 'workspace.roomsSchedule'),
                   roles: ['manager', 'warehouse', 'user'] as AppRole[],
                 },
               ]
@@ -112,7 +112,7 @@ export function getWorkspaceGroups(
           },
           {
             href: '/materials/rooms-admin',
-            label: 'إدارة القاعات',
+            label: label(language, 'workspace.roomsAdmin'),
             roles: ['manager', 'warehouse'],
           },
           {

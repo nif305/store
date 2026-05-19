@@ -177,10 +177,10 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-const ROLE_COLORS: Record<AppRole, { gradient: string; accent: string; badge: string }> = {
-  manager: { gradient: 'from-[#0a1f1a] to-[#1a4535]', accent: '#C7B08C', badge: 'مدير النظام' },
-  warehouse: { gradient: 'from-[#0d2b35] to-[#2A6364]', accent: '#4F8F7A', badge: 'مسؤول المستودع' },
-  user: { gradient: 'from-[#1a3c3c] to-[#2A6364]', accent: '#2A6364', badge: 'موظف' },
+const ROLE_COLORS: Record<AppRole, { gradient: string; accent: string }> = {
+  manager: { gradient: 'from-[#0a1f1a] to-[#1a4535]', accent: '#C7B08C' },
+  warehouse: { gradient: 'from-[#0d2b35] to-[#2A6364]', accent: '#4F8F7A' },
+  user: { gradient: 'from-[#1a3c3c] to-[#2A6364]', accent: '#2A6364' },
 };
 
 export function WorkspaceSidebar({
@@ -196,6 +196,8 @@ export function WorkspaceSidebar({
   const { t, language } = useI18n();
   const groups = getWorkspaceGroups(workspace, role, language, { canManageTrainerNeeds });
   const roleTheme = ROLE_COLORS[role];
+  const roleBadge = t(`roles.${role}`);
+  const systemSubtitle = language === 'en' ? 'Materials & Inventory System' : 'نظام إدارة المواد والتدريب';
 
   return (
     <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] lg:min-h-screen lg:w-[280px]" dir="rtl">
@@ -209,13 +211,13 @@ export function WorkspaceSidebar({
             <div className="text-[13px] font-extrabold text-white">{t('common.agency')}</div>
             <div className="mt-0.5 flex items-center gap-1.5">
               <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: roleTheme.accent }} />
-              <span className="text-[10px] font-semibold" style={{ color: `${roleTheme.accent}cc` }}>{roleTheme.badge}</span>
+              <span className="text-[10px] font-semibold" style={{ color: `${roleTheme.accent}cc` }}>{roleBadge}</span>
             </div>
           </div>
         </div>
         <div className="mt-3 rounded-[10px] border border-white/10 bg-white/8 px-3 py-2">
           <div className="text-[10px] text-white/40">{getWorkspaceTitle(workspace, language)}</div>
-          <div className="mt-0.5 text-[11px] font-semibold text-white/70">نظام إدارة المواد والتدريب</div>
+          <div className="mt-0.5 text-[11px] font-semibold text-white/70">{systemSubtitle}</div>
         </div>
       </div>
 
@@ -270,11 +272,11 @@ export function WorkspaceSidebar({
         <div className="rounded-[12px] bg-[#F9F9F9] px-3 py-2.5">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#2A6364] text-[11px] font-extrabold text-white">
-              {roleTheme.badge.slice(0, 1)}
+              {roleBadge.slice(0, 1)}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[11px] font-bold text-[#2A2A2A]">{roleTheme.badge}</div>
-              <div className="text-[10px] text-[#B5BDBE]">نظام المواد والمخزن</div>
+              <div className="truncate text-[11px] font-bold text-[#2A2A2A]">{roleBadge}</div>
+              <div className="text-[10px] text-[#B5BDBE]">{systemSubtitle}</div>
             </div>
           </div>
         </div>

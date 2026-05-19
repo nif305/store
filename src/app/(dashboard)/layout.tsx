@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/hooks/useI18n';
 
 const LEGACY_REDIRECTS: Record<string, string> = {
   '/dashboard': '/materials/dashboard',
@@ -23,6 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { language } = useI18n();
 
   useEffect(() => {
     if (loading) return;
@@ -41,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f7f7]">
         <div className="rounded-3xl border border-[#dde6e4] bg-white px-8 py-6 text-center shadow-[0_18px_40px_-34px_rgba(15,23,42,0.35)]">
-          جاري تجهيز بيئة العمل...
+          {language === 'en' ? 'Preparing workspace...' : 'جاري تجهيز بيئة العمل...'}
         </div>
       </div>
     );
