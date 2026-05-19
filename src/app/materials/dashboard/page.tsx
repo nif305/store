@@ -6,6 +6,7 @@ import { useI18n } from '@/hooks/useI18n';
 import { translateStaticUiText } from '@/lib/i18n';
 import { EmployeeDashboard } from './EmployeeDashboard';
 import { WarehouseDashboard } from './WarehouseDashboard';
+import { ManagerDashboard } from './ManagerDashboard';
 
 type SummaryMetrics = {
   totalInventory: number;
@@ -278,6 +279,11 @@ export default function MaterialsDashboardPage() {
   // ── Warehouse gets operations command center ──
   if ((user?.role as string) === 'warehouse') {
     return <WarehouseDashboard />;
+  }
+
+  // ── Manager gets full analytics command center ──
+  if ((user?.role as string) === 'manager') {
+    return <ManagerDashboard />;
   }
 
   return (

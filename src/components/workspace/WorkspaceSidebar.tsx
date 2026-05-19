@@ -177,6 +177,12 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+const ROLE_COLORS: Record<AppRole, { gradient: string; accent: string; badge: string }> = {
+  manager: { gradient: 'from-[#0a1f1a] to-[#1a4535]', accent: '#C7B08C', badge: 'مدير النظام' },
+  warehouse: { gradient: 'from-[#0d2b35] to-[#2A6364]', accent: '#4F8F7A', badge: 'مسؤول المستودع' },
+  user: { gradient: 'from-[#1a3c3c] to-[#2A6364]', accent: '#2A6364', badge: 'موظف' },
+};
+
 export function WorkspaceSidebar({
   workspace,
   role,
@@ -189,26 +195,38 @@ export function WorkspaceSidebar({
   const pathname = usePathname();
   const { t, language } = useI18n();
   const groups = getWorkspaceGroups(workspace, role, language, { canManageTrainerNeeds });
+  const roleTheme = ROLE_COLORS[role];
 
   return (
-    <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden border-b border-[#dce6e3] bg-white lg:min-h-screen lg:w-[300px] lg:border-b-0 lg:border-r">
-      <div className="shrink-0 border-b border-[#dce6e3] px-5 py-5">
-        <div className="rounded-[24px] border border-[#e0e8e6] bg-[linear-gradient(135deg,#fff_0%,#fafcfb_100%)] p-4">
-          <img src="/nauss-gold-logo.png" alt={t('portal.naussLogoAlt')} className="h-16 w-auto object-contain" />
-          <div className="mt-3 text-[11px] text-[#94a3a3]">{getWorkspaceTitle(workspace, language)}</div>
-          <div className="mt-1 text-[18px] font-bold text-[#1f3637]">{t('common.agency')}</div>
+    <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] lg:min-h-screen lg:w-[280px]" dir="rtl">
+      {/* Brand header */}
+      <div className={`shrink-0 bg-gradient-to-br ${roleTheme.gradient} p-5`}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white/15">
+            <img src="/nauss-gold-logo.png" alt="NAUSS" className="h-10 w-10 object-contain" />
+          </div>
+          <div>
+            <div className="text-[13px] font-extrabold text-white">{t('common.agency')}</div>
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: roleTheme.accent }} />
+              <span className="text-[10px] font-semibold" style={{ color: `${roleTheme.accent}cc` }}>{roleTheme.badge}</span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 rounded-[10px] border border-white/10 bg-white/8 px-3 py-2">
+          <div className="text-[10px] text-white/40">{getWorkspaceTitle(workspace, language)}</div>
+          <div className="mt-0.5 text-[11px] font-semibold text-white/70">نظام إدارة المواد والتدريب</div>
         </div>
       </div>
 
-      <nav
-        className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
-        aria-label={language === 'en' ? 'Workspace navigation' : 'تنقل مساحة العمل'}
-      >
-        <div className="space-y-5">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'none' }}>
+        <div className="space-y-4">
           {groups.map((group) => (
             <div key={group.key}>
-              <div className="mb-2 px-1 text-[11px] font-semibold tracking-wide text-[#9aa7a6]">{group.title}</div>
-              <div className="space-y-1.5">
+              <div className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-[#B5BDBE]">
+                {group.title}
+              </div>
+              <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const active = isActive(pathname, item.href);
                   return (
@@ -217,22 +235,27 @@ export function WorkspaceSidebar({
                       href={item.href}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'group flex items-center gap-3 rounded-[18px] border px-4 py-3 transition',
+                        'group flex items-center gap-3 rounded-[14px] px-3 py-2.5 transition-all',
                         active
-                          ? 'border-[#2A6364]/18 bg-[#2A6364] text-white shadow-[0_16px_36px_-28px_rgba(42,99,100,0.8)]'
-                          : 'border-[#e2ebea] bg-white text-[#264243] hover:border-[#cfe0dc] hover:bg-[#f8fbfb]'
+                          ? 'bg-[#2A6364] text-white shadow-[0_8px_24px_rgba(42,99,100,0.25)]'
+                          : 'text-[#3A3A3A] hover:bg-[#F0F5F5] hover:text-[#2A6364]'
                       )}
                     >
                       <span
                         className={cn(
-                          'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] transition',
-                          active ? 'bg-white/15 text-white' : 'bg-[#eef5f4] text-[#2A6364] group-hover:bg-[#e4f0ef]'
+                          'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] transition-all',
+                          active ? 'bg-white/18 text-white' : 'bg-[#F0F5F5] text-[#2A6364] group-hover:bg-[#e0eeec]'
                         )}
                         aria-hidden="true"
                       >
-                        {ICONS[item.href] ?? <DefaultIcon />}
+                        <span className="scale-90">{ICONS[item.href] ?? <DefaultIcon />}</span>
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{item.label}</span>
+                      <span className={cn('min-w-0 flex-1 truncate text-[13px] font-semibold', active ? 'text-white' : '')}>
+                        {item.label}
+                      </span>
+                      {active && (
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-white/60" />
+                      )}
                     </Link>
                   );
                 })}
@@ -241,6 +264,21 @@ export function WorkspaceSidebar({
           ))}
         </div>
       </nav>
+
+      {/* Footer */}
+      <div className="shrink-0 border-t border-[#F0F0F0] px-3 py-3">
+        <div className="rounded-[12px] bg-[#F9F9F9] px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#2A6364] text-[11px] font-extrabold text-white">
+              {roleTheme.badge.slice(0, 1)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[11px] font-bold text-[#2A2A2A]">{roleTheme.badge}</div>
+              <div className="text-[10px] text-[#B5BDBE]">نظام المواد والمخزن</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </aside>
   );
 }
