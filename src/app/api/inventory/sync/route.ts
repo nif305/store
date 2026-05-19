@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { resolveSessionUser } from '@/lib/auth/session';
 import { fullResyncInventoryToStore } from '@/services/training-store.service';
 
@@ -11,6 +12,6 @@ export async function POST(request: NextRequest) {
     const result = await fullResyncInventoryToStore();
     return NextResponse.json({ ok: true, ...result });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر المزامنة' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر المزامنة')}, { status: 500 });
   }
 }

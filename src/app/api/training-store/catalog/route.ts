@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { getPublicCatalog } from '@/services/training-store.service';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,6 @@ export async function GET() {
       },
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر جلب متجر المواد التدريبية' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر جلب متجر المواد التدريبية')}, { status: 500 });
   }
 }

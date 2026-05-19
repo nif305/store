@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { resolveSessionUser as resolveVerifiedSessionUser } from '@/lib/auth/session';
@@ -173,7 +174,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'تعذر جلب سجلات التدقيق' },
+      { error: sanitizeError(error, 'تعذر جلب سجلات التدقيق')},
       { status: error?.message?.includes('المستخدم') || error?.message?.includes('الدور') ? 401 : 500 }
     );
   }

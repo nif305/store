@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { prisma } from '@/lib/prisma';
 import { resolveSessionUser } from '@/lib/auth/session';
 
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.message || 'Unable to update language preference' },
+      { error: sanitizeError(error, 'Unable to update language preference')},
       { status: 400 }
     );
   }

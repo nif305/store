@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { MessagingService } from '@/services/messaging.service';
 import { resolveSessionUser } from '@/lib/auth/session';
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'ظپط´ظ„ ط¬ظ„ط¨ ط§ظ„ظ…ط±ط§ط³ظ„ط§طھ' }, { status: 401 });
+    return NextResponse.json({ error: sanitizeError(error, 'ظپط´ظ„ ط¬ظ„ط¨ ط§ظ„ظ…ط±ط§ط³ظ„ط§طھ')}, { status: 401 });
   }
 }
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: message }, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'ظپط´ظ„ ط¥ط±ط³ط§ظ„ ط§ظ„ط±ط³ط§ظ„ط©' }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'ظپط´ظ„ ط¥ط±ط³ط§ظ„ ط§ظ„ط±ط³ط§ظ„ط©')}, { status: 400 });
   }
 }
 
@@ -62,6 +63,6 @@ export async function PATCH(request: NextRequest) {
     const result = await MessagingService.markAsRead(body.id, session.id);
     return NextResponse.json({ data: result });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'ظپط´ظ„ طھط­ط¯ظٹط« ط§ظ„ط±ط³ط§ظ„ط©' }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'ظپط´ظ„ طھط­ط¯ظٹط« ط§ظ„ط±ط³ط§ظ„ط©')}, { status: 400 });
   }
 }

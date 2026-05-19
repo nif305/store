@@ -1,3 +1,4 @@
+﻿import { sanitizeError } from '@/lib/api/sanitizeError';
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveSessionUser } from '@/lib/auth/session';
 import { approveRoomBooking, cancelRoomBooking } from '@/services/training-rooms.service';
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const { id } = await context.params;
     return NextResponse.json({ data: await getTrainerNeed(id) });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر جلب الاحتياج' }, { status: 401 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر جلب الاحتياج')}, { status: 401 });
   }
 }
 
@@ -95,6 +96,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ error: 'إجراء غير صالح' }, { status: 400 });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر تنفيذ الإجراء' }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر تنفيذ الإجراء')}, { status: 400 });
   }
 }

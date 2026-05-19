@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { prisma } from '@/lib/prisma';
 import { Status, Role, CustodyStatus, ItemType } from '@prisma/client';
 import { CustodyService } from '@/services/custody.service';
@@ -194,7 +195,7 @@ export async function GET(request: NextRequest) {
       error?.message === 'غير مصرح' || error?.message === 'الحساب غير نشط' ? 401 : 500;
 
     return NextResponse.json(
-      { error: error?.message || 'تعذر جلب العهد' },
+      { error: sanitizeError(error, 'تعذر جلب العهد')},
       { status: statusCode }
     );
   }

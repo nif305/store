@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import {
   CustodyStatus,
   ItemStatus,
@@ -234,7 +235,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (error: any) {
     console.error('[dashboard-summary] failed', error);
-    const message = error?.message || 'Unable to load dashboard summary.';
+    const message = sanitizeError(error, 'Unable to load dashboard summary.');
     const statusCode =
       message.includes('Unable to resolve current user') ||
       message.includes('تعذر التحقق من المستخدم') ||

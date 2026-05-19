@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { ReportService } from '@/services/report.service';
 import { isManager, resolveSessionUser } from '@/lib/auth/session';
 
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       {
-        error: error?.message || 'تعذر تحميل ملخص التقارير',
+        error: sanitizeError(error, 'تعذر تحميل ملخص التقارير'),
       },
       { status: resolveStatus(error) }
     );

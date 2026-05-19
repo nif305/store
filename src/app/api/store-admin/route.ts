@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { Role } from '@prisma/client';
 import { resolveSessionUser } from '@/lib/auth/session';
 import {
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     if (!canManageStore(session.role)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     return NextResponse.json(await getStoreAdminCatalog());
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر جلب إدارة المواد' }, { status: 401 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر جلب إدارة المواد')}, { status: 401 });
   }
 }
 
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'نوع غير صالح' }, { status: 400 });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر حفظ بيانات المواد' }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر حفظ بيانات المواد')}, { status: 400 });
   }
 }
 
@@ -52,7 +53,7 @@ export async function PATCH(request: NextRequest) {
     if (body?.type === 'bundle') return NextResponse.json({ data: await updateStoreBundle(id, body) });
     return NextResponse.json({ data: await updateCatalogItem(id, body) });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر تحديث المادة' }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر تحديث المادة')}, { status: 400 });
   }
 }
 
@@ -66,6 +67,6 @@ export async function DELETE(request: NextRequest) {
     await deleteStoreBundle(id);
     return NextResponse.json({ ok: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر حذف البكج' }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر حذف البكج')}, { status: 400 });
   }
 }

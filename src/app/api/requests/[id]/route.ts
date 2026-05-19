@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Role } from '@prisma/client';
 import { RequestService } from '@/services/request.service';
 import { resolveSessionUser } from '@/lib/auth/session';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 
 export async function GET(
   request: NextRequest,
@@ -18,7 +19,7 @@ export async function GET(
 
     return NextResponse.json(materialRequest);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'تعذر جلب الطلب' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر جلب الطلب') }, { status: 500 });
   }
 }
 
@@ -103,7 +104,7 @@ async function handleMutation(
         ? 401
         : 400;
 
-    return NextResponse.json({ error: error.message || 'تعذر تنفيذ العملية' }, { status: statusCode });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر تنفيذ العملية') }, { status: statusCode });
   }
 }
 

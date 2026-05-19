@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { ItemStatus, ItemType, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { InventoryService } from '@/services/inventory.service';
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'تعذر جلب بيانات المخزون' },
+      { error: sanitizeError(error, 'تعذر جلب بيانات المخزون')},
       { status: resolveErrorStatus(error, 500, request) },
     );
   }
@@ -212,7 +213,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(item, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'تعذر إنشاء الصنف' },
+      { error: sanitizeError(error, 'تعذر إنشاء الصنف')},
       { status: resolveErrorStatus(error, 400, request) },
     );
   }

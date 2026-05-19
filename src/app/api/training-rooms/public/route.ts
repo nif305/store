@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { getPublicRooms } from '@/services/training-rooms.service';
 
 export async function GET(request: NextRequest) {
@@ -11,6 +12,6 @@ export async function GET(request: NextRequest) {
       })
     );
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر جلب القاعات' }, { status: 500 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر جلب القاعات')}, { status: 500 });
   }
 }

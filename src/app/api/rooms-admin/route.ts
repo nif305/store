@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { resolveSessionUser } from '@/lib/auth/session';
 import {
   canAdminRooms,
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (!canAdminRooms(session)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     return NextResponse.json(await getRoomsAdminCatalog());
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر جلب القاعات' }, { status: 401 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر جلب القاعات')}, { status: 401 });
   }
 }
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     return NextResponse.json({ data: await createTrainingRoom(body) }, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر إضافة القاعة' }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر إضافة القاعة')}, { status: 400 });
   }
 }
 
@@ -53,7 +54,7 @@ export async function PATCH(request: NextRequest) {
     if (!id) return NextResponse.json({ error: 'المعرف مطلوب' }, { status: 400 });
     return NextResponse.json({ data: await updateTrainingRoom(id, body) });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر تحديث القاعة' }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر تحديث القاعة')}, { status: 400 });
   }
 }
 
@@ -66,6 +67,6 @@ export async function DELETE(request: NextRequest) {
     await deleteTrainingRoom(id);
     return NextResponse.json({ ok: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر حذف القاعة' }, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر حذف القاعة')}, { status: 400 });
   }
 }

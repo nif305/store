@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { Role, Status } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { AlertService } from '@/services/alert.service';
@@ -330,7 +331,7 @@ export async function GET(request: NextRequest) {
     }, { headers: NO_STORE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'تعذر جلب الإشعارات' },
+      { error: sanitizeError(error, 'تعذر جلب الإشعارات')},
       { status: authStatusCode(error) || 500, headers: NO_STORE_HEADERS }
     );
   }
@@ -372,7 +373,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ data: result }, { headers: NO_STORE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'تعذر تحديث الإشعار' },
+      { error: sanitizeError(error, 'تعذر تحديث الإشعار')},
       { status: authStatusCode(error) || 400, headers: NO_STORE_HEADERS }
     );
   }
@@ -398,7 +399,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data }, { headers: NO_STORE_HEADERS });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'تعذر تحويل التذكير إلى طلب مدير' },
+      { error: sanitizeError(error, 'تعذر تحويل التذكير إلى طلب مدير')},
       { status: authStatusCode(error) || 400, headers: NO_STORE_HEADERS }
     );
   }

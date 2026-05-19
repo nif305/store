@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { Role, Status, RequestStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { RequestService } from '@/services/request.service';
@@ -109,7 +110,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.message || 'تعذر جلب الطلبات' },
+      { error: sanitizeError(error, 'تعذر جلب الطلبات')},
       { status: 401 }
     );
   }
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.message || 'تعذر إنشاء الطلب' },
+      { error: sanitizeError(error, 'تعذر إنشاء الطلب')},
       { status: 400 }
     );
   }

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { Role, Status } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { ReturnService } from '@/services/return.service';
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
       error?.message === 'غير مصرح' || error?.message === 'الحساب غير نشط' ? 401 : 500;
 
     return NextResponse.json(
-      { error: error?.message || 'تعذر جلب طلبات الإرجاع' },
+      { error: sanitizeError(error, 'تعذر جلب طلبات الإرجاع')},
       { status: statusCode }
     );
   }
@@ -177,7 +178,7 @@ export async function POST(request: NextRequest) {
       error?.message === 'غير مصرح' || error?.message === 'الحساب غير نشط' ? 401 : 400;
 
     return NextResponse.json(
-      { error: error?.message || 'تعذر إنشاء طلب الإرجاع' },
+      { error: sanitizeError(error, 'تعذر إنشاء طلب الإرجاع')},
       { status: statusCode }
     );
   }
@@ -224,7 +225,7 @@ export async function PUT(request: NextRequest) {
       error?.message === 'غير مصرح' || error?.message === 'الحساب غير نشط' ? 401 : 400;
 
     return NextResponse.json(
-      { error: error?.message || 'تعذر تنفيذ الإجراء' },
+      { error: sanitizeError(error, 'تعذر تنفيذ الإجراء')},
       { status: statusCode }
     );
   }

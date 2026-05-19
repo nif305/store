@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { resolveSessionUser } from '@/lib/auth/session';
 import {
   canManageTrainerNeeds,
@@ -37,6 +38,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'تعذر جلب احتياجات المدربين' }, { status: 401 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر جلب احتياجات المدربين')}, { status: 401 });
   }
 }

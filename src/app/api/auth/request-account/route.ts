@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/security/password';
 
@@ -148,7 +149,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.message || 'تعذر إنشاء الحساب' },
+      { error: sanitizeError(error, 'تعذر إنشاء الحساب')},
       { status: 500 }
     );
   }
