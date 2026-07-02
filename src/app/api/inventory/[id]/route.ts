@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Role } from '@prisma/client';
 import { InventoryService } from '@/services/inventory.service';
 import { resolveSessionUser } from '@/lib/auth/session';
+import { sanitizeError } from '@/lib/api/sanitizeError';
 
 type RouteContext = {
   params: Promise<{
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json(item);
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'تعذر جلب بيانات الصنف' },
+      { error: sanitizeError(error, 'تعذر جلب بيانات الصنف') },
       { status: resolveErrorStatus(error, 500, request) },
     );
   }
@@ -55,7 +56,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json(item);
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'تعذر تحديث الصنف' },
+      { error: sanitizeError(error, 'تعذر تحديث الصنف') },
       { status: resolveErrorStatus(error, 400, request) },
     );
   }
@@ -73,7 +74,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'تعذر حذف الصنف' },
+      { error: sanitizeError(error, 'تعذر حذف الصنف') },
       { status: resolveErrorStatus(error, 400, request) },
     );
   }

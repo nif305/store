@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error: any) {
-    return NextResponse.json({ error: sanitizeError(error, 'ظپط´ظ„ ط¬ظ„ط¨ ط§ظ„ظ…ط±ط§ط³ظ„ط§طھ')}, { status: 401 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر جلب المراسلات') }, { status: 401 });
   }
 }
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (!body.receiverId || !body.subject || !body.body) {
-      return NextResponse.json({ error: 'ط¨ظٹط§ظ†ط§طھ ط§ظ„ط±ط³ط§ظ„ط© ط؛ظٹط± ظ…ظƒطھظ…ظ„ط©' }, { status: 400 });
+      return NextResponse.json({ error: 'بيانات الرسالة غير مكتملة' }, { status: 400 });
     }
 
     const message = await MessagingService.send({
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: message }, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ error: sanitizeError(error, 'ظپط´ظ„ ط¥ط±ط³ط§ظ„ ط§ظ„ط±ط³ط§ظ„ط©')}, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر إرسال الرسالة') }, { status: 400 });
   }
 }
 
@@ -57,12 +57,12 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
 
     if (!body.id) {
-      return NextResponse.json({ error: 'ط¨ظٹط§ظ†ط§طھ ط§ظ„طھط­ط¯ظٹط« ط؛ظٹط± ظ…ظƒطھظ…ظ„ط©' }, { status: 400 });
+      return NextResponse.json({ error: 'بيانات التحديث غير مكتملة' }, { status: 400 });
     }
 
     const result = await MessagingService.markAsRead(body.id, session.id);
     return NextResponse.json({ data: result });
   } catch (error: any) {
-    return NextResponse.json({ error: sanitizeError(error, 'ظپط´ظ„ طھط­ط¯ظٹط« ط§ظ„ط±ط³ط§ظ„ط©')}, { status: 400 });
+    return NextResponse.json({ error: sanitizeError(error, 'تعذر تحديث الرسالة') }, { status: 400 });
   }
 }
