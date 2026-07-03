@@ -59,19 +59,17 @@ export const translations = {
     },
     portal: {
       trainingMaterialsTitle: 'طلب مواد تدريبية',
-      trainingMaterialsDescription:
-        'من هنا يمكنك تقديم طلب مواد لتلبية الاحتياجات التدريبية',
+      trainingMaterialsDescription: 'طلب مواد من المخزون',
       servicesTitle: 'طلب خدمة عامة',
-      servicesDescription:
-        'من هنا يمكنك تقديم طلب صيانة ونظافة ومشتريات وخدمات أخرى',
+      servicesDescription: 'صيانة، نظافة، مشتريات، وخدمات أخرى',
       naussLogoAlt: 'شعار جامعة نايف العربية للعلوم الأمنية',
     },
     workspace: {
       systems: 'الأنظمة',
       materialsTitle: 'نظام المواد والمخزون',
       servicesTitle: 'نظام الخدمات والمراسلات',
-      materialsDescription: 'بيئة مستقلة لطلبات المواد، المخزون، الصرف، والإرجاعات.',
-      servicesDescription: 'بيئة مستقلة لطلبات الخدمات، الاعتمادات، والمراسلات الخارجية.',
+      materialsDescription: 'المواد، المخزون، الصرف، والإرجاعات',
+      servicesDescription: 'الخدمات، الاعتمادات، والمراسلات',
       materialsDashboard: 'لوحة المواد',
       materialsDashboardItem: 'لوحة معلومات المواد',
       materialsOperations: 'عمليات المواد',
@@ -169,19 +167,17 @@ export const translations = {
     },
     portal: {
       trainingMaterialsTitle: 'Request Training Materials',
-      trainingMaterialsDescription:
-        'Submit material requests for training needs from here',
+      trainingMaterialsDescription: 'Request materials from inventory',
       servicesTitle: 'General Service Request',
-      servicesDescription:
-        'Submit maintenance, cleaning, purchasing, and other service requests from here',
+      servicesDescription: 'Maintenance, cleaning, purchases, and other services',
       naussLogoAlt: 'Naif Arab University for Security Sciences logo',
     },
     workspace: {
       systems: 'Systems',
       materialsTitle: 'Materials & Inventory',
       servicesTitle: 'Services & Correspondence',
-      materialsDescription: 'A dedicated workspace for material requests, inventory, issuance, and returns.',
-      servicesDescription: 'A dedicated workspace for service requests, approvals, and external correspondence.',
+      materialsDescription: 'Materials, inventory, issuance, and returns',
+      servicesDescription: 'Services, approvals, and correspondence',
       materialsDashboard: 'Materials Dashboard',
       materialsDashboardItem: 'Materials Overview',
       materialsOperations: 'Materials Operations',
@@ -400,9 +396,9 @@ const STATIC_UI_EN: Record<string, string> = {
   'تقارير الخدمات': 'Service Reports',
   'تقارير المواد': 'Material Reports',
   'لوحة أوسع لمتابعة أحجام الطلبات، المسودات النشطة، كثافة الأنواع، وأحدث المعاملات في دورة الخدمات.':
-    'A broader dashboard for request volume, active drafts, type density, and latest transactions in the service cycle.',
+    'Requests, drafts, and latest service transactions',
   'لوحة أوسع لمتابعة المخزون والطلبات والعهد والإرجاعات، مع مؤشرات تشغيلية وأبرز الأنماط خلال الفترة المحددة.':
-    'A broader dashboard for inventory, requests, custody, and returns with operational indicators and key patterns during the selected period.',
+    'Inventory, requests, custody, and returns overview',
   'بحث داخل التقارير': 'Search Reports',
   'اسم، رمز، جهة، أو عنوان': 'Name, code, department, or title',
   'إجمالي طلبات الخدمات': 'Total Service Requests',
@@ -415,11 +411,11 @@ const STATIC_UI_EN: Record<string, string> = {
   'طلبات معلقة': 'Pending Requests',
   'طلبات معادة': 'Returned Requests',
   'هذه الصفحة للمتابعة والاطلاع فقط. اعتماد وصرف مواد المخزن يتمان من خلال مسؤول المخزن، أما الطلبات الخدمية فتعالج من صفحات الصيانة والنظافة والشراء المباشر والطلبات الأخرى.':
-    'This page is for follow-up and viewing only. Warehouse material approval and issuance are handled by the warehouse officer, while service requests are processed from the maintenance, cleaning, direct purchase, and other request pages.',
+    'This page is for viewing only. Issuance is handled by the warehouse officer.',
   'جارٍ تحميل الأرشيف': 'Loading Archive',
-  'نجهّز لك السجلات المؤرشفة الآن.': 'Preparing archived records now.',
+  'نجهّز لك السجلات المؤرشفة الآن.': 'Loading archive...',
   'جارٍ تحميل الصفحة': 'Loading Page',
-  'نجهّز محتوى الصفحة الآن داخل لوحة التحكم.': 'Preparing the page content inside the dashboard now.',
+  'نجهّز محتوى الصفحة الآن داخل لوحة التحكم.': 'Loading page content...',
   'من بداية السنة': 'Year to Date',
   'توزيع الطلبات حسب النوع': 'Request Distribution by Type',
   'الإجمالي:': 'Total:',
@@ -484,7 +480,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'تواصل رسمي داخلي': 'Official internal communication',
   'عرض التقارير': 'View reports',
   'إجمالي الطلبات المفتوحة حاليًا عبر مسارات الخدمات المختلفة، مع تركيز على ما يحتاج اعتمادًا أو متابعة تشغيلية فورية.':
-    'Total currently open requests across service paths, with focus on items that need approval or immediate operational follow-up.',
+    'Open requests across all service paths',
   'طلبات تحتاج تنسيقًا أو تعميدًا': 'Requests that need coordination or authorization',
   'مواد لدى الموظفين تحتاج متابعة': 'Items with employees that need follow-up',
   'الإجراءات': 'Actions',
@@ -517,11 +513,11 @@ const STATIC_UI_EN: Record<string, string> = {
   'بوابة الموظف': 'Employee Portal',
   'مسار الموظف': 'Employee Path',
   'بيئة تشغيلية مستقلة لطلبات المواد والمخزون والإرجاعات':
-    'Independent operating space for material, inventory, and return requests',
+    'Materials, inventory, and returns',
   'بيئة مستقلة لطلبات الخدمات واعتمادها والمراسلات الخارجية':
-    'Independent space for service requests, approvals, and external correspondence',
+    'Services, approvals, and correspondence',
   'نقطة تشغيل موحدة لرفع الطلبات ومتابعتها دون ازدواج أو ارتباك':
-    'A unified operating point to submit and track requests without duplication or confusion',
+    'Submit and track requests',
   'المواد والمخزون': 'Materials and Inventory',
   'الإرجاعات التشغيلية': 'Operational Returns',
   'فتح القائمة': 'Open Menu',
@@ -549,7 +545,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'طلبات إرجاع لم تُستلم بعد': 'Return requests not yet received',
   'لوحة متابعة الطلبات والعهدة': 'Requests and Custody Follow-up Dashboard',
   'مخصصة لمتابعة طلباتك وعهدتك وإرجاعاتك وتحديثاتك الأحدث بشكل مباشر وواضح.':
-    'Designed to clearly track your requests, custody, returns, and latest updates in one place.',
+    'Your requests, custody, and returns at a glance',
   'ما زالت قيد الانتظار': 'Still pending',
   'تم تنفيذها لك بالفعل': 'Already fulfilled for you',
   'مواد ما زالت مسجلة عليك': 'Materials still assigned to you',
@@ -573,7 +569,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'لوحة المدير': 'Manager Dashboard',
   'لوحة قيادة تشغيلية للمخزون والطلبات': 'Operational Command Dashboard for Inventory and Requests',
   'مخصصة للرقابة على حالة المخزون، الاختناقات التشغيلية، والطلبات التي تستدعي تدخلًا إداريًا مباشرًا.':
-    'Designed to monitor inventory status, operational bottlenecks, and requests that require direct administrative intervention.',
+    'Inventory status, alerts, and pending decisions',
   'قراءة سريعة لحالة الأصناف': 'Quick reading of item status',
   'عدد المواد المعرفة في النظام': 'Number of items defined in the system',
   'أهم العناصر التي تستدعي تدخلًا مباشرًا': 'Key items requiring direct intervention',
@@ -585,7 +581,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'لوحة مسؤول المخزن': 'Warehouse Officer Dashboard',
   'لوحة تنفيذ يومية لمسؤول المخزن': 'Daily Execution Dashboard for the Warehouse Officer',
   'مخصصة للتنفيذ اليومي: ما يجب صرفه واستلامه ومتابعته الآن، مع حالة الأصناف الأكثر تأثيرًا على الجاهزية.':
-    'Designed for daily execution: what needs to be issued, received, and followed up now, with the items most affecting readiness.',
+    'Daily issuance, receipt, and inventory status',
   'طلبات تنتظر الصرف': 'Requests Awaiting Issuance',
   'أولوية التنفيذ الأولى': 'First Execution Priority',
   'تحتاج توثيقًا واستلامًا': 'Needs receipt and documentation',
@@ -602,11 +598,11 @@ const STATIC_UI_EN: Record<string, string> = {
   'مهام التشغيل والخدمة اليومية': 'Daily operations and service tasks',
   'طلبات تحتاج تنسيقًا أو تصعيدًا': 'Requests that need coordination or escalation',
   'مدخل مباشر لرفع طلبات المواد ومتابعة حالتها والعهد والمرتجعات المرتبطة بك دون إظهار تفاصيل المخزون التشغيلية.':
-    'A direct entry point to submit material requests and track their status, custody, and related returns without showing operational inventory details.',
+    'Submit and track your material requests and custody',
   'مركز متابعة يومي يربط بين حالة المخزون وطلبات الصرف والمرتجعات والعهد النشطة، مع وصول مباشر إلى أهم الإجراءات التنفيذية.':
-    'A daily follow-up center that connects inventory status, issuance requests, returns, and active custody with direct access to key operational actions.',
+    'Inventory status, issuance requests, returns, and custody',
   'لوحة تفاعلية لإدارة طلبات الصيانة والنظافة والشراء المباشر والمراسلات، مع إبراز الطلبات التي تحتاج قرارًا أو متابعة مباشرة.':
-    'An interactive dashboard for maintenance, cleaning, direct purchase, and correspondence requests, highlighting items that need a decision or direct follow-up.',
+    'Maintenance, cleaning, purchases, and correspondence',
 
   'طلبات المواد': 'Material Requests',
   'طلب مواد': 'Material Request',
@@ -653,7 +649,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'طلب جديد': 'New Request',
   'تعديل الطلب قبل الصرف': 'Edit Request Before Issuance',
   'طلب إرجاع فائض': 'Surplus Return Request',
-  'نموذج طلب بسيط، مباشر، وواضح للمستخدم.': 'A simple, direct, and clear request form for the user.',
+  'نموذج طلب بسيط، مباشر، وواضح للمستخدم.': 'Material request form',
   'الطلبات التشغيلية': 'Operational Requests',
   'الطلبات الجديدة': 'New Requests',
   'الطلبات المنتهية': 'Completed Requests',
@@ -915,7 +911,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'تعذر إنشاء طلب الإرجاع': 'Unable to create the return request',
   'تعذر تسجيل طلب الإرجاع': 'Unable to register the return request',
   'تظهر هنا المواد المسترجعة التي ما زالت بعهدتك ولم تُغلق بعد.':
-    'Returnable items that are still under your custody and have not been closed yet appear here.',
+    'Returnable items still under your custody',
   'طلب مادة جديدة': 'New Material Request',
   'إجمالي العهد الحالية': 'Current Total Custody',
   'طلبات إرجاع مفتوحة': 'Open Return Requests',
@@ -936,7 +932,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'طلبات الخدمات': 'Service Requests',
   'إجمالي الخدمات': 'Total Services',
   'إجمالي طلبات الخدمات بجميع حالاتها مع إبراز ما يحتاج اعتمادًا أو متابعة تشغيلية فورية.':
-    'Total service requests across all statuses, highlighting what needs approval or immediate operational follow-up.',
+    'All service requests across all statuses',
   'طلبات بانتظار الاعتماد': 'Requests Awaiting Approval',
   'بوابة طلبات الخدمات': 'Service Request Portal',
   'طلبات الخدمات التشغيلية': 'Operational Service Requests',
@@ -992,7 +988,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'رفع طلب خدمات عامة أخرى': 'Submit another general service request',
   'الطلبات المرفوعة': 'Submitted Requests',
   'متابعة طلبات الصيانة، النظافة، الشراء المباشر، والطلبات الأخرى بعد رفعها.':
-    'Track maintenance, cleaning, direct purchase, and other requests after submission.',
+    'Track submitted service requests',
   'فتح المراسلات': 'Open Correspondence',
   'فتح المراسلات الخارجية': 'Open External Correspondence',
   'ابحث برقم الطلب أو العنوان أو اسم مقدم الطلب': 'Search by request number, title, or requester name',
@@ -1016,7 +1012,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'اختياري': 'Optional',
   'حذف المرفق': 'Delete Attachment',
   'يمكنك إضافة صور للمشكلة مباشرة من الكاميرا أو من الملفات قبل إرسال الطلب.':
-    'You can add photos of the issue directly from the camera or files before submitting the request.',
+    'Attach photos from your camera or files',
   'لا توجد مرفقات مرفوعة لهذا الطلب.': 'No attachments have been uploaded for this request.',
   'تعذر تجهيز أحد المرفقات. احذف المرفق وحاول مرة أخرى.':
     'Unable to prepare one of the attachments. Delete it and try again.',
@@ -1054,7 +1050,7 @@ const STATIC_UI_EN: Record<string, string> = {
   'المرفقات (اختياري)': 'Attachments (Optional)',
   'معاينة': 'Preview',
   'سيتم ضغط الصور تلقائيًا قبل الرفع لتفادي فشل الحفظ.':
-    'Images will be compressed automatically before upload to avoid save failures.',
+    'Images are automatically compressed before upload',
   'تم رفع الطلب بنجاح وإحالته إلى المدير للمراجعة':
     'The request was submitted successfully and sent to the manager for review',
   'تم اعتماد الطلب بنجاح وإنشاء مسودة المراسلة الخارجية':
@@ -1064,13 +1060,13 @@ const STATIC_UI_EN: Record<string, string> = {
   'طلبات الشراء المباشر المرفوعة': 'Submitted Direct Purchase Requests',
   'الطلبات الأخرى المرفوعة': 'Submitted Other Requests',
   'متابعة واعتماد طلبات الصيانة وربطها بالمراسلات الخارجية.':
-    'Track and approve maintenance requests and link them to external correspondence.',
+    'Review and approve maintenance requests',
   'متابعة واعتماد طلبات النظافة وربطها بالمراسلات الخارجية.':
-    'Track and approve cleaning requests and link them to external correspondence.',
+    'Review and approve cleaning requests',
   'متابعة واعتماد طلبات الشراء المباشر وربطها بالمراسلات الخارجية.':
-    'Track and approve direct purchase requests and link them to external correspondence.',
+    'Review and approve direct purchase requests',
   'متابعة واعتماد الطلبات الأخرى وربطها بالمراسلات الخارجية.':
-    'Track and approve other requests and link them to external correspondence.',
+    'Review and approve other requests',
   'اسم البرنامج التدريبي (إن وجد)': 'Training Program Name (If Any)',
   'بنود إضافية (كل بند في سطر مستقل)': 'Additional Items (One Item Per Line)',
   'مثال:\nصيانة مقابض الأبواب\nمعالجة تسرب بسيط قرب النافذة':
@@ -1082,13 +1078,13 @@ const STATIC_UI_EN: Record<string, string> = {
   'طلب النظافة': 'Cleaning Request',
   'المعالجة': 'Processing',
   'يعرض هذا القسم الطلبات النشطة فقط. الطلب المعتمد ينتقل إلى المراسلات الخارجية، وبعد تنزيل المسودة ينتقل نهائيًا إلى الأرشيف.':
-    'This section shows active requests only. Approved requests move to external correspondence, and after downloading the draft they move permanently to the archive.',
+    'Active requests only — approved requests move to correspondence then archive',
   'يعرض هذا القسم طلباتك النشطة فقط. عند اعتماد الطلب ينتقل إلى المراسلات الخارجية ولا يبقى هنا.':
-    'This section shows your active requests only. Once approved, the request moves to external correspondence and no longer remains here.',
+    'Active requests only — approved requests move to correspondence',
   'كل بند في سطر مستقل': 'One item per line',
   'توثيق الطلب بالصور': 'Document the Request with Photos',
   'المرفقات مؤقتة، وتُحذف تلقائيًا بعد تنزيل مسودة البريد أو بعد 10 أيام.':
-    'Attachments are temporary and are deleted automatically after downloading the email draft or after 10 days.',
+    'Attachments are deleted after download or after 10 days',
   'إرفاق من الملفات': 'Attach from Files',
   'جاري تجهيز وضغط المرفقات...': 'Preparing and compressing attachments...',
   'جاري إرسال الطلب...': 'Submitting request...',
