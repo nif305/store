@@ -156,18 +156,18 @@ function roleDescriptionFromRoles(roles: RoleValue[]) {
   const normalized = normalizeRoles(roles);
 
   if (normalized.includes('manager') && normalized.includes('warehouse')) {
-    return 'له صلاحية الإدارة والمخزن، ويحتفظ دائمًا بصلاحية الموظف داخل المنصة.';
+    return 'مدير + مخزن + موظف';
   }
 
   if (normalized.includes('manager')) {
-    return 'له صلاحية الإدارة، ويحتفظ بإمكانية العمل كموظف داخل المنصة.';
+    return 'مدير + موظف';
   }
 
   if (normalized.includes('warehouse')) {
-    return 'له صلاحية المخزن، ويحتفظ بإمكانية العمل كموظف داخل المنصة.';
+    return 'مخزن + موظف';
   }
 
-  return 'يعمل بصلاحيات الموظف فقط.';
+  return 'موظف';
 }
 
 function statusLabel(status: UserStatus) {
@@ -755,11 +755,9 @@ export default function UsersPage() {
         {editing ? (
           <div className="space-y-5">
             <div className="rounded-[22px] border border-[#d6d7d4] bg-[#fbfcfc] px-4 py-4 text-sm text-[#556867]">
-              <div className="font-bold text-[#016564]">ملاحظة الصلاحيات</div>
-              <div className="mt-2 leading-7">
-                الموظف يملك دائمًا صلاحية <span className="font-bold">موظف</span> كأساس ثابت،
-                ويمكن إضافة صلاحية <span className="font-bold">مدير</span> و/أو صلاحية
-                <span className="font-bold"> مسؤول مخزن</span> فوقها بحسب الحاجة.
+              <div className="font-bold text-[#016564]">الصلاحيات</div>
+              <div className="mt-1 leading-6">
+                الأساس: <span className="font-bold">موظف</span> — يمكن إضافة: <span className="font-bold">مدير</span> و/أو <span className="font-bold">مخزن</span>
               </div>
             </div>
 
@@ -803,7 +801,7 @@ export default function UsersPage() {
                     <div>
                       <div className="text-sm font-bold text-[#152625]">مدير</div>
                       <div className="mt-1 text-xs leading-6 text-[#61706f]">
-                        يضيف صلاحيات الإدارة مع بقاء صلاحية الموظف.
+                        اعتماد الطلبات والتقارير
                       </div>
                     </div>
                   </label>
@@ -820,7 +818,7 @@ export default function UsersPage() {
                     <div>
                       <div className="text-sm font-bold text-[#152625]">مسؤول مخزن</div>
                       <div className="mt-1 text-xs leading-6 text-[#61706f]">
-                        يضيف صلاحيات الصرف والاستلام مع بقاء صلاحية الموظف.
+                        صرف واستلام المواد
                       </div>
                     </div>
                   </label>
@@ -837,7 +835,7 @@ export default function UsersPage() {
                     <div>
                       <div className="text-sm font-bold text-[#152625]">إدارة احتياجات المدربين</div>
                       <div className="mt-1 text-xs leading-6 text-[#61706f]">
-                        تظهر له صفحة احتياجات المدربين ويتابع طلبات مساعد تجهيز الدورة دون منحه صلاحية مدير أو مخزن.
+                        عرض احتياجات المدربين فقط
                       </div>
                     </div>
                   </label>
@@ -901,7 +899,7 @@ export default function UsersPage() {
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                placeholder="اتركه فارغًا إذا لا تريد تغييرها"
+                placeholder="اتركه فارغًا للإبقاء"
               />
 
               <Input

@@ -839,11 +839,7 @@ export default function ReturnsPage() {
               className="w-full rounded-xl border border-surface-border p-3"
               value={conditionNote}
               onChange={(e) => setConditionNote(e.target.value)}
-              placeholder={
-                returnMode === 'REQUEST_ITEM'
-                  ? 'مثال: بقيت 10 أقلام لم تُستخدم وسيتم إرجاعها'
-                  : 'مثال: يوجد خدش بسيط في الجهة اليمنى'
-              }
+              placeholder="ملاحظة الحالة"
             />
           </div>
 
@@ -950,7 +946,7 @@ export default function ReturnsPage() {
               className="w-full rounded-xl border border-surface-border p-3"
               value={receivedNotes}
               onChange={(e) => setReceivedNotes(e.target.value)}
-              placeholder="أضف الوصف الفعلي لحالة المادة عند الاستلام"
+              placeholder="حالة المادة عند الاستلام"
             />
           </div>
 

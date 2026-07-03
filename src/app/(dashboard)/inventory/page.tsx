@@ -383,9 +383,9 @@ function BulkUploadModal({ onClose, onDone }: { onClose: () => void; onDone: () 
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
-                  ['1', 'سمّ الصورة باسم المادة', 'مثال: أقلام سبورة.jpg أو سترة حماية.png'],
-                  ['2', 'اختر جميع الصور معاً', 'يمكن اختيار عدة مئات دفعة واحدة'],
-                  ['3', 'راجع وعدّل ثم احفظ', 'يُظهر النظام أفضل تطابق، وتقدر تعدّل يدوياً'],
+                  ['1', 'سمّ الصورة باسم المادة', ''],
+                  ['2', 'اختر الصور', ''],
+                  ['3', 'راجع وعدّل ثم احفظ', ''],
                 ].map(([n, t, d]) => (
                   <div key={n} className="rounded-[14px] border border-[#dce6e3] bg-[#f8fbfb] p-3">
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2A6364] text-[12px] font-bold text-white">{n}</div>
@@ -1111,12 +1111,9 @@ export default function InventoryPage() {
               <div className="space-y-1">
                 <label className="block text-[11px] font-semibold text-slate-600">نوع المادة</label>
                 <select value={formState.type} onChange={(event) => setFormState((prev) => ({ ...prev, type: event.target.value as any }))} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm">
-                  <option value="RETURNABLE">مسترجعة — تُعاد بعد الاستخدام (عهدة)</option>
-                  <option value="CONSUMABLE">مستهلكة — لا تُعاد (تُخصم عند الصرف)</option>
+                  <option value="RETURNABLE">مسترجعة (عهدة)</option>
+                  <option value="CONSUMABLE">مستهلكة</option>
                 </select>
-                <p className="text-[10px] text-slate-400">
-                  {formState.type === 'RETURNABLE' ? 'تُنشئ عهدة على المستلم وتظهر في المرتجعات.' : 'تُخصم من المخزون مباشرة عند الصرف. لا عهدة ولا إرجاع.'}
-                </p>
               </div>
               <Input label="الكمية" type="number" min="0" value={formState.quantity} onChange={(event) => setFormState((prev) => ({ ...prev, quantity: event.target.value }))} required />
               <Input label="الحد الأدنى" type="number" min="1" value={formState.minStock} onChange={(event) => setFormState((prev) => ({ ...prev, minStock: event.target.value }))} required />

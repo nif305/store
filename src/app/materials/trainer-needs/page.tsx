@@ -177,11 +177,11 @@ export default function TrainerNeedsPage() {
           ? `القاعة المعتمدة: ${opened?.roomBooking?.approvedRoom?.name}`
           : 'طلب القاعة يحتاج اعتماد أو اختيار بديل',
       traineeDecision: needsTraineeCount
-        ? 'عدد المتدربين غير محدد؛ حدده لإضافة الأقلام والنوت والملفات تلقائيا'
-        : `عدد المتدربين المعتمد: ${draftTraineeCount}`,
+        ? 'عدد المتدربين غير محدد'
+        : `عدد المتدربين: ${draftTraineeCount}`,
       returnDecision: opened?.endDate
-        ? `تاريخ إرجاع المواد المسترجعة سيكون ${formatDate(opened.endDate)} عند التحويل للمخزن`
-        : 'لا يوجد تاريخ نهاية دورة؛ المواد المسترجعة ستحتاج تاريخ إرجاع قبل الصرف',
+        ? `تاريخ الإرجاع: ${formatDate(opened.endDate)}`
+        : 'لا يوجد تاريخ نهاية دورة',
     };
   }, [draftRows.length, draftStats.convertible, draftStats.shortage, draftTraineeCount, opened]);
 
@@ -587,7 +587,7 @@ export default function TrainerNeedsPage() {
                     />
                   </label>
                   <div className="mt-2 text-[12px] leading-6 text-[#71817f]">
-                    عند حفظ الطلب سيتم إضافة الأقلام والنوت والملفات تلقائيا بنفس عدد المتدربين إذا لم تكن موجودة في البنود.
+                    تُضاف الأقلام والنوت والملفات تلقائياً حسب العدد
                   </div>
                 </div>
               ) : null}
@@ -629,7 +629,7 @@ export default function TrainerNeedsPage() {
               </section>
 
               <div className="rounded-[8px] border border-[#dce6e3] bg-[#fbfcfc] p-4 text-[13px] leading-7 text-[#536866]">
-                الكميات المتوفرة فقط تتحول إلى طلب مواد للمخزن. المواد غير المتوفرة لا يتم تحويلها للصرف؛ تبقى واضحة للمنسق كمطلوب يحتاج توفير أو حذف أو استبدال قبل الاعتماد. إذا كانت مادة غير منطقية احذفها من الجدول ثم احفظ تعديل الطلب.
+                الكميات المتوفرة فقط تتحول لطلب مخزن — المواد غير المتوفرة تبقى معلقة للمنسق.
               </div>
 
               <div className="flex justify-end">
@@ -735,7 +735,7 @@ export default function TrainerNeedsPage() {
                         <tr key={row.catalogItemId}>
                           <td className="px-4 py-3">
                             <div className="font-bold">{row.title}</div>
-                            {shortage > 0 ? <div className="mt-1 text-[11px] text-[#8a6a37]">هذا البند يحتاج قرار توفير أو تخفيض كمية أو حذف</div> : null}
+                            {shortage > 0 ? <div className="mt-1 text-[11px] text-[#8a6a37]">كمية غير كافية</div> : null}
                           </td>
                           <td className="px-4 py-3">
                             {isLocked ? row.requestedQty : (

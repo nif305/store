@@ -145,7 +145,7 @@ function BulkRoomModal({ rooms, onClose, onDone }: { rooms: Room[]; onClose: () 
         <div className="flex items-center justify-between border-b border-[#DADBD9] px-5 py-4">
           <div>
             <h2 className="text-[17px] font-extrabold text-[#2A2A2A]">رفع صور القاعات دفعياً</h2>
-            <p className="mt-0.5 text-[11px] text-[#B5BDBE]">سمّ الصورة باسم القاعة — مثل: Lab 1.jpg أو Class 3.png</p>
+            <p className="mt-0.5 text-[11px] text-[#B5BDBE]">سمّ الصورة باسم القاعة</p>
           </div>
           <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F9F9F9] text-[#5A5A5A] hover:bg-[#DADBD9]">✕</button>
         </div>
@@ -156,7 +156,7 @@ function BulkRoomModal({ rooms, onClose, onDone }: { rooms: Room[]; onClose: () 
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
               </svg>
               <p className="mt-3 text-[14px] font-bold text-[#5A5A5A]">اسحب صور القاعات أو اضغط للاختيار</p>
-              <p className="mt-1 text-[11px] text-[#B5BDBE]">سمّ كل ملف باسم القاعة: Lab 1.jpg, Class 3.png, ...</p>
+              <p className="mt-1 text-[11px] text-[#B5BDBE]">سمّ كل ملف باسم القاعة</p>
               <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => processFiles(Array.from(e.target.files || []))} />
             </label>
           )}

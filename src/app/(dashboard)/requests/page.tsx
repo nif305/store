@@ -1091,7 +1091,7 @@ export default function RequestsPage() {
                     label="الغرض من الطلب"
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
-                    placeholder="مثال: تجهيز دورة تدريبية أو فعالية"
+                    placeholder="الغرض من الطلب"
                   />
                 </div>
               </section>
@@ -1361,7 +1361,7 @@ export default function RequestsPage() {
 
                               <div className="flex items-end">
                                 <div className="w-full rounded-2xl border border-dashed border-[#d6d7d4] bg-[#fcfcfc] px-3 py-3 text-center text-xs text-[#61706f]">
-                                  سيتم استلام وتوثيق حالة المادة لاحقًا
+                                  يُستلم لاحقًا
                                 </div>
                               </div>
                             </div>
@@ -1375,7 +1375,7 @@ export default function RequestsPage() {
                     label="ملاحظات الإرجاع"
                     value={notes}
                     onChange={setNotes}
-                    placeholder="مثال: تم إرجاع الفائض بعد انتهاء البرنامج"
+                    placeholder="ملاحظات الإرجاع"
                     rows={3}
                   />
                 </div>

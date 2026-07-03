@@ -353,11 +353,11 @@ function MaterialsReport({ data, filteredTopItems, filteredTopUsers, filteredRec
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
               <div className="rounded-[10px] border border-[#e8ddbf] bg-white px-3 py-2">
                 <p className="text-[12px] font-bold text-[#8a6a37]">مواد مستهلكة (CONSUMABLE)</p>
-                <p className="mt-0.5 text-[11px] text-[#7f6b43]">أقلام، نوت، ملفات، ورق... تُخصم من المخزون عند الصرف ولا تُعاد. لا عهدة.</p>
+                <p className="mt-0.5 text-[11px] text-[#7f6b43]">تُخصم من المخزون عند الصرف ولا تُعاد.</p>
               </div>
               <div className="rounded-[10px] border border-[#cce6d7] bg-white px-3 py-2">
                 <p className="text-[12px] font-bold text-[#1e6b4c]">مواد مسترجعة (RETURNABLE)</p>
-                <p className="mt-0.5 text-[11px] text-[#2f6f4f]">أجهزة، لوحات، معدات... تُولّد عهدة عند الصرف وتُعاد بعد الاستخدام.</p>
+                <p className="mt-0.5 text-[11px] text-[#2f6f4f]">تُولّد عهدة عند الصرف وتُعاد بعد الاستخدام.</p>
               </div>
             </div>
           </div>
