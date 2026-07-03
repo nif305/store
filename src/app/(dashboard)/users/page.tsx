@@ -28,6 +28,7 @@ type UserRow = {
   status: UserStatus;
   createdAt?: string | null;
   canManageTrainerNeeds?: boolean;
+  telegramChatId?: string | null;
 };
 
 type FormState = {
@@ -909,6 +910,18 @@ export default function UsersPage() {
                 onChange={(e) => setForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
                 placeholder="أعد كتابة كلمة المرور"
               />
+
+              <div className="rounded-2xl border border-[#e8f0ef] bg-[#f6fbfb] px-4 py-3">
+                <div className="mb-2 text-sm font-semibold text-[#152625]">Telegram</div>
+                {editing?.telegramChatId ? (
+                  <div className="flex items-center gap-2 text-sm text-[#2a7a4a]">
+                    <span>✅ مرتبط</span>
+                    <span className="text-xs text-[#61706f]">(Chat ID: {editing.telegramChatId})</span>
+                  </div>
+                ) : (
+                  <div className="text-xs text-[#61706f]">غير مرتبط — يمكن للموظف ربط حسابه من ملفه الشخصي</div>
+                )}
+              </div>
             </div>
 
             <div className="flex flex-col-reverse gap-2 border-t border-[#edf1f0] pt-4 sm:flex-row sm:justify-end">

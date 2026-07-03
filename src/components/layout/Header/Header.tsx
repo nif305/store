@@ -71,7 +71,13 @@ export function Header() {
             </div>
           ) : null}
 
-          <div className="flex w-full justify-end">
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+            <a
+              href="/profile"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#d0e4e3] bg-[#f6fbfb] px-4 py-2 text-sm font-semibold text-[#016564] hover:bg-[#edf5f4] sm:w-auto"
+            >
+              ✈️ Telegram
+            </a>
             <Button variant="ghost" onClick={logout} className="w-full sm:w-auto">
               {t('common.logout')}
             </Button>

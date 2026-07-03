@@ -10,6 +10,7 @@ import {
   ReturnItemCondition,
 } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { sendTelegram } from '@/lib/telegram';
 
 type RequestItemInput = {
   itemId: string;
@@ -576,7 +577,7 @@ async function rejectRequest(requestId: string, actorId: string, reason: string)
     },
   });
 
-  await prisma.notification.create({
+  const rejectedNotif = await prisma.notification.create({
     data: {
       userId: request.requesterId,
       type: 'REQUEST_REJECTED',
@@ -586,7 +587,15 @@ async function rejectRequest(requestId: string, actorId: string, reason: string)
       entityId: request.id,
       entityType: 'REQUEST',
     },
+    select: { user: { select: { telegramChatId: true } } },
   });
+
+  if (rejectedNotif.user?.telegramChatId) {
+    await sendTelegram(
+      rejectedNotif.user.telegramChatId,
+      `❌ <b>تم رفض الطلب</b>\n🔖 الرمز: ${request.code}${reason ? `\n📝 السبب: ${reason}` : ''}`
+    );
+  }
 
   return updated;
 }
@@ -645,7 +654,7 @@ async function approveRequest(requestId: string, actorId: string, notes?: string
     });
   }
 
-  await prisma.notification.create({
+  const approvedNotif = await prisma.notification.create({
     data: {
       userId: request.requesterId,
       type: 'REQUEST_APPROVED',
@@ -655,7 +664,15 @@ async function approveRequest(requestId: string, actorId: string, notes?: string
       entityId: request.id,
       entityType: 'REQUEST',
     },
+    select: { user: { select: { telegramChatId: true } } },
   });
+
+  if (approvedNotif.user?.telegramChatId) {
+    await sendTelegram(
+      approvedNotif.user.telegramChatId,
+      `✅ <b>تم اعتماد طلبك</b>\n🔖 الرمز: ${request.code}\nجارٍ تجهيزه للصرف من المستودع.`
+    );
+  }
 
   return approved;
 }
@@ -731,7 +748,7 @@ async function issueRequest(requestId: string, actorId: string, notes?: string) 
     });
   });
 
-  await prisma.notification.create({
+  const issuedNotif = await prisma.notification.create({
     data: {
       userId: request.requesterId,
       type: 'REQUEST_ISSUED',
@@ -741,7 +758,16 @@ async function issueRequest(requestId: string, actorId: string, notes?: string) 
       entityId: request.id,
       entityType: 'REQUEST',
     },
+    select: { user: { select: { telegramChatId: true, fullName: true } } },
   });
+
+  if (issuedNotif.user?.telegramChatId) {
+    const itemNames = request.items.map((i) => `• ${i.item.name} ×${i.quantity}`).join('\n');
+    await sendTelegram(
+      issuedNotif.user.telegramChatId,
+      `📦 <b>تم صرف المواد</b>\n🔖 الرمز: ${request.code}\n\n${itemNames}`
+    );
+  }
 
   return result;
 }

@@ -21,6 +21,8 @@ model User {
   canManageTrainerNeeds Boolean       @default(false)
   status           Status             @default(PENDING)
   avatar           String?
+  telegramChatId   String?
+  telegramLinkToken String?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   requests         Request[]
