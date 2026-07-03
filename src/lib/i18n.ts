@@ -1133,7 +1133,6 @@ const STATIC_UI_EN: Record<string, string> = {
   'لغة الواجهة': 'Interface Language',
   'مصدر الحاجة': 'Need Source',
   'المسار': 'Path',
-  'مرتبط بملاحظة عامة في المبنى': 'Linked to a general building note',
   'العربية': 'Arabic',
   'English': 'English',
 
@@ -1336,10 +1335,6 @@ const STATIC_UI_EN: Record<string, string> = {
     'An improved audit log with filters by system, period, entity, and action to show only relevant records.',
   'طلبات المواد من المخزون ومسار صرفها وإرجاعها بقيت مستقلة تمامًا عن هذا المسار.':
     'Inventory material requests, issuance, and returns remain fully independent from this path.',
-  'رفع طلبات الصيانة التشغيلية الخاصة بالقاعات والمرافق والمكونات الفنية داخل المبنى.':
-    'Submit operational maintenance requests for rooms, facilities, and technical components inside the building.',
-  'رفع طلبات النظافة والخدمات المرتبطة بجاهزية البيئة التدريبية داخل المبنى.':
-    'Submit cleaning requests and services related to training environment readiness.',
   'رفع طلبات الشراء المباشر المرتبطة باحتياج تشغيلي أو دعم عاجل للعمل التدريبي.':
     'Submit direct purchase requests related to operational needs or urgent training support.',
   'رفع طلبات تشغيلية أخرى تحتاج إحالة واعتمادًا ومراسلة خارجية من المدير.':

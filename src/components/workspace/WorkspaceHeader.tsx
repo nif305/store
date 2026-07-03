@@ -34,9 +34,13 @@ export function WorkspaceHeader({ workspace }: { workspace: WorkspaceKey }) {
           <button
             type="button"
             onClick={() => router.push('/materials/dashboard')}
-            className="inline-flex h-12 items-center rounded-2xl border border-[#dbe5e3] bg-[#f7f9f9] px-4 text-[14px] font-semibold text-[#27494a] transition hover:border-[#2A6364]/35 hover:bg-white"
+            title={t('workspace.materialsTitle')}
+            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#dbe5e3] bg-[#f7f9f9] text-[#27494a] transition hover:border-[#2A6364]/35 hover:bg-white"
           >
-            {t('workspace.materialsTitle')}
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z" />
+              <path d="M9 21V12h6v9" />
+            </svg>
           </button>
 
           <div className="flex items-center gap-2 rounded-2xl border border-[#dbe5e3] bg-[#fbfcfc] px-3 py-2">
