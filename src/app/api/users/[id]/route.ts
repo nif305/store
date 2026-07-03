@@ -5,7 +5,7 @@ import { resolveSessionUser } from '@/lib/auth/session';
 import { hashPassword } from '@/lib/security/password';
 
 type UiRole = 'manager' | 'warehouse' | 'user';
-type PrismaRole = 'MANAGER' | 'WAREHOUSE' | 'USER';
+type PrismaRole = 'MANAGER' | 'WAREHOUSE' | 'MONITOR' | 'USER';
 
 function normalizeText(value?: string | null) { return (value || '').trim(); }
 function normalizeEmail(value?: string | null) { return (value || '').trim().toLowerCase(); }

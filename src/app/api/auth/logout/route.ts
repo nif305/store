@@ -1,12 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST() {
+function shouldUseSecureCookies(request: NextRequest) {
+  return request.nextUrl.protocol === 'https:';
+}
+
+export async function POST(request: NextRequest) {
   const response = NextResponse.json({ ok: true });
 
   const cookieOptions = {
     httpOnly: true as const,
     sameSite: 'lax' as const,
-    secure: true,
+    secure: shouldUseSecureCookies(request),
     path: '/',
     expires: new Date(0),
   };
@@ -22,6 +26,9 @@ export async function POST() {
     'user_department',
     'user_employee_id',
     'active_role',
+    'server_active_role',
+    'server_user_roles',
+    'preferred_language',
   ];
 
   for (const cookieName of cookiesToClear) {

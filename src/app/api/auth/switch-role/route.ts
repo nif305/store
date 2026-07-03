@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const ALLOWED_ROLES = ['manager', 'warehouse', 'user'] as const;
 
+function shouldUseSecureCookies(request: NextRequest) {
+  return request.nextUrl.protocol === 'https:';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -32,7 +36,7 @@ export async function POST(request: NextRequest) {
     const cookieOptions = {
       httpOnly: true as const,
       sameSite: 'lax' as const,
-      secure: true,
+      secure: shouldUseSecureCookies(request),
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
     };

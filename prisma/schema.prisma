@@ -53,6 +53,7 @@ model Undertaking {
 enum Role {
   MANAGER
   WAREHOUSE
+  MONITOR
   USER
 }
 

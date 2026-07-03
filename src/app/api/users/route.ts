@@ -4,7 +4,7 @@ import { Role, Status } from '@prisma/client';
 import { resolveSessionUser } from '@/lib/auth/session';
 import { hashPassword } from '@/lib/security/password';
 
-type PrismaRole = 'MANAGER' | 'WAREHOUSE' | 'USER';
+type PrismaRole = 'MANAGER' | 'WAREHOUSE' | 'MONITOR' | 'USER';
 
 function normalizeText(value?: string | null) {
   return (value || '').trim();

@@ -22,13 +22,17 @@ function normalizeLanguage(value?: string | null) {
   return String(value || '').trim().toLowerCase() === 'en' ? 'en' : 'ar';
 }
 
-function clearSessionResponse() {
+function shouldUseSecureCookies(request: NextRequest) {
+  return request.nextUrl.protocol === 'https:';
+}
+
+function clearSessionResponse(request: NextRequest) {
   const response = NextResponse.json({ user: null }, { status: 401 });
 
   const cookieOptions = {
     httpOnly: true as const,
     sameSite: 'lax' as const,
-    secure: true,
+    secure: shouldUseSecureCookies(request),
     path: '/',
     expires: new Date(0),
   };
@@ -46,7 +50,7 @@ export async function GET(request: NextRequest) {
     const activeRoleFromCookie = request.cookies.get('active_role')?.value?.toLowerCase();
 
     if (!userId) {
-      return clearSessionResponse();
+      return clearSessionResponse(request);
     }
 
     const user = await prisma.user.findUnique({
@@ -57,7 +61,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user || user.status === 'DISABLED') {
-      return clearSessionResponse();
+      return clearSessionResponse(request);
     }
 
     const roles = normalizeRoles((user as { roles?: string[] }).roles);
@@ -98,7 +102,7 @@ export async function GET(request: NextRequest) {
     const cookieOptions = {
       httpOnly: true as const,
       sameSite: 'lax' as const,
-      secure: true,
+      secure: shouldUseSecureCookies(request),
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
     };
@@ -119,6 +123,6 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch {
-    return clearSessionResponse();
+    return clearSessionResponse(request);
   }
 }

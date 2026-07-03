@@ -7,6 +7,10 @@ function normalizeLanguage(value: unknown) {
   return String(value || '').trim().toLowerCase() === 'en' ? 'en' : 'ar';
 }
 
+function shouldUseSecureCookies(request: NextRequest) {
+  return request.nextUrl.protocol === 'https:';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await resolveSessionUser(request);
@@ -25,7 +29,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set('preferred_language', preferredLanguage, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: true,
+      secure: shouldUseSecureCookies(request),
       path: '/',
       maxAge: 60 * 60 * 24 * 365,
     });

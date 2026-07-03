@@ -3,6 +3,10 @@ import type { NextRequest } from 'next/server';
 
 const PUBLIC_FILE = /\.(.*)$/;
 
+function shouldUseSecureCookies(request: NextRequest) {
+  return request.nextUrl.protocol === 'https:';
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -59,7 +63,7 @@ export function middleware(request: NextRequest) {
     const cookieOptions = {
       httpOnly: true as const,
       sameSite: 'lax' as const,
-      secure: true,
+      secure: shouldUseSecureCookies(request),
       path: '/',
       expires: new Date(0),
     };
