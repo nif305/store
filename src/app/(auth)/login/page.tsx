@@ -163,7 +163,14 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <div className="mt-5 grid gap-3">
+              <div className="mt-5 text-center text-[14px] text-[#5f687b]">
+                {t('auth.requestAccountPrompt')}
+                <Link href="/request-account" className="mx-2 font-semibold text-[#016564] hover:underline">
+                  {t('auth.requestAccountLink')}
+                </Link>
+              </div>
+
+              <div className="mt-3 grid gap-3">
                 <Link
                   href="/training-kit"
                   className="group flex items-center gap-4 rounded-[20px] border border-[#d8e3e1] bg-[#f8fbfb] px-4 py-4 text-right transition hover:border-[#016564] hover:bg-white"
