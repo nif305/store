@@ -199,7 +199,7 @@ export default function AuditLogsPage() {
           {[
             { value: days, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setDays(v); }, options: [['7','آخر 7 أيام'],['30','آخر 30 يوماً'],['90','آخر 90 يوماً'],['0','كل الفترات']] },
             { value: entityFilter, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setEntityFilter(v); }, options: [['', language === 'en' ? 'All entities' : 'كل الكيانات'], ...entityOptions.map((e) => [e, entityLabel(e, language)])] },
-            { value: actionFilter, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setActionFilter(v); }, options: [['','كل الإجراءات'], ...Object.entries(ACTION_LABELS).map(([k,v]) => [k, v])] },
+            { value: actionFilter, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setActionFilter(v); }, options: [['', language === 'en' ? 'All actions' : 'كل الإجراءات'], ...Object.entries(language === 'en' ? ACTION_LABELS_EN : ACTION_LABELS_AR).map(([k,v]) => [k, v])] },
           ].map((sel, i) => (
             <select key={i} value={sel.value} onChange={(e) => sel.onChange(e.target.value)}
               className="h-9 rounded-full border border-white/20 bg-white/10 px-3 text-[12px] text-white outline-none focus:border-white/40">
