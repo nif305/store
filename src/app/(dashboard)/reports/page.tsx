@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/hooks/useI18n';
 
 function normalizeArabic(v: string) {
   return (v || '').toLowerCase().trim()
@@ -61,9 +62,13 @@ function SectionHeader({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
-const STATUS_LABELS: Record<string, string> = {
+const STATUS_LABELS_AR: Record<string, string> = {
   PENDING: 'بانتظار الصرف', APPROVED: 'معتمد', REJECTED: 'مرفوض',
   ISSUED: 'مصروف', RETURNED: 'معاد', DRAFT: 'مسودة',
+};
+const STATUS_LABELS_EN: Record<string, string> = {
+  PENDING: 'Pending', APPROVED: 'Approved', REJECTED: 'Rejected',
+  ISSUED: 'Issued', RETURNED: 'Returned', DRAFT: 'Draft',
 };
 const STATUS_COLORS: Record<string, string> = {
   PENDING: '#8a6a37', APPROVED: '#2A6364', REJECTED: '#7c1e3e',
@@ -74,6 +79,8 @@ const STATUS_COLORS: Record<string, string> = {
 export default function ReportsPage() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { language } = useI18n();
+  const STATUS_LABELS = language === 'en' ? STATUS_LABELS_EN : STATUS_LABELS_AR;
   const system = pathname?.startsWith('/services') ? 'services' : 'materials';
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -117,9 +124,11 @@ export default function ReportsPage() {
             </div>
             <div>
               <h1 className="text-[20px] font-extrabold text-white">
-                {system === 'services' ? 'تقارير الخدمات' : 'تقارير المواد والمخزون'}
+                {system === 'services'
+                  ? (language === 'en' ? 'Services Reports' : 'تقارير الخدمات')
+                  : (language === 'en' ? 'Materials & Inventory Reports' : 'تقارير المواد والمخزون')}
               </h1>
-              <div className="text-[11px] text-white/50">لوحة تحليلية شاملة</div>
+              <div className="text-[11px] text-white/50">{language === 'en' ? 'Comprehensive analytics dashboard' : 'لوحة تحليلية شاملة'}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -132,10 +141,10 @@ export default function ReportsPage() {
             </div>
             <select value={period} onChange={(e) => setPeriod(e.target.value)}
               className="h-9 rounded-full border border-white/20 bg-white/10 px-3 text-[12px] text-white outline-none focus:border-white/40">
-              <option value="year" className="bg-white text-black">من بداية السنة</option>
-              <option value="30d" className="bg-white text-black">آخر 30 يوم</option>
-              <option value="90d" className="bg-white text-black">آخر 90 يوم</option>
-              <option value="all" className="bg-white text-black">كل الفترات</option>
+              <option value="year" className="bg-white text-black">{language === 'en' ? 'This year' : 'من بداية السنة'}</option>
+              <option value="30d" className="bg-white text-black">{language === 'en' ? 'Last 30 days' : 'آخر 30 يوم'}</option>
+              <option value="90d" className="bg-white text-black">{language === 'en' ? 'Last 90 days' : 'آخر 90 يوم'}</option>
+              <option value="all" className="bg-white text-black">{language === 'en' ? 'All time' : 'كل الفترات'}</option>
             </select>
           </div>
         </div>

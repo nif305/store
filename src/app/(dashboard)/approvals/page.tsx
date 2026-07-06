@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/hooks/useI18n';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -47,12 +48,19 @@ type PaginationState = {
   limit: number;
 };
 
-const STATUS_MAP: Record<RequestStatus, { label: string; variant: 'neutral' | 'success' | 'warning' | 'danger' | 'info' }> = {
+const STATUS_MAP_AR: Record<RequestStatus, { label: string; variant: 'neutral' | 'success' | 'warning' | 'danger' | 'info' }> = {
   PENDING: { label: 'بانتظار معالجة مسؤول المخزن', variant: 'warning' },
   ISSUED: { label: 'تم الصرف', variant: 'success' },
   REJECTED: { label: 'مرفوض / ملغي', variant: 'danger' },
   RETURNED: { label: 'تمت الإعادة', variant: 'neutral' },
   DRAFT: { label: 'مسودة', variant: 'neutral' },
+};
+const STATUS_MAP_EN: Record<RequestStatus, { label: string; variant: 'neutral' | 'success' | 'warning' | 'danger' | 'info' }> = {
+  PENDING: { label: 'Pending warehouse processing', variant: 'warning' },
+  ISSUED: { label: 'Issued', variant: 'success' },
+  REJECTED: { label: 'Rejected / Cancelled', variant: 'danger' },
+  RETURNED: { label: 'Returned', variant: 'neutral' },
+  DRAFT: { label: 'Draft', variant: 'neutral' },
 };
 
 function formatDate(date?: string) {
@@ -66,6 +74,8 @@ function formatDate(date?: string) {
 
 export default function ApprovalsPage() {
   const { user } = useAuth();
+  const { language } = useI18n();
+  const STATUS_MAP = language === 'en' ? STATUS_MAP_EN : STATUS_MAP_AR;
   const [requests, setRequests] = useState<RequestRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<ViewFilter>('ALL');

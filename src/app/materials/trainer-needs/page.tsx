@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useI18n } from '@/hooks/useI18n';
 
 type NeedItem = {
   id: string;
@@ -61,7 +62,7 @@ type RequestBucket = 'pending' | 'active' | 'done';
 type BucketCounts = Record<RequestBucket, number>;
 type PaginationState = { page: number; limit: 5 | 10; total: number; totalPages: number };
 
-const statusLabel: Record<string, string> = {
+const statusLabelAr: Record<string, string> = {
   NEW: 'جديد',
   IN_REVIEW: 'قيد المراجعة',
   ASSIGNED: 'تم الإسناد',
@@ -70,6 +71,16 @@ const statusLabel: Record<string, string> = {
   SHORTAGE_IN_PROGRESS: 'يوجد نقص',
   CONVERTED_TO_REQUEST: 'تحول إلى طلب مواد',
   CANCELLED: 'ملغي',
+};
+const statusLabelEn: Record<string, string> = {
+  NEW: 'New',
+  IN_REVIEW: 'Under Review',
+  ASSIGNED: 'Assigned',
+  PLAN_PROPOSED: 'Availability Reviewed',
+  RESERVED_AVAILABLE: 'Available Reserved',
+  SHORTAGE_IN_PROGRESS: 'Shortage',
+  CONVERTED_TO_REQUEST: 'Converted to Request',
+  CANCELLED: 'Cancelled',
 };
 
 function formatDate(value?: string | null) {
@@ -90,6 +101,8 @@ const bucketLabel: Record<RequestBucket, string> = {
 };
 
 export default function TrainerNeedsPage() {
+  const { language } = useI18n();
+  const statusLabel = language === 'en' ? statusLabelEn : statusLabelAr;
   const [needs, setNeeds] = useState<Need[]>([]);
   const [assignees, setAssignees] = useState<Assignee[]>([]);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);

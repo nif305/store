@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/hooks/useI18n';
 
 type ArchiveSource = 'materials' | 'service';
 type FolderKey =
@@ -37,7 +38,9 @@ type FolderMeta = {
   key: FolderKey;
   source: ArchiveSource;
   title: string;
+  titleEn: string;
   subtitle: string;
+  subtitleEn: string;
   tone: string;
 };
 
@@ -55,62 +58,14 @@ type PaginationState = {
 };
 
 const FOLDERS: FolderMeta[] = [
-  {
-    key: 'service-correspondence',
-    source: 'service',
-    title: 'المراسلات الخارجية',
-    subtitle: 'المعاملات المنتهية بعد التنزيل أو الإرسال',
-    tone: 'text-[#016564]',
-  },
-  {
-    key: 'service-maintenance',
-    source: 'service',
-    title: 'طلبات الصيانة',
-    subtitle: 'طلبات الصيانة المؤرشفة',
-    tone: 'text-[#016564]',
-  },
-  {
-    key: 'service-cleaning',
-    source: 'service',
-    title: 'طلبات النظافة',
-    subtitle: 'طلبات النظافة المؤرشفة',
-    tone: 'text-[#016564]',
-  },
-  {
-    key: 'service-purchase',
-    source: 'service',
-    title: 'طلبات المشتريات المباشرة',
-    subtitle: 'طلبات الشراء المباشر المؤرشفة',
-    tone: 'text-[#8a6a28]',
-  },
-  {
-    key: 'service-other',
-    source: 'service',
-    title: 'طلبات أخرى',
-    subtitle: 'الطلبات الأخرى المؤرشفة',
-    tone: 'text-[#6d5b7a]',
-  },
-  {
-    key: 'material-consumable',
-    source: 'materials',
-    title: 'الطلبات المستهلكة',
-    subtitle: 'طلبات المواد الاستهلاكية المصروفة',
-    tone: 'text-[#498983]',
-  },
-  {
-    key: 'material-returnable',
-    source: 'materials',
-    title: 'الطلبات المسترجعة',
-    subtitle: 'طلبات المواد المسترجعة المكتملة',
-    tone: 'text-[#498983]',
-  },
-  {
-    key: 'material-custody-returned',
-    source: 'materials',
-    title: 'العهد المعادة',
-    subtitle: 'العهد التي أغلقت وتمت إعادتها',
-    tone: 'text-[#498983]',
-  },
+  { key: 'service-correspondence', source: 'service', title: 'المراسلات الخارجية', titleEn: 'External Correspondence', subtitle: 'المعاملات المنتهية بعد التنزيل أو الإرسال', subtitleEn: 'Completed transactions after download or submission', tone: 'text-[#016564]' },
+  { key: 'service-maintenance', source: 'service', title: 'طلبات الصيانة', titleEn: 'Maintenance Requests', subtitle: 'طلبات الصيانة المؤرشفة', subtitleEn: 'Archived maintenance requests', tone: 'text-[#016564]' },
+  { key: 'service-cleaning', source: 'service', title: 'طلبات النظافة', titleEn: 'Cleaning Requests', subtitle: 'طلبات النظافة المؤرشفة', subtitleEn: 'Archived cleaning requests', tone: 'text-[#016564]' },
+  { key: 'service-purchase', source: 'service', title: 'طلبات المشتريات المباشرة', titleEn: 'Direct Purchase Requests', subtitle: 'طلبات الشراء المباشر المؤرشفة', subtitleEn: 'Archived direct purchase requests', tone: 'text-[#8a6a28]' },
+  { key: 'service-other', source: 'service', title: 'طلبات أخرى', titleEn: 'Other Requests', subtitle: 'الطلبات الأخرى المؤرشفة', subtitleEn: 'Other archived requests', tone: 'text-[#6d5b7a]' },
+  { key: 'material-consumable', source: 'materials', title: 'الطلبات المستهلكة', titleEn: 'Consumable Requests', subtitle: 'طلبات المواد الاستهلاكية المصروفة', subtitleEn: 'Issued consumable material requests', tone: 'text-[#498983]' },
+  { key: 'material-returnable', source: 'materials', title: 'الطلبات المسترجعة', titleEn: 'Returnable Requests', subtitle: 'طلبات المواد المسترجعة المكتملة', subtitleEn: 'Completed returnable material requests', tone: 'text-[#498983]' },
+  { key: 'material-custody-returned', source: 'materials', title: 'العهد المعادة', titleEn: 'Returned Custody', subtitle: 'العهد التي أغلقت وتمت إعادتها', subtitleEn: 'Closed and returned custody records', tone: 'text-[#498983]' },
 ];
 
 const PAGE_LIMIT = 5;
@@ -156,6 +111,7 @@ function FolderIcon() {
 export default function ArchivePage() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { language } = useI18n();
   const systemSource: ArchiveSource = pathname?.startsWith('/services')
     ? 'service'
     : 'materials';
@@ -356,7 +312,7 @@ export default function ArchivePage() {
               <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h4l1.8 2H18a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 18 19H6a2.5 2.5 0 0 1-2.5-2.5v-9Z"/>
               </svg>
-              {folder.title}
+              {language === 'en' ? folder.titleEn : folder.title}
               <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${activeFolder === folder.key ? 'bg-white/25 text-white' : 'bg-white/10 text-white/50'}`}>
                 {folderCounts[folder.key] || 0}
               </span>

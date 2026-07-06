@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/hooks/useI18n';
 
 /* ─── Types ─── */
 type PendingRequest = {
@@ -86,6 +87,7 @@ function formatTimeAgo(date: string) {
 ══════════════════════════════════════ */
 export function WarehouseDashboard() {
   const { user } = useAuth();
+  const { language } = useI18n();
   const [data, setData] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -94,7 +96,9 @@ export function WarehouseDashboard() {
   const [lastRefresh, setLastRefresh] = useState(Date.now());
 
   const greetHour = new Date().getHours();
-  const greeting = greetHour < 12 ? 'صباح الخير' : greetHour < 17 ? 'مساء الخير' : 'مساء النور';
+  const greeting = language === 'en'
+    ? (greetHour < 12 ? 'Good morning' : greetHour < 17 ? 'Good afternoon' : 'Good evening')
+    : (greetHour < 12 ? 'صباح الخير' : greetHour < 17 ? 'مساء الخير' : 'مساء النور');
 
   const refresh = () => {
     setLoading(true);

@@ -109,7 +109,13 @@ function formatDate(date?: string | null) {
   }
 }
 
-function statusLabel(status: CustodyStatus) {
+function statusLabel(status: CustodyStatus, lang = 'ar') {
+  if (lang === 'en') {
+    if (status === 'ACTIVE') return 'Active';
+    if (status === 'OVERDUE') return 'Overdue';
+    if (status === 'RETURN_REQUESTED') return 'Return Requested';
+    return 'Returned';
+  }
   if (status === 'ACTIVE') return 'نشطة';
   if (status === 'OVERDUE') return 'متأخرة';
   if (status === 'RETURN_REQUESTED') return 'طُلب إرجاعها';
@@ -399,7 +405,7 @@ export default function CustodyPage() {
                     </div>
                   </div>
                   <span className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ backgroundColor: sBg, color: sColor }}>
-                    {statusLabel(item.status)}
+                    {statusLabel(item.status, language)}
                   </span>
                 </div>
 
@@ -490,7 +496,7 @@ export default function CustodyPage() {
               ['الفئة', selectedItem?.category],
               ['تاريخ الاستلام', formatDate(selectedItem?.assignedDate)],
               ['موعد الإرجاع', formatDate(selectedItem?.dueDate)],
-              ['الحالة', selectedItem ? statusLabel(selectedItem.status) : '—'],
+              [language === 'en' ? 'Status' : 'الحالة', selectedItem ? statusLabel(selectedItem.status, language) : '—'],
             ].map(([k, v]) => (
               <div key={k} className="rounded-[8px] bg-white px-3 py-2">
                 <div className="text-[10px] text-[#B5BDBE]">{k}</div>

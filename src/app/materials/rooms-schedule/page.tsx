@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useI18n } from '@/hooks/useI18n';
 
 type Booking = {
   id: string;
@@ -14,11 +15,17 @@ type Booking = {
   trainerNeed: { code: string; courseName: string; trainerName: string; traineeCount: number; assignedTo?: { fullName: string } | null };
 };
 
-const statusLabel: Record<string, string> = {
+const statusLabelAr: Record<string, string> = {
   REQUESTED: 'بانتظار الاعتماد',
   APPROVED: 'محجوزة',
   ALTERNATIVE_PROPOSED: 'بديل مقترح',
   CANCELLED: 'ملغية',
+};
+const statusLabelEn: Record<string, string> = {
+  REQUESTED: 'Pending Approval',
+  APPROVED: 'Reserved',
+  ALTERNATIVE_PROPOSED: 'Alternative Proposed',
+  CANCELLED: 'Cancelled',
 };
 
 const statusColor: Record<string, { color: string; bg: string }> = {
@@ -34,6 +41,8 @@ function formatDate(value?: string) {
 }
 
 export default function RoomsSchedulePage() {
+  const { language } = useI18n();
+  const statusLabel = language === 'en' ? statusLabelEn : statusLabelAr;
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
