@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/hooks/useI18n';
 
 type RelatedType = 'REQUEST' | 'RETURN' | 'CUSTODY' | 'MAINTENANCE' | 'PURCHASE' | 'OTHER';
 
@@ -47,7 +48,7 @@ function formatDate(date?: string) {
   }
 }
 
-const relatedTypeLabels: Record<RelatedType, string> = {
+const relatedTypeLabelsAr: Record<RelatedType, string> = {
   REQUEST: 'طلب مواد',
   RETURN: 'إرجاع',
   CUSTODY: 'عهدة',
@@ -56,9 +57,20 @@ const relatedTypeLabels: Record<RelatedType, string> = {
   OTHER: 'طلب آخر',
 };
 
+const relatedTypeLabelsEn: Record<RelatedType, string> = {
+  REQUEST: 'Material Request',
+  RETURN: 'Return',
+  CUSTODY: 'Custody',
+  MAINTENANCE: 'Maintenance',
+  PURCHASE: 'Direct Purchase',
+  OTHER: 'Other Request',
+};
+
 export default function MessagesPage() {
   const searchParams = useSearchParams();
   const { user, allUsers } = useAuth();
+  const { language } = useI18n();
+  const relatedTypeLabels = language === 'en' ? relatedTypeLabelsEn : relatedTypeLabelsAr;
   const [activeBox, setActiveBox] = useState<'inbox' | 'sent'>('inbox');
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [stats, setStats] = useState<MessageStats>({ total: 0, unread: 0 });

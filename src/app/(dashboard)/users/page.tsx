@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { type AppLanguage, useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/hooks/useI18n';
 
 type RoleValue = 'manager' | 'warehouse' | 'user';
 type UserStatus = 'active' | 'disabled';
@@ -130,48 +131,45 @@ function getPrimaryRole(roles: RoleValue[]): RoleValue {
   return 'user';
 }
 
-function roleLabelFromRoles(roles: RoleValue[]) {
+function roleLabelFromRoles(roles: RoleValue[], lang: AppLanguage = 'ar') {
   const normalized = normalizeRoles(roles);
-
-  if (normalized.includes('manager') && normalized.includes('warehouse')) {
-    return 'مدير + مسؤول مخزن + موظف';
+  if (lang === 'en') {
+    if (normalized.includes('manager') && normalized.includes('warehouse')) return 'Manager + Warehouse + Employee';
+    if (normalized.includes('manager')) return 'Manager + Employee';
+    if (normalized.includes('warehouse')) return 'Warehouse + Employee';
+    return 'Employee';
   }
-
+  if (normalized.includes('manager') && normalized.includes('warehouse')) return 'مدير + مسؤول مخزن + موظف';
   if (normalized.includes('manager')) return 'مدير + موظف';
   if (normalized.includes('warehouse')) return 'مسؤول مخزن + موظف';
   return 'موظف';
 }
 
-function roleShortBadges(roles: RoleValue[]) {
+function roleShortBadges(roles: RoleValue[], lang: AppLanguage = 'ar') {
   const normalized = normalizeRoles(roles);
   const badges: string[] = [];
-
-  if (normalized.includes('manager')) badges.push('مدير');
-  if (normalized.includes('warehouse')) badges.push('مسؤول مخزن');
-  badges.push('موظف');
-
+  if (normalized.includes('manager')) badges.push(lang === 'en' ? 'Manager' : 'مدير');
+  if (normalized.includes('warehouse')) badges.push(lang === 'en' ? 'Warehouse' : 'مسؤول مخزن');
+  badges.push(lang === 'en' ? 'Employee' : 'موظف');
   return badges;
 }
 
-function roleDescriptionFromRoles(roles: RoleValue[]) {
+function roleDescriptionFromRoles(roles: RoleValue[], lang: AppLanguage = 'ar') {
   const normalized = normalizeRoles(roles);
-
-  if (normalized.includes('manager') && normalized.includes('warehouse')) {
-    return 'مدير + مخزن + موظف';
+  if (lang === 'en') {
+    if (normalized.includes('manager') && normalized.includes('warehouse')) return 'Manager + Warehouse + Employee';
+    if (normalized.includes('manager')) return 'Manager + Employee';
+    if (normalized.includes('warehouse')) return 'Warehouse + Employee';
+    return 'Employee';
   }
-
-  if (normalized.includes('manager')) {
-    return 'مدير + موظف';
-  }
-
-  if (normalized.includes('warehouse')) {
-    return 'مخزن + موظف';
-  }
-
+  if (normalized.includes('manager') && normalized.includes('warehouse')) return 'مدير + مخزن + موظف';
+  if (normalized.includes('manager')) return 'مدير + موظف';
+  if (normalized.includes('warehouse')) return 'مخزن + موظف';
   return 'موظف';
 }
 
-function statusLabel(status: UserStatus) {
+function statusLabel(status: UserStatus, lang: AppLanguage = 'ar') {
+  if (lang === 'en') return status === 'active' ? 'Active' : 'Disabled';
   return status === 'active' ? 'نشط' : 'موقوف';
 }
 
@@ -246,6 +244,7 @@ function InfoPill({ label, value }: { label: string; value: string }) {
 
 export default function UsersPage() {
   const { user, refreshUsers } = useAuth();
+  const { language } = useI18n();
   const isManager = user?.role === 'manager';
 
   const [rows, setRows] = useState<UserRow[]>([]);
@@ -555,14 +554,14 @@ export default function UsersPage() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap gap-2">
-                          {roleShortBadges(row.roles).map((badge) => (
-                            <Badge key={`${row.id}-${badge}`} variant={badge === 'موظف' ? 'success' : 'info'}>
+                          {roleShortBadges(row.roles, language).map((badge) => (
+                            <Badge key={`${row.id}-${badge}`} variant={badge === 'موظف' || badge === 'Employee' ? 'success' : 'info'}>
                               {badge}
                             </Badge>
                           ))}
                         </div>
                         <div className="mt-2 text-xs text-[#61706f]">
-                          {roleDescriptionFromRoles(row.roles)}
+                          {roleDescriptionFromRoles(row.roles, language)}
                         </div>
                       </td>
                       <td className="px-5 py-4">
@@ -625,9 +624,9 @@ export default function UsersPage() {
                       <div className="mt-1 break-all text-sm text-[#61706f]">{row.email}</div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant={statusVariant(row.status)}>{statusLabel(row.status)}</Badge>
-                      {roleShortBadges(row.roles).map((badge) => (
-                        <Badge key={`${row.id}-mobile-${badge}`} variant={badge === 'موظف' ? 'success' : 'info'}>
+                      <Badge variant={statusVariant(row.status)}>{statusLabel(row.status, language)}</Badge>
+                      {roleShortBadges(row.roles, language).map((badge) => (
+                        <Badge key={`${row.id}-mobile-${badge}`} variant={badge === 'موظف' || badge === 'Employee' ? 'success' : 'info'}>
                           {badge}
                         </Badge>
                       ))}
@@ -642,7 +641,7 @@ export default function UsersPage() {
                   </div>
 
                   <div className="rounded-2xl border border-[#edf1f0] bg-[#fbfcfc] px-3 py-3 text-sm text-[#556867]">
-                    {roleDescriptionFromRoles(row.roles)}
+                    {roleDescriptionFromRoles(row.roles, language)}
                   </div>
 
                   <div className="grid gap-2 sm:grid-cols-3">
@@ -711,8 +710,8 @@ export default function UsersPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <InfoPill label="الاسم" value={selected.fullName} />
               <InfoPill label="البريد الإلكتروني" value={selected.email} />
-              <InfoPill label="الصلاحيات" value={roleLabelFromRoles(selected.roles)} />
-              <InfoPill label="الحالة" value={statusLabel(selected.status)} />
+              <InfoPill label={language === 'en' ? 'Permissions' : 'الصلاحيات'} value={roleLabelFromRoles(selected.roles, language)} />
+              <InfoPill label={language === 'en' ? 'Status' : 'الحالة'} value={statusLabel(selected.status, language)} />
               <InfoPill label="لغة الواجهة" value={languageLabel(selected.preferredLanguage)} />
               <InfoPill label="الجوال" value={selected.mobile || '—'} />
               <InfoPill label="التحويلة" value={selected.extension || '—'} />
@@ -725,7 +724,7 @@ export default function UsersPage() {
             </div>
 
             <div className="rounded-2xl border border-[#edf1f0] bg-[#fbfcfc] px-4 py-3 text-sm text-[#556867]">
-              {roleDescriptionFromRoles(selected.roles)}
+              {roleDescriptionFromRoles(selected.roles, language)}
             </div>
 
             <div className="flex flex-col-reverse justify-end gap-2 sm:flex-row">
@@ -843,11 +842,11 @@ export default function UsersPage() {
                 </div>
 
                 <div className="rounded-2xl border border-[#edf1f0] bg-[#fbfcfc] px-4 py-3 text-sm text-[#556867]">
-                  الصلاحية النهائية لهذا المستخدم: {roleLabelFromRoles([
+                  {language === 'en' ? 'Final permissions: ' : 'الصلاحية النهائية لهذا المستخدم: '}{roleLabelFromRoles([
                     'user',
                     ...(form.hasWarehouseRole ? ['warehouse' as const] : []),
                     ...(form.hasManagerRole ? ['manager' as const] : []),
-                  ])}
+                  ], language)}
                 </div>
               </div>
 

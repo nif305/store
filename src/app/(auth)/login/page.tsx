@@ -183,8 +183,8 @@ export default function LoginPage() {
                     </svg>
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[16px] font-extrabold text-[#163e44]">مساعد تجهيز الدورة</span>
-                    <span className="mt-1 block text-[12px] leading-6 text-[#687b79]">دخول مباشر للمدربين لاختيار مستلزمات التدريب</span>
+                    <span className="block text-[16px] font-extrabold text-[#163e44]">{language === 'en' ? 'Training Kit Assistant' : 'مساعد تجهيز الدورة'}</span>
+                    <span className="mt-1 block text-[12px] leading-6 text-[#687b79]">{language === 'en' ? 'Direct access for trainers to select training materials' : 'دخول مباشر للمدربين لاختيار مستلزمات التدريب'}</span>
                   </span>
                 </Link>
               </div>

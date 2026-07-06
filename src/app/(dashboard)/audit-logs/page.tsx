@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/hooks/useI18n';
 
 type AuditRow = {
   id: string; source: string; action: string; entity: string;
@@ -15,9 +16,16 @@ function formatDate(value?: string | null) {
   try { return new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)); }
   catch { return '—'; }
 }
-function formatTimeAgo(date: string) {
+function formatTimeAgo(date: string, lang = 'ar') {
   const diff = Date.now() - new Date(date).getTime();
   const m = Math.floor(diff / 60000);
+  if (lang === 'en') {
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  }
   if (m < 1) return 'الآن';
   if (m < 60) return `منذ ${m} د`;
   const h = Math.floor(m / 60);
@@ -25,7 +33,7 @@ function formatTimeAgo(date: string) {
   return `منذ ${Math.floor(h / 24)} ي`;
 }
 
-const ACTION_LABELS: Record<string, string> = {
+const ACTION_LABELS_AR: Record<string, string> = {
   TRAINER_NEED_CREATED: 'إنشاء احتياج مدرب', TRAINER_NEED_ASSIGNED: 'تعيين منسق',
   TRAINER_NEED_UNASSIGNED: 'إلغاء تعيين', TRAINER_NEED_CONVERTED_TO_REQUEST: 'تحويل لطلب مواد',
   TRAINER_NEED_EXTERNAL_SOURCING: 'تأمين خارجي', TRAINER_NEED_UPDATED: 'تعديل احتياج',
@@ -38,10 +46,29 @@ const ACTION_LABELS: Record<string, string> = {
   UPDATE_USER: 'تعديل مستخدم', TOGGLE_USER_STATUS: 'تغيير حالة مستخدم',
 };
 
-const ENTITY_LABELS: Record<string, string> = {
+const ACTION_LABELS_EN: Record<string, string> = {
+  TRAINER_NEED_CREATED: 'Trainer Need Created', TRAINER_NEED_ASSIGNED: 'Coordinator Assigned',
+  TRAINER_NEED_UNASSIGNED: 'Unassigned', TRAINER_NEED_CONVERTED_TO_REQUEST: 'Converted to Request',
+  TRAINER_NEED_EXTERNAL_SOURCING: 'External Sourcing', TRAINER_NEED_UPDATED: 'Need Updated',
+  TRAINER_NEED_CANCELLED: 'Need Cancelled', CREATE_REQUEST: 'New Request',
+  ISSUE_REQUEST: 'Request Issued', REJECT_REQUEST: 'Request Rejected', CANCEL_REQUEST: 'Request Cancelled',
+  APPROVE_RETURN: 'Return Approved', REJECT_RETURN: 'Return Rejected', CREATE_RETURN: 'Return Created',
+  UPDATE_INVENTORY: 'Inventory Updated', SYNC_INVENTORY: 'Inventory Synced',
+  ASSIGN_CUSTODY: 'Custody Assigned', RETURN_CUSTODY: 'Custody Returned',
+  SYNC_SMART_ALERTS: 'Alerts Synced', CREATE_USER: 'User Created',
+  UPDATE_USER: 'User Updated', TOGGLE_USER_STATUS: 'User Status Changed',
+};
+
+const ENTITY_LABELS_AR: Record<string, string> = {
   TrainerNeed: 'احتياج مدرب', Request: 'طلب مواد', ReturnRequest: 'طلب إرجاع',
   CustodyRecord: 'عهدة', InventoryItem: 'مادة مخزون', Notification: 'إشعار',
   User: 'مستخدم', AuditLog: 'سجل تدقيق',
+};
+
+const ENTITY_LABELS_EN: Record<string, string> = {
+  TrainerNeed: 'Trainer Need', Request: 'Material Request', ReturnRequest: 'Return Request',
+  CustodyRecord: 'Custody Record', InventoryItem: 'Inventory Item', Notification: 'Notification',
+  User: 'User', AuditLog: 'Audit Log',
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -52,8 +79,14 @@ const FIELD_LABELS: Record<string, string> = {
   role: 'الدور', before: 'قبل', after: 'بعد',
 };
 
-function actionLabel(action: string) { return ACTION_LABELS[action] || action.replace(/_/g, ' '); }
-function entityLabel(entity: string) { return ENTITY_LABELS[entity] || entity; }
+function actionLabel(action: string, lang = 'ar') {
+  const labels = lang === 'en' ? ACTION_LABELS_EN : ACTION_LABELS_AR;
+  return labels[action] || action.replace(/_/g, ' ');
+}
+function entityLabel(entity: string, lang = 'ar') {
+  const labels = lang === 'en' ? ENTITY_LABELS_EN : ENTITY_LABELS_AR;
+  return labels[entity] || entity;
+}
 
 function actionColor(action: string): { color: string; bg: string } {
   const a = action.toUpperCase();
@@ -85,6 +118,7 @@ const entityOptions = ['TrainerNeed', 'Request', 'ReturnRequest', 'CustodyRecord
 
 export default function AuditLogsPage() {
   const { user } = useAuth();
+  const { language } = useI18n();
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -203,23 +237,25 @@ export default function AuditLogsPage() {
               const ac = actionColor(row.action);
               const parsed = parseDetails(row.details);
               const userRole = row.user?.roles?.[0] || row.user?.role || '';
-              const roleLabel = userRole === 'MANAGER' ? 'مدير' : userRole === 'WAREHOUSE' ? 'مستودع' : userRole === 'USER' ? 'موظف' : '';
+              const roleLabel = language === 'en'
+                ? (userRole === 'MANAGER' ? 'Manager' : userRole === 'WAREHOUSE' ? 'Warehouse' : userRole === 'USER' ? 'Employee' : '')
+                : (userRole === 'MANAGER' ? 'مدير' : userRole === 'WAREHOUSE' ? 'مستودع' : userRole === 'USER' ? 'موظف' : '');
               return (
                 <div key={row.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-[#FAFAFA]">
                   {/* Action badge */}
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: ac.bg }}>
                     <span className="text-[9px] font-extrabold" style={{ color: ac.color }}>
-                      {actionLabel(row.action).slice(0, 2)}
+                      {actionLabel(row.action, language).slice(0, 2)}
                     </span>
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ backgroundColor: ac.bg, color: ac.color }}>
-                        {actionLabel(row.action)}
+                        {actionLabel(row.action, language)}
                       </span>
                       <span className="rounded-full bg-[#F0F0F0] px-2 py-0.5 text-[10px] text-[#5A5A5A]">
-                        {entityLabel(row.entity)}
+                        {entityLabel(row.entity, language)}
                       </span>
                       {row.entityId && (
                         <span className="font-mono text-[10px] text-[#B5BDBE]">
@@ -235,7 +271,7 @@ export default function AuditLogsPage() {
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-[11px] text-[#B5BDBE]">{formatTimeAgo(row.createdAt)}</span>
+                    <span className="text-[11px] text-[#B5BDBE]">{formatTimeAgo(row.createdAt, language)}</span>
                     <button onClick={() => setSelected(row)}
                       className="rounded-[8px] border border-[#DADBD9] px-2.5 py-1 text-[11px] font-semibold text-[#5A5A5A] hover:bg-[#F9F9F9]">
                       تفاصيل
@@ -265,8 +301,8 @@ export default function AuditLogsPage() {
           <div className="w-full max-w-2xl overflow-hidden rounded-[20px] bg-white shadow-2xl">
             <div className="flex items-center justify-between gap-3 border-b border-[#DADBD9] px-5 py-4">
               <div>
-                <div className="text-[15px] font-extrabold text-[#2A2A2A]">{actionLabel(selected.action)}</div>
-                <div className="text-[11px] text-[#B5BDBE]">{entityLabel(selected.entity)} · {formatDate(selected.createdAt)}</div>
+                <div className="text-[15px] font-extrabold text-[#2A2A2A]">{actionLabel(selected.action, language)}</div>
+                <div className="text-[11px] text-[#B5BDBE]">{entityLabel(selected.entity, language)} · {formatDate(selected.createdAt)}</div>
               </div>
               <button onClick={() => setSelected(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F9F9F9] text-[#5A5A5A] hover:bg-[#DADBD9]">✕</button>
             </div>
@@ -278,7 +314,7 @@ export default function AuditLogsPage() {
                   ['المنفذ', selected.user?.fullName || 'النظام'],
                   ['البريد', selected.user?.email || '—'],
                   ['الدور', selected.user?.roles?.[0] || selected.user?.role || '—'],
-                  ['الكيان', entityLabel(selected.entity)],
+                  [language === 'en' ? 'Entity' : 'الكيان', entityLabel(selected.entity, language)],
                   ['الرمز المرجعي', selected.entityId ? `#${selected.entityId.slice(-12)}` : '—'],
                   ['عنوان IP', selected.ipAddress || '—'],
                 ].map(([k, v]) => (
