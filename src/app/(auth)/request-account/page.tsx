@@ -79,10 +79,16 @@ export default function RequestAccountPage() {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
+        const arabicError: string = data?.error || '';
+        const ERROR_MAP: Record<string, string> = {
+          'يوجد حساب مسجل بهذا البريد الإلكتروني': 'An account with this email already exists.',
+          'الاسم والبريد والجوال وكلمة المرور مطلوبة': 'Name, email, mobile, and password are required.',
+          'يجب قبول التعهد قبل إنشاء الحساب': 'You must accept the undertaking before creating an account.',
+        };
         setError(
           language === 'en'
-            ? data?.error || 'Unable to create the account.'
-            : data?.error || 'تعذر إنشاء الحساب'
+            ? ERROR_MAP[arabicError] || 'Unable to create the account.'
+            : arabicError || 'تعذر إنشاء الحساب'
         );
         return;
       }
