@@ -198,7 +198,7 @@ export default function AuditLogsPage() {
           </div>
           {[
             { value: days, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setDays(v); }, options: [['7','آخر 7 أيام'],['30','آخر 30 يوماً'],['90','آخر 90 يوماً'],['0','كل الفترات']] },
-            { value: entityFilter, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setEntityFilter(v); }, options: [['','كل الكيانات'], ...entityOptions.map((e) => [e, ENTITY_LABELS[e] || e])] },
+            { value: entityFilter, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setEntityFilter(v); }, options: [['', language === 'en' ? 'All entities' : 'كل الكيانات'], ...entityOptions.map((e) => [e, entityLabel(e, language)])] },
             { value: actionFilter, onChange: (v: string) => { setPagination((p) => ({...p,page:1})); setActionFilter(v); }, options: [['','كل الإجراءات'], ...Object.entries(ACTION_LABELS).map(([k,v]) => [k, v])] },
           ].map((sel, i) => (
             <select key={i} value={sel.value} onChange={(e) => sel.onChange(e.target.value)}
