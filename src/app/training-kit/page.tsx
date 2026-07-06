@@ -2,20 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-
-/* ══════════════════════════════════════════
-   COLOR PALETTE
-   Primary  : #2A6364
-   Gold     : #C7B08C
-   Bg       : #F9F9F9
-   Burgundy : #73384B
-   Blue     : #2E6F8E
-   Green    : #4F8F7A
-   Brown    : #6B5A4A
-   LightGray: #DADBD9
-   MidGray  : #B5BDBE
-   DarkGray : #5A5A5A
-══════════════════════════════════════════ */
+import { useI18n } from '@/hooks/useI18n';
 
 /* ─── Types ─── */
 type StoreItem = {
@@ -47,6 +34,8 @@ type SubmittedOrder = {
   rooms: { name: string; type: string; startDate: string; endDate: string }[];
   submittedAt: string;
 };
+
+const ALL = '__all__';
 
 /* ─── Category SVG fallback illustrations ─── */
 function CategoryIllustration({ category, size = 48 }: { category: string; size?: number }) {
@@ -108,19 +97,21 @@ function RoomIllustration({ type }: { type: string }) {
 }
 
 /* ─── Step bar ─── */
-const STEPS = [
-  { key: 'home', label: 'المواد' },
-  { key: 'rooms', label: 'القاعة' },
-  { key: 'orders', label: 'المراجعة' },
-];
 function stepIdx(v: View) { if (v === 'home' || v === 'bundles') return 0; if (v === 'rooms') return 1; if (v === 'orders') return 2; return 3; }
 
 function StepBar({ view }: { view: View }) {
+  const { language } = useI18n();
+  const isEn = language === 'en';
+  const steps = [
+    { key: 'home', label: isEn ? 'Materials' : 'المواد' },
+    { key: 'rooms', label: isEn ? 'Room' : 'القاعة' },
+    { key: 'orders', label: isEn ? 'Review' : 'المراجعة' },
+  ];
   if (view === 'success') return null;
   const cur = stepIdx(view);
   return (
     <div className="flex items-center justify-center gap-0 border-t border-[#DADBD9] bg-white px-4 py-2.5">
-      {STEPS.map((step, i) => (
+      {steps.map((step, i) => (
         <div key={step.key} className="flex items-center">
           <div className={`flex items-center gap-1.5 rounded-full px-3.5 py-1 text-[12px] font-semibold transition-all ${
             i === cur ? 'bg-[#2A6364] text-white' : i < cur ? 'text-[#4F8F7A]' : 'text-[#B5BDBE]'
@@ -128,7 +119,7 @@ function StepBar({ view }: { view: View }) {
             {i < cur && <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 4L6 11l-3-3" /></svg>}
             {step.label}
           </div>
-          {i < STEPS.length - 1 && <div className={`mx-1 h-px w-6 ${i < cur ? 'bg-[#2A6364]' : 'bg-[#DADBD9]'}`} />}
+          {i < steps.length - 1 && <div className={`mx-1 h-px w-6 ${i < cur ? 'bg-[#2A6364]' : 'bg-[#DADBD9]'}`} />}
         </div>
       ))}
     </div>
@@ -141,6 +132,8 @@ function SuggestedModal({ items, onClose, onSave }: {
   onClose: () => void;
   onSave: (items: SuggestedItem[]) => void;
 }) {
+  const { language } = useI18n();
+  const isEn = language === 'en';
   const [local, setLocal] = useState<SuggestedItem[]>(items.length ? items : [{ title: '', quantity: '1', note: '' }]);
   function add() { setLocal((p) => [...p, { title: '', quantity: '1', note: '' }]); }
   function update(i: number, patch: Partial<SuggestedItem>) { setLocal((p) => p.map((s, idx) => idx === i ? { ...s, ...patch } : s)); }
@@ -148,13 +141,13 @@ function SuggestedModal({ items, onClose, onSave }: {
   function save() { onSave(local.filter((s) => s.title.trim())); }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" dir={isEn ? 'ltr' : 'rtl'}>
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg rounded-t-[24px] bg-white p-5 shadow-2xl sm:rounded-[20px]">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-[17px] font-extrabold text-[#2A6364]">مواد مقترحة</h3>
-            <p className="mt-0.5 text-[11px] text-[#B5BDBE]">مواد غير متوفرة في المتجر — سيراجعها المنسق</p>
+            <h3 className="text-[17px] font-extrabold text-[#2A6364]">{isEn ? 'Suggested Items' : 'مواد مقترحة'}</h3>
+            <p className="mt-0.5 text-[11px] text-[#B5BDBE]">{isEn ? 'Items not in store — coordinator will review' : 'مواد غير متوفرة في المتجر — سيراجعها المنسق'}</p>
           </div>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F9F9F9] text-[#5A5A5A] hover:bg-[#DADBD9]">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
@@ -163,9 +156,9 @@ function SuggestedModal({ items, onClose, onSave }: {
         <div className="mt-4 max-h-[50vh] space-y-2 overflow-y-auto">
           {local.map((s, i) => (
             <div key={i} className="grid grid-cols-[1fr_70px_auto] gap-2">
-              <input value={s.title} onChange={(e) => update(i, { title: e.target.value })} placeholder="اسم المادة"
+              <input value={s.title} onChange={(e) => update(i, { title: e.target.value })} placeholder={isEn ? 'Item name' : 'اسم المادة'}
                 className="h-9 rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-3 text-[13px] outline-none placeholder:text-[#B5BDBE] focus:border-[#2A6364]/40 focus:bg-white" />
-              <input type="number" min="1" value={s.quantity} onChange={(e) => update(i, { quantity: e.target.value })} placeholder="الكمية"
+              <input type="number" min="1" value={s.quantity} onChange={(e) => update(i, { quantity: e.target.value })} placeholder={isEn ? 'Qty' : 'الكمية'}
                 className="h-9 rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-2 text-center text-[13px] outline-none focus:border-[#2A6364]/40 focus:bg-white" />
               <button onClick={() => remove(i)} className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-[#DADBD9] text-[#73384B] hover:bg-[#fff0f3]">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
@@ -175,11 +168,11 @@ function SuggestedModal({ items, onClose, onSave }: {
         </div>
         <button onClick={add} className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-[#DADBD9] py-2 text-[12px] text-[#B5BDBE] hover:border-[#C7B08C] hover:text-[#6B5A4A]">
           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-          إضافة مادة
+          {isEn ? 'Add item' : 'إضافة مادة'}
         </button>
         <div className="mt-4 flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-[10px] border border-[#DADBD9] py-2.5 text-[13px] font-semibold text-[#5A5A5A] hover:bg-[#F9F9F9]">إلغاء</button>
-          <button onClick={save} className="flex-1 rounded-[10px] bg-[#2A6364] py-2.5 text-[13px] font-bold text-white hover:bg-[#1e5152]">حفظ المقترحات</button>
+          <button onClick={onClose} className="flex-1 rounded-[10px] border border-[#DADBD9] py-2.5 text-[13px] font-semibold text-[#5A5A5A] hover:bg-[#F9F9F9]">{isEn ? 'Cancel' : 'إلغاء'}</button>
+          <button onClick={save} className="flex-1 rounded-[10px] bg-[#2A6364] py-2.5 text-[13px] font-bold text-white hover:bg-[#1e5152]">{isEn ? 'Save suggestions' : 'حفظ المقترحات'}</button>
         </div>
       </div>
     </div>
@@ -190,13 +183,16 @@ function SuggestedModal({ items, onClose, onSave }: {
    MAIN PAGE
 ═══════════════════════════════════════ */
 export default function TrainingKitPage() {
+  const { language } = useI18n();
+  const isEn = language === 'en';
+
   const [items, setItems] = useState<StoreItem[]>([]);
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [rooms, setRooms] = useState<TrainingRoom[]>([]);
   const [view, setView] = useState<View>('home');
-  const [category, setCategory] = useState('الكل');
+  const [category, setCategory] = useState(ALL);
   const [query, setQuery] = useState('');
-  const [roomType, setRoomType] = useState('الكل');
+  const [roomType, setRoomType] = useState(ALL);
   const [cart, setCart] = useState<Cart>({});
   const [roomSelections, setRoomSelections] = useState<RoomSelection[]>([]);
   const [suggestedItems, setSuggestedItems] = useState<SuggestedItem[]>([]);
@@ -210,7 +206,7 @@ export default function TrainingKitPage() {
   async function loadCatalog() {
     const res = await fetch(`/api/training-store/catalog?t=${Date.now()}`, { cache: 'no-store' });
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json?.error || 'تعذر تحميل مواد التدريب');
+    if (!res.ok) throw new Error(json?.error || (isEn ? 'Failed to load training materials' : 'تعذر تحميل مواد التدريب'));
     setItems(Array.isArray(json.items) ? json.items : []);
     setBundles(Array.isArray(json.bundles) ? json.bundles : []);
   }
@@ -227,7 +223,7 @@ export default function TrainingKitPage() {
 
   useEffect(() => {
     let mounted = true;
-    loadCatalog().catch(() => mounted && setError('تعذر تحميل المواد')).finally(() => mounted && setLoading(false));
+    loadCatalog().catch(() => mounted && setError(isEn ? 'Failed to load materials' : 'تعذر تحميل المواد')).finally(() => mounted && setLoading(false));
     return () => { mounted = false; };
   }, []);
 
@@ -249,16 +245,16 @@ export default function TrainingKitPage() {
     .map(([id, qty]) => ({ item: items.find((r) => r.id === id), quantity: qty }))
     .filter((r) => r.item && r.quantity > 0) as { item: StoreItem; quantity: number }[], [cart, items]);
 
-  const categories = useMemo(() => ['الكل', ...Array.from(new Set(items.map((i) => i.category)))], [items]);
-  const roomTypes = useMemo(() => ['الكل', ...Array.from(new Set(rooms.map((r) => r.type)))], [rooms]);
+  const categories = useMemo(() => [ALL, ...Array.from(new Set(items.map((i) => i.category)))], [items]);
+  const roomTypes = useMemo(() => [ALL, ...Array.from(new Set(rooms.map((r) => r.type)))], [rooms]);
   const selectedRooms = useMemo(() =>
     roomSelections.map((s) => ({ selection: s, room: rooms.find((r) => r.id === s.roomId) || null }))
       .filter((r) => r.room) as { selection: RoomSelection; room: TrainingRoom }[], [rooms, roomSelections]);
-  const visibleRooms = useMemo(() => rooms.filter((r) => roomType === 'الكل' || r.type === roomType), [rooms, roomType]);
+  const visibleRooms = useMemo(() => rooms.filter((r) => roomType === ALL || r.type === roomType), [rooms, roomType]);
   const visibleItems = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return items.filter((item) => {
-      const catOk = category === 'الكل' || item.category === category;
+      const catOk = category === ALL || item.category === category;
       const searchOk = !needle || item.title.toLowerCase().includes(needle) || item.category.toLowerCase().includes(needle);
       return catOk && searchOk;
     });
@@ -302,7 +298,7 @@ export default function TrainingKitPage() {
         }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.error || 'تعذر إرسال الطلبات');
+      if (!res.ok) throw new Error(json?.error || (isEn ? 'Failed to submit request' : 'تعذر إرسال الطلبات'));
       setSubmittedOrder({
         code: json?.data?.code || '',
         trainerName: form.trainerName, courseName: form.courseName,
@@ -310,44 +306,45 @@ export default function TrainingKitPage() {
         items: cartRows.map((r) => ({ title: r.item.title, quantity: r.quantity, unit: r.item.unit, category: r.item.category })),
         suggestedItems: validSuggested,
         rooms: selectedRooms.map(({ selection, room }) => ({ name: room.name, type: room.type, startDate: selection.startDate || form.startDate, endDate: selection.endDate || form.endDate })),
-        submittedAt: new Date().toLocaleString('ar-SA'),
+        submittedAt: new Date().toLocaleString(isEn ? 'en-US' : 'ar-SA'),
       });
       setCart({}); setRoomSelections([]); setSuggestedItems([]);
       await loadCatalog(); await loadRooms();
       setView('success');
     } catch (err: any) {
-      setError(err?.message || 'تعذر إرسال الطلبات');
+      setError(err?.message || (isEn ? 'Failed to submit request' : 'تعذر إرسال الطلبات'));
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[#F9F9F9] text-[#2A2A2A]">
+    <main dir={isEn ? 'ltr' : 'rtl'} className="min-h-screen bg-[#F9F9F9] text-[#2A2A2A]">
       <style>{`@media print { .no-print { display:none!important; } }`}</style>
 
       {/* ─── Header ─── */}
       <header className="no-print sticky top-0 z-30 border-b border-[#DADBD9] bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
         <div className="mx-auto flex max-w-[1480px] items-center gap-3 px-4 py-3">
-          {/* Logo */}
-          <img src="/nauss-gold-logo.png" alt="جامعة نايف" className="h-10 w-auto object-contain" />
+          <img src="/nauss-gold-logo.png" alt="NAUSS" className="h-10 w-auto object-contain" />
           <div className="flex-1 min-w-0">
-            <div className="truncate text-[13px] font-bold text-[#2A6364]">جامعة نايف العربية للعلوم الأمنية</div>
-            <div className="text-[10px] text-[#B5BDBE]">مساعد تجهيز الدورة — وكالة التدريب</div>
+            <div className="truncate text-[13px] font-bold text-[#2A6364]">
+              {isEn ? 'Naif Arab University for Security Sciences' : 'جامعة نايف العربية للعلوم الأمنية'}
+            </div>
+            <div className="text-[10px] text-[#B5BDBE]">
+              {isEn ? 'Training Kit Assistant — Training Agency' : 'مساعد تجهيز الدورة — وكالة التدريب'}
+            </div>
           </div>
 
-          {/* Nav */}
           {view !== 'success' && (
             <nav className="flex items-center gap-1.5">
-              <NavBtn active={view === 'home'} onClick={() => setView('home')}>المواد</NavBtn>
-              <NavBtn active={view === 'bundles'} onClick={() => setView('bundles')}>البكجات</NavBtn>
-              <NavBtn active={view === 'rooms'} onClick={() => setView('rooms')}>القاعات</NavBtn>
-              <NavBtn active={view === 'orders'} onClick={() => setView('orders')} badge={cartCount > 0 ? cartCount : undefined}>طلباتي</NavBtn>
-              {/* Suggested items button */}
+              <NavBtn active={view === 'home'} onClick={() => setView('home')}>{isEn ? 'Materials' : 'المواد'}</NavBtn>
+              <NavBtn active={view === 'bundles'} onClick={() => setView('bundles')}>{isEn ? 'Packages' : 'البكجات'}</NavBtn>
+              <NavBtn active={view === 'rooms'} onClick={() => setView('rooms')}>{isEn ? 'Rooms' : 'القاعات'}</NavBtn>
+              <NavBtn active={view === 'orders'} onClick={() => setView('orders')} badge={cartCount > 0 ? cartCount : undefined}>{isEn ? 'My Orders' : 'طلباتي'}</NavBtn>
               <button onClick={() => setShowSuggestedModal(true)}
                 className="relative flex items-center gap-1.5 rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-3 py-2 text-[12px] font-semibold text-[#6B5A4A] transition hover:border-[#C7B08C] hover:bg-[#fdf8f0]">
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
-                مقترحة
+                {isEn ? 'Suggestions' : 'مقترحة'}
                 {validSuggested.length > 0 && (
                   <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#C7B08C] text-[9px] font-bold text-white">{validSuggested.length}</span>
                 )}
@@ -356,13 +353,12 @@ export default function TrainingKitPage() {
           )}
           <Link href="/login" className="no-print flex items-center gap-1.5 rounded-[8px] border border-[#DADBD9] bg-white px-3 py-2 text-[12px] font-semibold text-[#5A5A5A] hover:border-[#2A6364]/30 hover:text-[#2A6364]">
             <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></svg>
-            دخول
+            {isEn ? 'Login' : 'دخول'}
           </Link>
         </div>
         <StepBar view={view} />
       </header>
 
-      {/* Suggested modal */}
       {showSuggestedModal && (
         <SuggestedModal
           items={suggestedItems}
@@ -371,7 +367,6 @@ export default function TrainingKitPage() {
         />
       )}
 
-      {/* ─── Content ─── */}
       <div className={`mx-auto max-w-[1480px] px-4 py-4 ${view !== 'orders' && view !== 'success' && cartCount > 0 ? 'pb-28' : ''}`}>
         {error && (
           <div className="no-print mb-3 flex items-center gap-2 rounded-[10px] border border-[#73384B]/20 bg-[#fff5f7] px-4 py-2.5 text-[13px] text-[#73384B]">
@@ -388,34 +383,33 @@ export default function TrainingKitPage() {
       </div>
 
       <footer className="no-print mt-8 border-t border-[#DADBD9] py-4 text-center text-[11px] text-[#B5BDBE]">
-        وكالة التدريب — جامعة نايف العربية للعلوم الأمنية © 2026
+        {isEn ? 'Training Agency — Naif Arab University for Security Sciences © 2026' : 'وكالة التدريب — جامعة نايف العربية للعلوم الأمنية © 2026'}
       </footer>
 
-      {/* Checkout float bar — fully white, high contrast */}
       {view !== 'orders' && view !== 'success' && cartCount > 0 && (
         <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t-2 border-[#2A6364]/20 bg-white px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.12)]">
           <div className="mx-auto flex max-w-[680px] items-center justify-between gap-4">
-            {/* Cart summary */}
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2A6364] shadow-[0_2px_8px_rgba(42,99,100,0.35)]">
                 <span className="text-[14px] font-extrabold text-white">{cartCount}</span>
               </div>
-              <div className="text-[13px] font-extrabold text-[#2A2A2A]">{cartRows.length} صنف · {cartCount} وحدة</div>
+              <div className="text-[13px] font-extrabold text-[#2A2A2A]">
+                {isEn ? `${cartRows.length} types · ${cartCount} units` : `${cartRows.length} صنف · ${cartCount} وحدة`}
+              </div>
             </div>
-            {/* Action buttons */}
             <div className="flex items-center gap-2">
               <button onClick={() => setView('rooms')}
                 className="flex items-center gap-1.5 rounded-[10px] border border-[#DADBD9] bg-[#F9F9F9] px-4 py-2.5 text-[13px] font-semibold text-[#5A5A5A] transition hover:border-[#2A6364]/30 hover:bg-[#eef5f4] hover:text-[#2A6364]">
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
                 </svg>
-                اختيار قاعة
+                {isEn ? 'Select Room' : 'اختيار قاعة'}
               </button>
               <button onClick={() => setView('orders')}
                 className="flex items-center gap-2 rounded-[10px] bg-[#2A6364] px-5 py-2.5 text-[13px] font-extrabold text-white shadow-[0_3px_12px_rgba(42,99,100,0.4)] transition hover:bg-[#1e5152]">
-                مراجعة الطلب
+                {isEn ? 'Review Order' : 'مراجعة الطلب'}
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 18l6-6-6-6" />
+                  <path d={isEn ? 'M15 18l-6-6 6-6' : 'M9 18l6-6-6-6'} />
                 </svg>
               </button>
             </div>
@@ -433,18 +427,18 @@ function HomeView({ loading, items, categories, category, query, cart, setCatego
   loading: boolean; items: StoreItem[]; categories: string[]; category: string; query: string;
   cart: Cart; setCategory: (v: string) => void; setQuery: (v: string) => void; setQty: (id: string, qty: number) => void;
 }) {
+  const { language } = useI18n();
+  const isEn = language === 'en';
   return (
     <div className="space-y-3">
-      {/* Search — full row */}
       <div className="relative">
         <svg viewBox="0 0 24 24" fill="none" className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B5BDBE]" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
         </svg>
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="بحث عن مادة أو فئة..."
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={isEn ? 'Search materials or category...' : 'بحث عن مادة أو فئة...'}
           className="h-10 w-full rounded-[10px] border border-[#DADBD9] bg-white pr-10 pl-4 text-[13px] outline-none placeholder:text-[#B5BDBE] focus:border-[#2A6364]/50 focus:shadow-[0_0_0_3px_rgba(42,99,100,0.08)]" />
       </div>
 
-      {/* Category chips — full row */}
       <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
         {categories.map((cat) => (
           <button key={cat} type="button" onClick={() => setCategory(cat)}
@@ -452,11 +446,10 @@ function HomeView({ loading, items, categories, category, query, cart, setCatego
               category === cat
                 ? 'border-[#2A6364] bg-[#2A6364] text-white'
                 : 'border-[#DADBD9] bg-white text-[#5A5A5A] hover:border-[#2A6364]/30 hover:text-[#2A6364]'
-            }`}>{cat}</button>
+            }`}>{cat === ALL ? (isEn ? 'All' : 'الكل') : cat}</button>
         ))}
       </div>
 
-      {/* Grid */}
       {loading ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {[1,2,3,4,5,6,7,8,9,10].map((i) => <div key={i} className="h-56 animate-pulse rounded-[14px] bg-[#DADBD9]" />)}
@@ -464,7 +457,7 @@ function HomeView({ loading, items, categories, category, query, cart, setCatego
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-20">
           <CategoryIllustration category="" size={56} />
-          <p className="text-[13px] text-[#B5BDBE]">لا توجد نتائج</p>
+          <p className="text-[13px] text-[#B5BDBE]">{isEn ? 'No results' : 'لا توجد نتائج'}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -475,17 +468,16 @@ function HomeView({ loading, items, categories, category, query, cart, setCatego
   );
 }
 
-/* ─── Material Card — compact ─── */
+/* ─── Material Card ─── */
 function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; setQty: (id: string, qty: number) => void }) {
+  const { language } = useI18n();
+  const isEn = language === 'en';
   const [imgFailed, setImgFailed] = useState(false);
   const hasImg = !!item.imageUrl && !imgFailed;
   const free = Math.max(item.stockQty - item.temporarilyReservedQty, 0);
-  const stockColor = free === 0 ? '#73384B' : free < 5 ? '#6B5A4A' : '#4F8F7A';
-  const stockLabel = item.isOnDemand ? 'عند الطلب' : free === 0 ? 'نافد' : free < 5 ? 'كمية محدودة' : 'متاح';
 
   return (
     <article className={`group flex flex-col overflow-hidden rounded-[14px] border bg-white transition hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.09)] ${qty > 0 ? 'border-[#2A6364]/40 ring-1 ring-[#2A6364]/15' : 'border-[#DADBD9]'}`}>
-      {/* Image — 4:3 ratio suits most professional product photos */}
       <div className="relative aspect-[4/3] overflow-hidden bg-[#F9F9F9]">
         {hasImg ? (
           <img src={item.imageUrl!} alt={item.title} loading="lazy" className="h-full w-full object-cover object-center" onError={() => setImgFailed(true)} />
@@ -494,19 +486,20 @@ function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; set
             <CategoryIllustration category={item.category} size={56} />
           </div>
         )}
-        {/* Stock pill — shows status + actual number */}
-        <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white shadow-sm" style={{ backgroundColor: stockColor }}>
-          {item.isOnDemand ? 'عند الطلب' : free === 0 ? 'نافد' : (
-            <>{free === item.stockQty ? '✓' : '⚡'} {free} {item.unit} متاح</>
-          )}
+        <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white shadow-sm"
+          style={{ backgroundColor: item.isOnDemand ? '#4F8F7A' : free === 0 ? '#73384B' : free < 5 ? '#6B5A4A' : '#4F8F7A' }}>
+          {item.isOnDemand
+            ? (isEn ? 'On Demand' : 'عند الطلب')
+            : free === 0
+              ? (isEn ? 'Out of Stock' : 'نافد')
+              : <>{free === item.stockQty ? '✓' : '⚡'} {free} {item.unit} {isEn ? 'avail.' : 'متاح'}</>
+          }
         </span>
-        {/* Added badge */}
         {qty > 0 && (
           <span className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#2A6364] text-[10px] font-bold text-white">{qty}</span>
         )}
       </div>
 
-      {/* Info */}
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div>
           <div className="text-[13px] font-bold leading-snug text-[#2A2A2A] line-clamp-2">{item.title}</div>
@@ -522,13 +515,13 @@ function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; set
         {qty > 0 ? (
           <div className="mt-auto flex items-center justify-between gap-2">
             <QuantityControl value={qty} onMinus={() => setQty(item.id, qty - 1)} onPlus={() => setQty(item.id, qty + 1)} onChange={(v) => setQty(item.id, v)} />
-            <button onClick={() => setQty(item.id, 0)} className="text-[11px] text-[#73384B] hover:underline">حذف</button>
+            <button onClick={() => setQty(item.id, 0)} className="text-[11px] text-[#73384B] hover:underline">{isEn ? 'Remove' : 'حذف'}</button>
           </div>
         ) : (
           <button type="button" onClick={() => setQty(item.id, 1)} disabled={free === 0 && !item.isOnDemand}
             className="mt-auto flex h-8 w-full items-center justify-center gap-1.5 rounded-[8px] border border-[#DADBD9] text-[12px] font-semibold text-[#2A6364] transition hover:border-[#2A6364]/40 hover:bg-[#eef5f4] disabled:cursor-not-allowed disabled:opacity-40">
             <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-            {free === 0 && !item.isOnDemand ? 'نافد' : 'إضافة'}
+            {free === 0 && !item.isOnDemand ? (isEn ? 'Out of Stock' : 'نافد') : (isEn ? 'Add' : 'إضافة')}
           </button>
         )}
       </div>
@@ -540,22 +533,25 @@ function MaterialCard({ item, qty, setQty }: { item: StoreItem; qty: number; set
    BUNDLES VIEW
 ═══════════════════════════════════════ */
 function BundlesView({ bundles, traineeCount, onAdd }: { bundles: Bundle[]; traineeCount: number; onAdd: (b: Bundle) => void }) {
+  const { language } = useI18n();
+  const isEn = language === 'en';
   const needsTraineeCount = bundles.some((b) => b.items.some((i) => i.quantityMode === 'PER_TRAINEE')) && traineeCount === 0;
   return (
     <div className="space-y-3">
-      {/* Info bar */}
       {needsTraineeCount && (
         <div className="flex items-center gap-2 rounded-[10px] border border-[#e8ddbf] bg-[#fffbf0] px-3 py-2 text-[11px] text-[#8a6a37]">
           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
-          بعض البكجات تحسب الكمية حسب عدد المتدربين — أدخله في صفحة المراجعة لرؤية الكميات الدقيقة.
+          {isEn
+            ? 'Some packages calculate quantity per trainee — enter trainee count in the Review page to see exact quantities.'
+            : 'بعض البكجات تحسب الكمية حسب عدد المتدربين — أدخله في صفحة المراجعة لرؤية الكميات الدقيقة.'}
         </div>
       )}
     <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {!bundles.length && (
         <div className="col-span-3 rounded-[14px] border border-dashed border-[#DADBD9] bg-white py-16 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#F9F9F9]"><CategoryIllustration category="" size={32} /></div>
-          <p className="text-[13px] font-semibold text-[#5A5A5A]">لا توجد بكجات جاهزة حالياً</p>
-          <p className="mt-1 text-[11px] text-[#B5BDBE]">يمكنك إضافة بكجات من قسم إدارة المخزون في المنصة الرئيسية</p>
+          <p className="text-[13px] font-semibold text-[#5A5A5A]">{isEn ? 'No packages available' : 'لا توجد بكجات جاهزة حالياً'}</p>
+          <p className="mt-1 text-[11px] text-[#B5BDBE]">{isEn ? 'You can add packages from the inventory management section' : 'يمكنك إضافة بكجات من قسم إدارة المخزون في المنصة الرئيسية'}</p>
         </div>
       )}
       {bundles.map((bundle) => (
@@ -567,7 +563,7 @@ function BundlesView({ bundles, traineeCount, onAdd }: { bundles: Bundle[]; trai
             <div>
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-[15px] font-extrabold text-[#2A2A2A]">{bundle.title}</h3>
-                <span className="shrink-0 rounded-full border border-[#DADBD9] px-2 py-0.5 text-[10px] text-[#B5BDBE]">{bundle.items.length} مادة</span>
+                <span className="shrink-0 rounded-full border border-[#DADBD9] px-2 py-0.5 text-[10px] text-[#B5BDBE]">{bundle.items.length} {isEn ? 'items' : 'مادة'}</span>
               </div>
               {bundle.description && <p className="mt-1 text-[12px] leading-5 text-[#B5BDBE]">{bundle.description}</p>}
             </div>
@@ -575,15 +571,15 @@ function BundlesView({ bundles, traineeCount, onAdd }: { bundles: Bundle[]; trai
               {bundle.items.slice(0, 4).map((item) => (
                 <div key={item.catalogItemId} className="flex items-center justify-between rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-3 py-1.5 text-[12px]">
                   <span className="text-[#2A2A2A]">{item.title}</span>
-                  <span className="font-bold text-[#2A6364]">{item.quantityMode === 'PER_TRAINEE' ? `${traineeCount || '؟'}×${item.quantity}` : item.quantity}</span>
+                  <span className="font-bold text-[#2A6364]">{item.quantityMode === 'PER_TRAINEE' ? `${traineeCount || '?'}×${item.quantity}` : item.quantity}</span>
                 </div>
               ))}
-              {bundle.items.length > 4 && <div className="text-center text-[11px] text-[#B5BDBE]">+{bundle.items.length - 4} مواد أخرى</div>}
+              {bundle.items.length > 4 && <div className="text-center text-[11px] text-[#B5BDBE]">+{bundle.items.length - 4} {isEn ? 'more items' : 'مواد أخرى'}</div>}
             </div>
             <button type="button" onClick={() => onAdd(bundle)}
               className="mt-auto flex h-9 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[#2A6364] text-[13px] font-bold text-white hover:bg-[#1e5152]">
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-              إضافة البكج
+              {isEn ? 'Add Package' : 'إضافة البكج'}
             </button>
           </div>
         </article>
@@ -603,6 +599,8 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
   setRoomSelections: React.Dispatch<React.SetStateAction<RoomSelection[]>>;
   goOrders: () => void;
 }) {
+  const { language } = useI18n();
+  const isEn = language === 'en';
   const selectedIds = new Set(roomSelections.map((s) => s.roomId));
   const selRows = roomSelections.map((s) => ({ selection: s, room: rooms.find((r) => r.id === s.roomId) })).filter((r) => r.room) as { selection: RoomSelection; room: TrainingRoom }[];
 
@@ -625,23 +623,26 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
   return (
     <div className="relative grid gap-4 xl:block xl:pl-[390px]">
       <div className="space-y-3">
-        {/* Availability context — show period only when dates are set */}
         {form.startDate && (
           <div className="flex items-center gap-2 rounded-[12px] border border-[#cce6d7] bg-[#eef8f2] px-4 py-2.5 text-[12px] text-[#1e6b4c]">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="9" />
             </svg>
-            <span>التوفر مُحسَّب للفترة: <strong>{form.startDate}</strong> → <strong>{form.endDate || '؟'}</strong>{form.traineeCount && ` · ${form.traineeCount} متدرب`}</span>
+            <span>
+              {isEn ? 'Availability calculated for: ' : 'التوفر مُحسَّب للفترة: '}
+              <strong>{form.startDate}</strong> → <strong>{form.endDate || '?'}</strong>
+              {form.traineeCount && ` · ${form.traineeCount} ${isEn ? 'trainees' : 'متدرب'}`}
+            </span>
           </div>
         )}
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-[18px] font-extrabold text-[#2A2A2A]">القاعات التدريبية</h2>
+          <h2 className="text-[18px] font-extrabold text-[#2A2A2A]">{isEn ? 'Training Rooms' : 'القاعات التدريبية'}</h2>
           <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
             {roomTypes.map((t) => (
               <button key={t} onClick={() => setRoomType(t)}
                 className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition ${roomType === t ? 'border-[#2A6364] bg-[#2A6364] text-white' : 'border-[#DADBD9] bg-white text-[#5A5A5A] hover:border-[#2A6364]/30'}`}>
-                {t}
+                {t === ALL ? (isEn ? 'All' : 'الكل') : t}
               </button>
             ))}
           </div>
@@ -661,18 +662,16 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
                       <div className="mt-1.5 space-y-1">
                         <div className="text-[11px] text-[#B5BDBE]">{room.type}</div>
                         <div className="flex items-center gap-2">
-                          {/* السعة الأساسية */}
                           <span className="flex items-center gap-1 rounded-full border border-[#DADBD9] px-2 py-0.5 text-[10px] font-semibold text-[#2A6364]">
                             <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                             {room.capacity}
-                            <span className="text-[#B5BDBE] font-normal">أساسي</span>
+                            <span className="text-[#B5BDBE] font-normal">{isEn ? 'basic' : 'أساسي'}</span>
                           </span>
-                          {/* السعة القصوى — فقط إذا كانت مختلفة */}
                           {room.maxCapacity && room.maxCapacity !== room.capacity && (
                             <span className="flex items-center gap-1 rounded-full border border-[#e8ddbf] bg-[#fffbf0] px-2 py-0.5 text-[10px] font-semibold text-[#8a6a37]">
                               <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                               {room.maxCapacity}
-                              <span className="text-[#b8a278] font-normal">قصوى</span>
+                              <span className="text-[#b8a278] font-normal">{isEn ? 'max' : 'قصوى'}</span>
                             </span>
                           )}
                         </div>
@@ -680,11 +679,13 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${room.isAvailable ? 'bg-[#eef8f2] text-[#4F8F7A]' : 'bg-[#fff0f3] text-[#73384B]'}`}>
-                        {room.isAvailable ? '✓ متاحة للفترة' : '✕ محجوزة للفترة'}
+                        {room.isAvailable
+                          ? (isEn ? '✓ Available' : '✓ متاحة للفترة')
+                          : (isEn ? '✕ Booked' : '✕ محجوزة للفترة')}
                       </span>
                       {!room.capacityFit && form.traineeCount && (
                         <span className="rounded-full bg-[#fffbf0] px-2 py-0.5 text-[9px] font-bold text-[#8a6a37]">
-                          السعة أقل من عدد المتدربين
+                          {isEn ? 'Capacity below trainee count' : 'السعة أقل من عدد المتدربين'}
                         </span>
                       )}
                     </div>
@@ -696,7 +697,11 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
                   )}
                   <button onClick={() => select(room)} disabled={!room.isAvailable}
                     className={`mt-3 h-8 w-full rounded-[8px] text-[12px] font-bold transition disabled:opacity-40 ${sel ? 'border border-[#2A6364] bg-white text-[#2A6364]' : room.isAvailable ? 'bg-[#2A6364] text-white hover:bg-[#1e5152]' : 'bg-[#DADBD9] text-[#B5BDBE] cursor-not-allowed'}`}>
-                    {sel ? '✓ محددة' : room.isAvailable ? 'اختيار' : 'محجوزة في هذه الفترة'}
+                    {sel
+                      ? (isEn ? '✓ Selected' : '✓ محددة')
+                      : room.isAvailable
+                        ? (isEn ? 'Select' : 'اختيار')
+                        : (isEn ? 'Booked this period' : 'محجوزة في هذه الفترة')}
                   </button>
                 </div>
               </article>
@@ -705,28 +710,29 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
         </div>
       </div>
 
-      {/* Side panel */}
       <aside className="rounded-[14px] border border-[#DADBD9] bg-white p-4 xl:fixed xl:left-[max(1rem,calc((100vw-1480px)/2+1rem))] xl:top-[108px] xl:z-20 xl:w-[375px] xl:max-h-[calc(100vh-120px)] xl:overflow-y-auto">
         <div className="flex items-center justify-between">
-          <h3 className="text-[15px] font-extrabold text-[#2A2A2A]">القاعات المختارة</h3>
-          {selRows.length > 0 && <button onClick={() => setRoomSelections([])} className="text-[11px] text-[#73384B] hover:underline">مسح الكل</button>}
+          <h3 className="text-[15px] font-extrabold text-[#2A2A2A]">{isEn ? 'Selected Rooms' : 'القاعات المختارة'}</h3>
+          {selRows.length > 0 && <button onClick={() => setRoomSelections([])} className="text-[11px] text-[#73384B] hover:underline">{isEn ? 'Clear All' : 'مسح الكل'}</button>}
         </div>
         <div className="mt-3 space-y-2">
           {selRows.length === 0 ? (
-            <div className="rounded-[10px] border border-dashed border-[#DADBD9] py-6 text-center text-[12px] text-[#B5BDBE]">اختر قاعة من البطاقات</div>
+            <div className="rounded-[10px] border border-dashed border-[#DADBD9] py-6 text-center text-[12px] text-[#B5BDBE]">
+              {isEn ? 'Select a room from the cards' : 'اختر قاعة من البطاقات'}
+            </div>
           ) : selRows.map(({ selection, room }) => (
             <div key={room.id} className="rounded-[10px] border border-[#DADBD9] bg-[#F9F9F9] p-3">
               <div className="flex items-center justify-between">
                 <div className="text-[12px] font-bold text-[#2A2A2A]">{room.name}</div>
-                <button onClick={() => setRoomSelections((p) => p.filter((r) => r.roomId !== room.id))} className="text-[11px] text-[#73384B]">حذف</button>
+                <button onClick={() => setRoomSelections((p) => p.filter((r) => r.roomId !== room.id))} className="text-[11px] text-[#73384B]">{isEn ? 'Remove' : 'حذف'}</button>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-1.5">
                 <label className="block text-[10px] text-[#B5BDBE]">
-                  من
+                  {isEn ? 'From' : 'من'}
                   <input type="date" value={selection.startDate} onChange={(e) => updateSel(room.id, { startDate: e.target.value })} className="mt-0.5 h-7 w-full rounded-[6px] border border-[#DADBD9] bg-white px-2 text-[11px] outline-none focus:border-[#2A6364]/40" />
                 </label>
                 <label className="block text-[10px] text-[#B5BDBE]">
-                  إلى
+                  {isEn ? 'To' : 'إلى'}
                   <input type="date" value={selection.endDate} min={selection.startDate || undefined} onChange={(e) => updateSel(room.id, { endDate: e.target.value })} className="mt-0.5 h-7 w-full rounded-[6px] border border-[#DADBD9] bg-white px-2 text-[11px] outline-none focus:border-[#2A6364]/40" />
                 </label>
               </div>
@@ -734,8 +740,8 @@ function RoomsView({ rooms, roomTypes, roomType, roomSelections, form, setRoomTy
           ))}
         </div>
         <button onClick={goOrders} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[10px] bg-[#2A6364] text-[13px] font-bold text-white hover:bg-[#1e5152]">
-          متابعة المراجعة
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+          {isEn ? 'Continue to Review' : 'متابعة المراجعة'}
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d={isEn ? 'M15 18l-6-6 6-6' : 'M9 18l6-6-6-6'} /></svg>
         </button>
       </aside>
     </div>
@@ -755,41 +761,39 @@ function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, se
   submitting: boolean; onSubmit: (e: React.FormEvent) => void;
   goHome: () => void; goRooms: () => void; onOpenSuggested: () => void;
 }) {
+  const { language } = useI18n();
+  const isEn = language === 'en';
   const totalUnits = cartRows.reduce((s, r) => s + r.quantity, 0);
   const isReady = form.trainerName && form.courseName && form.startDate && form.endDate && (cartRows.length > 0 || suggestedItems.length > 0);
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-
-      {/* ── Course info — distinctive teal background ── */}
       <section className="overflow-hidden rounded-[16px] border border-[#2A6364]/20 bg-[#eef5f4]">
         <div className="flex items-center gap-2 border-b border-[#2A6364]/15 bg-[#2A6364] px-4 py-2.5">
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" /><path d="M6 12v5c3.5 3 8.5 3 12 0v-5" />
           </svg>
-          <h2 className="text-[14px] font-extrabold text-white">بيانات الدورة التدريبية</h2>
-          <span className="mr-auto text-[11px] text-white/60">الحقول المُعلّمة بـ * مطلوبة</span>
+          <h2 className="text-[14px] font-extrabold text-white">{isEn ? 'Training Course Details' : 'بيانات الدورة التدريبية'}</h2>
+          <span className="mr-auto text-[11px] text-white/60">{isEn ? 'Fields marked * are required' : 'الحقول المُعلّمة بـ * مطلوبة'}</span>
         </div>
         <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
-          <Field label="اسم المدرب *" value={form.trainerName} onChange={(v) => setForm((p) => ({ ...p, trainerName: v }))} required className="xl:col-span-2" />
-          <Field label="اسم الدورة *" value={form.courseName} onChange={(v) => setForm((p) => ({ ...p, courseName: v }))} required className="xl:col-span-2" />
-          <Field label="عدد المتدربين" type="number" value={form.traineeCount} required={false} onChange={(v) => setForm((p) => ({ ...p, traineeCount: v }))} />
-          <Field label="تاريخ البداية *" type="date" value={form.startDate} onChange={(v) => setForm((p) => ({ ...p, startDate: v }))} />
-          <Field label="تاريخ النهاية *" type="date" value={form.endDate} onChange={(v) => setForm((p) => ({ ...p, endDate: v }))} />
+          <Field label={isEn ? 'Trainer Name *' : 'اسم المدرب *'} value={form.trainerName} onChange={(v) => setForm((p) => ({ ...p, trainerName: v }))} required className="xl:col-span-2" />
+          <Field label={isEn ? 'Course Name *' : 'اسم الدورة *'} value={form.courseName} onChange={(v) => setForm((p) => ({ ...p, courseName: v }))} required className="xl:col-span-2" />
+          <Field label={isEn ? 'Trainee Count' : 'عدد المتدربين'} type="number" value={form.traineeCount} required={false} onChange={(v) => setForm((p) => ({ ...p, traineeCount: v }))} />
+          <Field label={isEn ? 'Start Date *' : 'تاريخ البداية *'} type="date" value={form.startDate} onChange={(v) => setForm((p) => ({ ...p, startDate: v }))} />
+          <Field label={isEn ? 'End Date *' : 'تاريخ النهاية *'} type="date" value={form.endDate} onChange={(v) => setForm((p) => ({ ...p, endDate: v }))} />
         </div>
       </section>
 
-      {/* ── 3 columns: Materials | Room | Summary ── */}
       <div className="grid gap-4 xl:grid-cols-[1fr_260px_260px]">
-
         {/* Column 1 — Materials */}
         <section className="rounded-[14px] border border-[#DADBD9] bg-white">
           <div className="flex items-center justify-between border-b border-[#DADBD9] px-4 py-3">
             <h3 className="text-[14px] font-extrabold text-[#2A2A2A]">
-              المواد المطلوبة
-              <span className="mr-1.5 text-[12px] font-normal text-[#B5BDBE]">{cartRows.length} صنف</span>
+              {isEn ? 'Required Materials' : 'المواد المطلوبة'}
+              <span className="mr-1.5 text-[12px] font-normal text-[#B5BDBE]">{cartRows.length} {isEn ? 'items' : 'صنف'}</span>
             </h3>
-            <button type="button" onClick={goHome} className="text-[12px] font-semibold text-[#2A6364] hover:underline">+ إضافة</button>
+            <button type="button" onClick={goHome} className="text-[12px] font-semibold text-[#2A6364] hover:underline">+ {isEn ? 'Add' : 'إضافة'}</button>
           </div>
           {cartRows.length ? (
             <div className="divide-y divide-[#f5f5f5]">
@@ -804,7 +808,9 @@ function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, se
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13px] font-semibold text-[#2A2A2A]">{item.title}</div>
-                      <div className="text-[10px] text-[#B5BDBE]">{item.isOnDemand ? 'عند الطلب' : `متاح: ${free}`}</div>
+                      <div className="text-[10px] text-[#B5BDBE]">
+                        {item.isOnDemand ? (isEn ? 'On Demand' : 'عند الطلب') : `${isEn ? 'Avail.' : 'متاح:'} ${free}`}
+                      </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <QuantityControl value={quantity} onMinus={() => setQty(item.id, quantity - 1)} onPlus={() => setQty(item.id, quantity + 1)} onChange={(v) => setQty(item.id, v)} />
@@ -817,15 +823,15 @@ function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, se
           ) : (
             <div className="flex flex-col items-center gap-2 py-10">
               <CategoryIllustration category="" size={40} />
-              <p className="text-[12px] text-[#B5BDBE]">لا توجد مواد</p>
-              <button type="button" onClick={goHome} className="rounded-[8px] bg-[#2A6364] px-3 py-1.5 text-[12px] font-bold text-white">تصفح المواد</button>
+              <p className="text-[12px] text-[#B5BDBE]">{isEn ? 'No materials' : 'لا توجد مواد'}</p>
+              <button type="button" onClick={goHome} className="rounded-[8px] bg-[#2A6364] px-3 py-1.5 text-[12px] font-bold text-white">{isEn ? 'Browse Materials' : 'تصفح المواد'}</button>
             </div>
           )}
           {suggestedItems.length > 0 && (
             <div className="border-t border-[#DADBD9] px-4 py-3">
               <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-[11px] font-bold text-[#6B5A4A]">مقترحة ({suggestedItems.length})</span>
-                <button type="button" onClick={onOpenSuggested} className="text-[10px] text-[#2A6364] underline">تعديل</button>
+                <span className="text-[11px] font-bold text-[#6B5A4A]">{isEn ? 'Suggested' : 'مقترحة'} ({suggestedItems.length})</span>
+                <button type="button" onClick={onOpenSuggested} className="text-[10px] text-[#2A6364] underline">{isEn ? 'Edit' : 'تعديل'}</button>
               </div>
               {suggestedItems.map((s, i) => (
                 <div key={i} className="flex items-center justify-between text-[11px] text-[#5A5A5A]">
@@ -840,9 +846,9 @@ function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, se
         {/* Column 2 — Room */}
         <section className="rounded-[14px] border border-[#DADBD9] bg-white">
           <div className="flex items-center justify-between border-b border-[#DADBD9] px-4 py-3">
-            <h3 className="text-[14px] font-extrabold text-[#2A2A2A]">القاعة المطلوبة</h3>
+            <h3 className="text-[14px] font-extrabold text-[#2A2A2A]">{isEn ? 'Required Room' : 'القاعة المطلوبة'}</h3>
             <button type="button" onClick={goRooms} className="text-[12px] font-semibold text-[#2A6364] hover:underline">
-              {selectedRooms.length ? 'تعديل' : '+ اختيار'}
+              {selectedRooms.length ? (isEn ? 'Edit' : 'تعديل') : `+ ${isEn ? 'Select' : 'اختيار'}`}
             </button>
           </div>
           {selectedRooms.length ? (
@@ -881,11 +887,11 @@ function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, se
               <svg viewBox="0 0 24 24" fill="none" className="h-10 w-10 text-[#DADBD9]" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 21v-4h6v4" />
               </svg>
-              <p className="text-[12px] text-[#B5BDBE]">لم تختر قاعة بعد</p>
-              <p className="text-[10px] text-[#DADBD9]">اختيارية — يمكن الإرسال بدونها</p>
+              <p className="text-[12px] text-[#B5BDBE]">{isEn ? 'No room selected' : 'لم تختر قاعة بعد'}</p>
+              <p className="text-[10px] text-[#DADBD9]">{isEn ? 'Optional — can submit without it' : 'اختيارية — يمكن الإرسال بدونها'}</p>
               <button type="button" onClick={goRooms}
                 className="mt-1 rounded-[8px] border border-[#DADBD9] px-3 py-1.5 text-[12px] font-semibold text-[#2A6364] hover:border-[#2A6364]/40 hover:bg-[#eef5f4]">
-                اختيار قاعة
+                {isEn ? 'Select Room' : 'اختيار قاعة'}
               </button>
             </div>
           )}
@@ -894,36 +900,38 @@ function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, se
         {/* Column 3 — Summary + Submit */}
         <aside className="rounded-[14px] border border-[#DADBD9] bg-white xl:sticky xl:top-[108px] xl:self-start">
           <div className="border-b border-[#DADBD9] px-4 py-3">
-            <h3 className="text-[14px] font-extrabold text-[#2A2A2A]">ملخص الطلب</h3>
+            <h3 className="text-[14px] font-extrabold text-[#2A2A2A]">{isEn ? 'Order Summary' : 'ملخص الطلب'}</h3>
           </div>
           <div className="space-y-2 px-4 py-3">
-            <SummaryRow label="المواد" value={`${cartRows.length} صنف`} />
-            <SummaryRow label="الوحدات" value={`${totalUnits}`} />
-            {suggestedItems.length > 0 && <SummaryRow label="مقترحة" value={`${suggestedItems.length}`} />}
-            <SummaryRow label="القاعة" value={selectedRooms.length > 0 ? selectedRooms[0].room.name : 'غير محددة'} />
-            {form.trainerName && <SummaryRow label="المدرب" value={form.trainerName} />}
-            {form.courseName && <SummaryRow label="الدورة" value={form.courseName} />}
+            <SummaryRow label={isEn ? 'Materials' : 'المواد'} value={`${cartRows.length} ${isEn ? 'items' : 'صنف'}`} />
+            <SummaryRow label={isEn ? 'Units' : 'الوحدات'} value={`${totalUnits}`} />
+            {suggestedItems.length > 0 && <SummaryRow label={isEn ? 'Suggested' : 'مقترحة'} value={`${suggestedItems.length}`} />}
+            <SummaryRow label={isEn ? 'Room' : 'القاعة'} value={selectedRooms.length > 0 ? selectedRooms[0].room.name : (isEn ? 'Not selected' : 'غير محددة')} />
+            {form.trainerName && <SummaryRow label={isEn ? 'Trainer' : 'المدرب'} value={form.trainerName} />}
+            {form.courseName && <SummaryRow label={isEn ? 'Course' : 'الدورة'} value={form.courseName} />}
           </div>
           <div className="px-4 pb-4 pt-2">
             {!isReady && (
               <div className="mb-3 rounded-[8px] border border-[#e8ddbf] bg-[#fffbf0] px-3 py-2 text-[11px] text-[#8a6a37]">
-                أكمل بيانات الدورة والمواد للإرسال
+                {isEn ? 'Complete course info and materials to submit' : 'أكمل بيانات الدورة والمواد للإرسال'}
               </div>
             )}
             <button type="submit" disabled={submitting || !isReady}
               className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-[#2A6364] text-[15px] font-extrabold text-white shadow-[0_4px_18px_rgba(42,99,100,0.35)] transition hover:bg-[#1e5152] disabled:cursor-not-allowed disabled:opacity-40">
               {submitting ? (
-                <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> جاري الإرسال...</>
+                <><div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> {isEn ? 'Sending...' : 'جاري الإرسال...'}</>
               ) : (
                 <>
                   <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                   </svg>
-                  إرسال الطلب
+                  {isEn ? 'Submit Request' : 'إرسال الطلب'}
                 </>
               )}
             </button>
-            <p className="mt-2 text-center text-[10px] text-[#B5BDBE]">تاريخ النهاية = موعد إرجاع المواد المسترجعة</p>
+            <p className="mt-2 text-center text-[10px] text-[#B5BDBE]">
+              {isEn ? 'End date = return date for borrowed materials' : 'تاريخ النهاية = موعد إرجاع المواد المسترجعة'}
+            </p>
           </div>
         </aside>
       </div>
@@ -935,43 +943,68 @@ function OrdersView({ form, setForm, cartRows, selectedRooms, suggestedItems, se
    SUCCESS VIEW
 ═══════════════════════════════════════ */
 function SuccessView({ order, onReset }: { order: SubmittedOrder; onReset: () => void }) {
+  const { language } = useI18n();
+  const isEn = language === 'en';
   const [copied, setCopied] = useState(false);
 
   const lmsText = [
-    `طلب تجهيز دورة تدريبية`, `رقم الطلب: ${order.code}`, `─────────────────────`,
-    `المدرب: ${order.trainerName}`, `الدورة: ${order.courseName}`,
-    `التاريخ: ${order.startDate} إلى ${order.endDate}`,
-    order.traineeCount > 0 ? `عدد المتدربين: ${order.traineeCount}` : '',
-    ``, `المواد المطلوبة:`,
+    isEn ? `Training Course Request` : `طلب تجهيز دورة تدريبية`,
+    isEn ? `Order #: ${order.code}` : `رقم الطلب: ${order.code}`,
+    `─────────────────────`,
+    isEn ? `Trainer: ${order.trainerName}` : `المدرب: ${order.trainerName}`,
+    isEn ? `Course: ${order.courseName}` : `الدورة: ${order.courseName}`,
+    isEn ? `Date: ${order.startDate} to ${order.endDate}` : `التاريخ: ${order.startDate} إلى ${order.endDate}`,
+    order.traineeCount > 0 ? (isEn ? `Trainees: ${order.traineeCount}` : `عدد المتدربين: ${order.traineeCount}`) : '',
+    ``,
+    isEn ? `Required Materials:` : `المواد المطلوبة:`,
     ...order.items.map((i) => `• ${i.title}  ×${i.quantity} ${i.unit}`),
-    ...(order.suggestedItems?.length ? [``, `مواد مقترحة:`, ...order.suggestedItems.map((s) => `◇ ${s.title} ×${s.quantity}${s.note ? ` — ${s.note}` : ''}`)] : []),
-    ...(order.rooms.length ? [``, `القاعات:`, ...order.rooms.map((r) => `• ${r.name} — ${r.startDate} → ${r.endDate}`)] : []),
-    ``, `تاريخ الإرسال: ${order.submittedAt}`,
-    `─────────────────────`, `مساعد تجهيز الدورة — وكالة التدريب، جامعة نايف العربية للعلوم الأمنية`,
+    ...(order.suggestedItems?.length ? [
+      ``,
+      isEn ? `Suggested Items:` : `مواد مقترحة:`,
+      ...order.suggestedItems.map((s) => `◇ ${s.title} ×${s.quantity}${s.note ? ` — ${s.note}` : ''}`)
+    ] : []),
+    ...(order.rooms.length ? [
+      ``,
+      isEn ? `Rooms:` : `القاعات:`,
+      ...order.rooms.map((r) => `• ${r.name} — ${r.startDate} → ${r.endDate}`)
+    ] : []),
+    ``,
+    isEn ? `Submitted: ${order.submittedAt}` : `تاريخ الإرسال: ${order.submittedAt}`,
+    `─────────────────────`,
+    isEn
+      ? `Training Kit Assistant — Training Agency, Naif Arab University for Security Sciences`
+      : `مساعد تجهيز الدورة — وكالة التدريب، جامعة نايف العربية للعلوم الأمنية`,
   ].filter(Boolean).join('\n');
 
   return (
     <div className="mx-auto max-w-[680px]">
-      {/* Success header */}
       <div className="no-print mb-5 text-center">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#eef5f4]">
           <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-[#4F8F7A]" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
         </div>
-        <h2 className="text-[22px] font-extrabold text-[#2A2A2A]">تم إرسال الطلب بنجاح</h2>
+        <h2 className="text-[22px] font-extrabold text-[#2A2A2A]">{isEn ? 'Request Submitted Successfully' : 'تم إرسال الطلب بنجاح'}</h2>
       </div>
 
-      {/* Summary card */}
       <div className="rounded-[18px] border border-[#DADBD9] bg-white overflow-hidden">
-        {/* Code bar */}
         <div className="flex items-center justify-between bg-[#2A6364] px-5 py-4">
-          <div><div className="text-[10px] font-semibold text-white/60">رقم الطلب</div><div className="mt-0.5 text-[20px] font-extrabold tracking-wider text-white">{order.code}</div></div>
-          <div className="text-right"><div className="text-[10px] text-white/60">تاريخ الإرسال</div><div className="mt-0.5 text-[12px] font-semibold text-white">{order.submittedAt}</div></div>
+          <div>
+            <div className="text-[10px] font-semibold text-white/60">{isEn ? 'Order #' : 'رقم الطلب'}</div>
+            <div className="mt-0.5 text-[20px] font-extrabold tracking-wider text-white">{order.code}</div>
+          </div>
+          <div className={isEn ? 'text-left' : 'text-right'}>
+            <div className="text-[10px] text-white/60">{isEn ? 'Submitted At' : 'تاريخ الإرسال'}</div>
+            <div className="mt-0.5 text-[12px] font-semibold text-white">{order.submittedAt}</div>
+          </div>
         </div>
 
         <div className="p-5 space-y-4">
-          {/* Info grid */}
           <div className="grid gap-2 sm:grid-cols-2">
-            {[['المدرب', order.trainerName], ['الدورة', order.courseName], ['الفترة', `${order.startDate} — ${order.endDate}`], ...(order.traineeCount > 0 ? [['المتدربون', `${order.traineeCount} متدرب`]] : [])].map(([l, v]) => (
+            {[
+              [isEn ? 'Trainer' : 'المدرب', order.trainerName],
+              [isEn ? 'Course' : 'الدورة', order.courseName],
+              [isEn ? 'Period' : 'الفترة', `${order.startDate} — ${order.endDate}`],
+              ...(order.traineeCount > 0 ? [[isEn ? 'Trainees' : 'المتدربون', `${order.traineeCount} ${isEn ? 'trainees' : 'متدرب'}`]] : [])
+            ].map(([l, v]) => (
               <div key={String(l)} className="rounded-[10px] border border-[#DADBD9] bg-[#F9F9F9] px-3 py-2">
                 <div className="text-[10px] text-[#B5BDBE]">{l}</div>
                 <div className="mt-0.5 text-[13px] font-bold text-[#2A2A2A]">{v}</div>
@@ -979,25 +1012,33 @@ function SuccessView({ order, onReset }: { order: SubmittedOrder; onReset: () =>
             ))}
           </div>
 
-          {/* Materials table */}
           <div>
-            <h3 className="mb-2 text-[13px] font-extrabold text-[#2A2A2A]">المواد المطلوبة</h3>
+            <h3 className="mb-2 text-[13px] font-extrabold text-[#2A2A2A]">{isEn ? 'Required Materials' : 'المواد المطلوبة'}</h3>
             <div className="overflow-hidden rounded-[10px] border border-[#DADBD9]">
               <table className="w-full text-[12px]">
-                <thead><tr className="bg-[#F9F9F9] text-[#5A5A5A]"><th className="px-3 py-2 text-right font-bold">المادة</th><th className="px-3 py-2 text-center font-bold">الكمية</th><th className="px-3 py-2 text-right font-bold">الوحدة</th></tr></thead>
+                <thead>
+                  <tr className="bg-[#F9F9F9] text-[#5A5A5A]">
+                    <th className="px-3 py-2 text-right font-bold">{isEn ? 'Item' : 'المادة'}</th>
+                    <th className="px-3 py-2 text-center font-bold">{isEn ? 'Qty' : 'الكمية'}</th>
+                    <th className="px-3 py-2 text-right font-bold">{isEn ? 'Unit' : 'الوحدة'}</th>
+                  </tr>
+                </thead>
                 <tbody className="divide-y divide-[#F9F9F9]">
                   {order.items.map((item, i) => (
-                    <tr key={i}><td className="px-3 py-2 font-medium text-[#2A2A2A]">{item.title}</td><td className="px-3 py-2 text-center font-bold text-[#2A6364]">{item.quantity}</td><td className="px-3 py-2 text-[#B5BDBE]">{item.unit}</td></tr>
+                    <tr key={i}>
+                      <td className="px-3 py-2 font-medium text-[#2A2A2A]">{item.title}</td>
+                      <td className="px-3 py-2 text-center font-bold text-[#2A6364]">{item.quantity}</td>
+                      <td className="px-3 py-2 text-[#B5BDBE]">{item.unit}</td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Suggested items */}
           {order.suggestedItems?.length > 0 && (
             <div>
-              <h3 className="mb-2 text-[13px] font-extrabold text-[#6B5A4A]">مواد مقترحة</h3>
+              <h3 className="mb-2 text-[13px] font-extrabold text-[#6B5A4A]">{isEn ? 'Suggested Items' : 'مواد مقترحة'}</h3>
               {order.suggestedItems.map((s, i) => (
                 <div key={i} className="flex items-center justify-between rounded-[8px] border border-[#DADBD9] bg-[#fdf8f0] px-3 py-2 text-[12px] mb-1">
                   <span className="font-medium text-[#6B5A4A]">{s.title}{s.note ? ` — ${s.note}` : ''}</span>
@@ -1007,10 +1048,9 @@ function SuccessView({ order, onReset }: { order: SubmittedOrder; onReset: () =>
             </div>
           )}
 
-          {/* Rooms */}
           {order.rooms.length > 0 && (
             <div>
-              <h3 className="mb-2 text-[13px] font-extrabold text-[#2A2A2A]">القاعات</h3>
+              <h3 className="mb-2 text-[13px] font-extrabold text-[#2A2A2A]">{isEn ? 'Rooms' : 'القاعات'}</h3>
               {order.rooms.map((r, i) => (
                 <div key={i} className="flex items-center gap-2 rounded-[8px] border border-[#DADBD9] bg-[#F9F9F9] px-3 py-2 text-[12px] mb-1">
                   <span className="font-bold text-[#2A2A2A] flex-1">{r.name}</span>
@@ -1020,30 +1060,32 @@ function SuccessView({ order, onReset }: { order: SubmittedOrder; onReset: () =>
             </div>
           )}
 
-          {/* LMS note */}
           <div className="no-print rounded-[10px] border border-[#C7B08C]/30 bg-[#fdf8f0] px-4 py-3">
-            <p className="text-[11px] font-bold text-[#6B5A4A]">نقل إلى منصة التدريب LMS</p>
-            <p className="mt-0.5 text-[10px] leading-4 text-[#B5BDBE]">انسخ الملخص والصقه في خانة الملاحظات أو العرض الفني للدورة في منصة التدريب.</p>
+            <p className="text-[11px] font-bold text-[#6B5A4A]">{isEn ? 'Copy to LMS' : 'نقل إلى منصة التدريب LMS'}</p>
+            <p className="mt-0.5 text-[10px] leading-4 text-[#B5BDBE]">
+              {isEn
+                ? 'Copy the summary and paste it into the notes or technical presentation field in the training platform.'
+                : 'انسخ الملخص والصقه في خانة الملاحظات أو العرض الفني للدورة في منصة التدريب.'}
+            </p>
           </div>
         </div>
 
         <div className="border-t border-[#DADBD9] bg-[#F9F9F9] px-5 py-2.5 text-center text-[10px] text-[#B5BDBE]">
-          وكالة التدريب — جامعة نايف العربية للعلوم الأمنية
+          {isEn ? 'Training Agency — Naif Arab University for Security Sciences' : 'وكالة التدريب — جامعة نايف العربية للعلوم الأمنية'}
         </div>
       </div>
 
-      {/* Actions */}
       <div className="no-print mt-4 flex flex-wrap gap-2">
         <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#DADBD9] bg-white px-4 py-2.5 text-[12px] font-bold text-[#5A5A5A] hover:border-[#2A6364]/30 hover:text-[#2A6364]">
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
-          طباعة
+          {isEn ? 'Print' : 'طباعة'}
         </button>
         <button onClick={() => { navigator.clipboard.writeText(lmsText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); }); }}
           className={`inline-flex items-center gap-1.5 rounded-[10px] px-4 py-2.5 text-[12px] font-bold text-white transition ${copied ? 'bg-[#4F8F7A]' : 'bg-[#2A6364] hover:bg-[#1e5152]'}`}>
-          {copied ? '✓ تم النسخ' : 'نسخ للـ LMS'}
+          {copied ? (isEn ? '✓ Copied' : '✓ تم النسخ') : (isEn ? 'Copy for LMS' : 'نسخ للـ LMS')}
         </button>
         <button onClick={onReset} className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#DADBD9] bg-white px-4 py-2.5 text-[12px] font-bold text-[#5A5A5A] hover:border-[#2A6364]/30">
-          طلب جديد
+          {isEn ? 'New Request' : 'طلب جديد'}
         </button>
       </div>
     </div>
