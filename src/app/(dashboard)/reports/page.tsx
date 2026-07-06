@@ -158,14 +158,14 @@ export default function ReportsPage() {
       ) : system === 'services' ? (
         <ServicesReport data={data} filteredTopUsers={filteredTopUsers} filteredRecent={filteredRecent} filteredDrafts={(data?.externalDrafts || []).filter((i: any) => normalizeArabic(`${i.subject} ${i.recipient}`).includes(q))} />
       ) : (
-        <MaterialsReport data={data} filteredTopItems={filteredTopItems} filteredTopUsers={filteredTopUsers} filteredRecent={filteredRecent} />
+        <MaterialsReport data={data} filteredTopItems={filteredTopItems} filteredTopUsers={filteredTopUsers} filteredRecent={filteredRecent} statusLabels={STATUS_LABELS} />
       )}
     </div>
   );
 }
 
 /* ── Materials Report ── */
-function MaterialsReport({ data, filteredTopItems, filteredTopUsers, filteredRecent }: { data: any; filteredTopItems: any[]; filteredTopUsers: any[]; filteredRecent: any[] }) {
+function MaterialsReport({ data, filteredTopItems, filteredTopUsers, filteredRecent, statusLabels }: { data: any; filteredTopItems: any[]; filteredTopUsers: any[]; filteredRecent: any[]; statusLabels: Record<string, string> }) {
   const reqMax = Math.max(data.requestsByStatus?.pending || 0, data.requestsByStatus?.issued || 0, data.requestsByStatus?.returned || 0, data.requestsByStatus?.rejected || 0, 1);
   const itemMax = filteredTopItems.length > 0 ? Math.max(...filteredTopItems.map((i: any) => i.quantity)) : 1;
   const userMax = filteredTopUsers.length > 0 ? Math.max(...filteredTopUsers.map((i: any) => i.quantity)) : 1;
@@ -338,7 +338,7 @@ function MaterialsReport({ data, filteredTopItems, filteredTopUsers, filteredRec
                     <td className="px-4 py-2.5 text-center font-bold text-[#2A6364]">{item.itemCount}</td>
                     <td className="px-4 py-2.5">
                       <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={{ backgroundColor: `${STATUS_COLORS[item.status] || '#9aacaa'}18`, color: STATUS_COLORS[item.status] || '#9aacaa' }}>
-                        {STATUS_LABELS[item.status] || item.status}
+                        {statusLabels[item.status] || item.status}
                       </span>
                     </td>
                   </tr>
