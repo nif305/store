@@ -202,20 +202,19 @@ export function WorkspaceSidebar({
   return (
     <aside className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] lg:min-h-screen lg:w-[280px]" dir="rtl">
       {/* Brand header */}
-      <div className={`shrink-0 bg-gradient-to-br ${roleTheme.gradient} p-5`}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white/15">
-            <img src="/nauss-gold-logo.png" alt="NAUSS" className="h-10 w-10 object-contain" />
+      <div className={`shrink-0 bg-gradient-to-br ${roleTheme.gradient} px-5 pb-4 pt-6`}>
+        {/* Logo — centered, large */}
+        <div className="flex flex-col items-center">
+          <div className="flex h-20 w-full items-center justify-center overflow-hidden rounded-[16px] bg-white/10 px-4 py-2 backdrop-blur-sm">
+            <img src="/nauss-gold-logo.png" alt="NAUSS" className="h-16 w-auto object-contain" />
           </div>
-          <div>
-            <div className="text-[13px] font-extrabold text-white">{t('common.agency')}</div>
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: roleTheme.accent }} />
-              <span className="text-[10px] font-semibold" style={{ color: `${roleTheme.accent}cc` }}>{roleBadge}</span>
-            </div>
+          {/* Role badge */}
+          <div className="mt-3 flex items-center gap-1.5">
+            <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: roleTheme.accent }} />
+            <span className="text-[11px] font-semibold" style={{ color: `${roleTheme.accent}cc` }}>{roleBadge}</span>
           </div>
         </div>
-        <div className="mt-3 rounded-[10px] border border-white/10 bg-white/8 px-3 py-2">
+        <div className="mt-3 rounded-[10px] border border-white/10 bg-white/8 px-3 py-2 text-center">
           <div className="text-[10px] text-white/40">{getWorkspaceTitle(workspace, language)}</div>
           <div className="mt-0.5 text-[11px] font-semibold text-white/70">{systemSubtitle}</div>
         </div>
