@@ -137,7 +137,9 @@ export async function POST(request: NextRequest) {
     let department = session.department;
 
     const onBehalfOfUserId = typeof body?.onBehalfOfUserId === 'string' ? body.onBehalfOfUserId.trim() : '';
-    if (session.role === Role.MANAGER && onBehalfOfUserId) {
+    const isPrivilegedRole = session.role === Role.MANAGER || session.role === Role.WAREHOUSE;
+
+    if (isPrivilegedRole && onBehalfOfUserId) {
       const targetUser = await prisma.user.findUnique({
         where: { id: onBehalfOfUserId },
         select: { id: true, department: true, status: true },
@@ -152,7 +154,7 @@ export async function POST(request: NextRequest) {
       department = targetUser.department || session.department;
     }
 
-    const result = await RequestService.create({
+    const created = await RequestService.create({
       requesterId,
       department,
       purpose: body.purpose.trim(),
@@ -164,7 +166,17 @@ export async function POST(request: NextRequest) {
       })),
     });
 
-    return NextResponse.json(result, { status: 201 });
+    // مسؤول المخزن يُسجّل صرفاً مباشراً → اعتماد فوري
+    if (session.role === Role.WAREHOUSE && onBehalfOfUserId) {
+      try {
+        const issued = await RequestService.issue(created.id, session.id, body.notes?.trim() || '');
+        return NextResponse.json({ ...issued, autoIssued: true }, { status: 201 });
+      } catch {
+        return NextResponse.json({ ...created, autoIssued: false, autoIssueWarning: 'تم إنشاء الطلب لكن تعذر الصرف التلقائي' }, { status: 201 });
+      }
+    }
+
+    return NextResponse.json(created, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(
       { error: sanitizeError(error, 'تعذر إنشاء الطلب')},

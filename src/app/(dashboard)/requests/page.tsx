@@ -431,12 +431,12 @@ export default function RequestsPage() {
   useEffect(() => {
     if (isModalOpen) {
       fetchInventory();
-      if (isManager) fetchEmployees();
+      if (isManager || isWarehouse) fetchEmployees();
     }
-  }, [isModalOpen, fetchInventory, isManager, fetchEmployees]);
+  }, [isModalOpen, fetchInventory, isManager, isWarehouse, fetchEmployees]);
 
   const fetchEmployees = useCallback(async () => {
-    if (!isManager) return;
+    if (!isManager && !isWarehouse) return;
     setEmployeesLoading(true);
     try {
       const res = await fetch('/api/users?limit=200', { credentials: 'include', headers: sessionHeaders });
@@ -666,7 +666,7 @@ export default function RequestsPage() {
               expectedReturnDate: item.expectedReturnDate || null,
             }));
 
-    if (isManager && formMode === 'create' && !onBehalfOfUserId) {
+    if ((isManager || isWarehouse) && formMode === 'create' && !onBehalfOfUserId) {
       alert('يرجى اختيار الموظف أولاً');
       return;
     }
@@ -704,7 +704,7 @@ export default function RequestsPage() {
             purpose,
             notes,
             items: cleanedItems,
-            ...(isManager && onBehalfOfUserId ? { onBehalfOfUserId } : {}),
+            ...((isManager || isWarehouse) && onBehalfOfUserId ? { onBehalfOfUserId } : {}),
           }),
         });
       } else if (formMode === 'edit' && activeRequest) {
@@ -748,7 +748,7 @@ export default function RequestsPage() {
 
   const modalTitle =
     formMode === 'create'
-      ? 'طلب مواد جديد'
+      ? isWarehouse ? 'تسجيل صرف مباشر' : 'طلب مواد جديد'
       : formMode === 'edit'
       ? 'تعديل الطلب قبل الصرف'
       : 'طلب إرجاع فائض';
@@ -779,11 +779,11 @@ export default function RequestsPage() {
               {isEmployee ? tx('طلباتي', 'My Requests') : isWarehouse ? tx('الطلبات التشغيلية', 'Operational Requests') : tx('متابعة الطلبات', 'Request Tracking')}
             </h1>
           </div>
-          {(isEmployee || isManager) && (
+          {(isEmployee || isManager || isWarehouse) && (
             <button onClick={openCreateModal}
               className="inline-flex items-center gap-2 rounded-[14px] bg-white px-4 py-2.5 text-[13px] font-extrabold text-[#2A6364] shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition hover:bg-[#f0fbf9]">
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-              {isManager ? 'طلب باسم موظف' : 'طلب جديد'}
+              {isManager ? 'طلب باسم موظف' : isWarehouse ? 'تسجيل صرف مباشر' : 'طلب جديد'}
             </button>
           )}
         </div>
@@ -1099,7 +1099,7 @@ export default function RequestsPage() {
               {submitting
                 ? 'جاري الحفظ...'
                 : formMode === 'create'
-                ? 'حفظ الطلب'
+                ? isWarehouse ? 'تسجيل الصرف' : 'حفظ الطلب'
                 : formMode === 'edit'
                 ? 'حفظ التعديل'
                 : 'رفع طلب الإرجاع'}
@@ -1112,9 +1112,17 @@ export default function RequestsPage() {
             <>
               <section className="rounded-2xl border border-[#e7ebea] bg-[#fcfdfd] p-4 sm:p-5">
                 <div className="text-sm font-bold text-[#016564]">بيانات الطلب</div>
-                {isManager && formMode === 'create' && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">الموظف (الطلب باسمه)</label>
+                {(isManager || isWarehouse) && formMode === 'create' && (
+                  <div className="mt-4 space-y-2">
+                    {isWarehouse && (
+                      <div className="flex items-start gap-2 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2.5">
+                        <svg viewBox="0 0 24 24" fill="none" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <p className="text-[12px] text-amber-700 leading-relaxed">سيتم إنشاء الطلب واعتماده تلقائياً وخصم الكميات من المخزون فور الحفظ</p>
+                      </div>
+                    )}
+                    <label className="block text-sm font-semibold text-slate-700">
+                      {isWarehouse ? 'الموظف المستلم' : 'الموظف (الطلب باسمه)'}
+                    </label>
                     <select
                       value={onBehalfOfUserId}
                       onChange={(e) => setOnBehalfOfUserId(e.target.value)}
