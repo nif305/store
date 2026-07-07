@@ -2,10 +2,14 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useI18n } from '@/hooks/useI18n';
+import { useAuth } from '@/context/AuthContext';
+import { LanguageToggle } from '@/components/layout/LanguageToggle';
 import { type AppRole } from '@/lib/workspace';
 import { cn } from '@/lib/utils/cn';
+
+const ROLE_ORDER: AppRole[] = ['manager', 'warehouse', 'user'];
 
 function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -215,11 +219,24 @@ export function MobileBottomNav({
   canManageTrainerNeeds?: boolean;
 }) {
   const pathname = usePathname();
-  const { language } = useI18n();
+  const router = useRouter();
+  const { language, t } = useI18n();
+  const { user, originalUser, canUseRoleSwitch, switchViewRole, logout } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
   const ar = language !== 'en';
 
   const { primary, more } = getNavConfig(role, language, canManageTrainerNeeds);
+
+  const availableRoles = ROLE_ORDER.filter((r) =>
+    Array.isArray(originalUser?.roles) && originalUser.roles.includes(r)
+  );
+
+  const onRoleChange = async (r: AppRole) => {
+    await switchViewRole(r);
+    router.replace(pathname);
+    router.refresh();
+    setMoreOpen(false);
+  };
 
   const ACCENT = role === 'manager' ? '#C7B08C' : role === 'warehouse' ? '#4F8F7A' : '#2A6364';
   const BG = role === 'manager' ? 'from-[#0a1f1a] to-[#1a4535]' : role === 'warehouse' ? 'from-[#0d2b35] to-[#2A6364]' : 'from-[#1a3c3c] to-[#2A6364]';
@@ -255,33 +272,65 @@ export function MobileBottomNav({
           </div>
 
           {/* Items grid */}
-          <div className="grid grid-cols-3 gap-0 p-3">
-            {more.map((item) => {
-              const active = isActive(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMoreOpen(false)}
-                  className={cn(
-                    'flex flex-col items-center gap-2 rounded-[16px] px-2 py-4 text-center transition-all active:scale-95',
-                    active
-                      ? 'bg-[#eef5f4] text-[#2A6364]'
-                      : 'text-[#5a6a69] hover:bg-[#f5f8f8]'
-                  )}
-                >
-                  <span
+          {more.length > 0 && (
+            <div className="grid grid-cols-3 gap-0 p-3">
+              {more.map((item) => {
+                const active = isActive(pathname, item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMoreOpen(false)}
                     className={cn(
-                      'flex h-11 w-11 items-center justify-center rounded-[14px] transition-all',
-                      active ? 'bg-[#2A6364] text-white shadow-[0_4px_12px_rgba(42,99,100,0.3)]' : 'bg-[#f0f5f5] text-[#2A6364]'
+                      'flex flex-col items-center gap-2 rounded-[16px] px-2 py-4 text-center transition-all active:scale-95',
+                      active ? 'bg-[#eef5f4] text-[#2A6364]' : 'text-[#5a6a69]'
                     )}
                   >
-                    {item.icon}
-                  </span>
-                  <span className="text-[11px] font-semibold leading-tight">{item.label}</span>
-                </Link>
-              );
-            })}
+                    <span className={cn('flex h-11 w-11 items-center justify-center rounded-[14px]', active ? 'bg-[#2A6364] text-white' : 'bg-[#f0f5f5] text-[#2A6364]')}>
+                      {item.icon}
+                    </span>
+                    <span className="text-[11px] font-semibold leading-tight">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Settings strip */}
+          <div className="border-t border-[#f0f0f0] px-4 py-3 space-y-3">
+            {/* Language + Role switch */}
+            <div className="flex items-center justify-between gap-3">
+              <LanguageToggle />
+              {canUseRoleSwitch && availableRoles.length > 1 && (
+                <div className="flex items-center gap-1 rounded-[14px] border border-[#dbe5e3] bg-[#f7f9f9] p-0.5">
+                  {availableRoles.map((r) => {
+                    const active = user?.role === r;
+                    return (
+                      <button key={r} type="button" onClick={() => onRoleChange(r)}
+                        className={cn(
+                          'rounded-[11px] px-3 py-1.5 text-[12px] font-bold transition-all',
+                          active ? 'bg-[#2A6364] text-white' : 'text-[#3e5756]'
+                        )}
+                      >
+                        {t(`roles.${r}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Logout */}
+            <button
+              type="button"
+              onClick={() => { logout(); setMoreOpen(false); }}
+              className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#f0d8d8] bg-[#fdf5f5] py-3 text-[13px] font-bold text-[#8b3a3a] transition active:scale-95"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+              </svg>
+              {ar ? 'تسجيل الخروج' : 'Logout'}
+            </button>
           </div>
         </div>
       </div>

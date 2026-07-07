@@ -32,45 +32,17 @@ export function WorkspaceHeader({ workspace }: { workspace: WorkspaceKey }) {
 
       {/* ── Mobile header (compact) ── */}
       <div className="flex items-center justify-between px-4 py-3 lg:hidden">
-        {/* User avatar + name */}
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#2A6364] text-[13px] font-extrabold text-white">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#2A6364] text-[12px] font-extrabold text-white">
             {(user?.fullName || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
           </span>
           <div className="min-w-0">
-            <div className="truncate text-[14px] font-bold text-[#223738] max-w-[150px]">{user?.fullName || t('common.systemUser')}</div>
+            <div className="truncate text-[14px] font-bold text-[#223738]">{user?.fullName || t('common.systemUser')}</div>
             <div className="text-[11px] text-[#7a8d8b]">{t(`roles.${user?.role || 'user'}`)}</div>
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          {canUseRoleSwitch && availableRoles.length > 1 && (
-            <div className="flex items-center gap-1 rounded-[14px] border border-[#dbe5e3] bg-[#f7f9f9] p-0.5">
-              {availableRoles.map((role) => {
-                const active = user?.role === role;
-                return (
-                  <button key={role} type="button" onClick={() => onRoleChange(role)}
-                    className={active
-                      ? 'rounded-[11px] bg-[#2A6364] px-3 py-1.5 text-[11px] font-bold text-white'
-                      : 'rounded-[11px] px-3 py-1.5 text-[11px] font-bold text-[#3e5756]'}
-                  >
-                    {t(`roles.${role}`)}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <LanguageToggle />
+        <div className="flex items-center gap-2 shrink-0">
           {user?.id ? <NotificationBell userId={user.id} /> : null}
-          <button type="button" onClick={logout}
-            className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-[#dbe5e3] bg-[#fdf4f4] text-[#8b3a3a] transition active:scale-95"
-            title={t('common.logout')}
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-            </svg>
-          </button>
         </div>
       </div>
 
