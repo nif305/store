@@ -42,6 +42,7 @@ export function WorkspaceHeader({ workspace }: { workspace: WorkspaceKey }) {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <LanguageToggle compact />
           {user?.id ? <NotificationBell userId={user.id} /> : null}
         </div>
       </div>
