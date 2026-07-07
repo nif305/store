@@ -521,147 +521,233 @@ export default function UsersPage() {
           </button>
         </div>
 
+        {/* ── Desktop table ── */}
         <div className="hidden xl:block">
           {loading ? (
-            <div className="space-y-3 p-4">
-              {[1, 2, 3, 4].map((item) => (
-                <Skeleton key={item} className="h-20 w-full rounded-[20px]" />
+            <div className="space-y-2 p-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-[62px] w-full rounded-[14px]" />
               ))}
             </div>
           ) : filteredRows.length === 0 ? (
-            <div className="p-8 text-center text-sm text-[#61706f]">لا توجد نتائج مطابقة</div>
+            <div className="p-12 text-center text-sm text-[#91a09f]">
+              {language === 'en' ? 'No matching results' : 'لا توجد نتائج مطابقة'}
+            </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-[#edf1f0]">
-                <thead className="bg-[#fbfcfc]">
-                  <tr className="text-right text-sm text-[#61706f]">
-                    <th className="px-5 py-4 font-semibold">المستخدم</th>
-                    <th className="px-5 py-4 font-semibold">الصلاحيات</th>
-                    <th className="px-5 py-4 font-semibold">الحالة</th>
-                    <th className="px-5 py-4 font-semibold">التواصل</th>
-                    <th className="px-5 py-4 font-semibold">المشروع</th>
-                    <th className="px-5 py-4 font-semibold">الإنشاء</th>
-                    <th className="px-5 py-4 font-semibold">الإجراءات</th>
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-[#edf1f0] bg-[#f7f9f9] text-right text-[11px] font-bold uppercase tracking-wider text-[#91a09f]">
+                    <th className="px-5 py-3">{language === 'en' ? 'User' : 'المستخدم'}</th>
+                    <th className="px-4 py-3">{language === 'en' ? 'Permissions' : 'الصلاحيات'}</th>
+                    <th className="px-4 py-3">{language === 'en' ? 'Status' : 'الحالة'}</th>
+                    <th className="px-4 py-3">{language === 'en' ? 'Contact' : 'التواصل'}</th>
+                    <th className="px-4 py-3">{language === 'en' ? 'Project' : 'المشروع'}</th>
+                    <th className="px-4 py-3">{language === 'en' ? 'Created' : 'الإنشاء'}</th>
+                    <th className="px-4 py-3 text-center">{language === 'en' ? 'Actions' : 'الإجراءات'}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#edf1f0]">
-                  {filteredRows.map((row) => (
-                    <tr key={row.id} className="align-top transition hover:bg-[#fcfdfd]">
-                      <td className="px-5 py-4">
-                        <div className="font-bold text-[#152625]">{row.fullName}</div>
-                        <div className="mt-1 break-all text-sm text-[#61706f]">{row.email}</div>
-                        <div className="mt-1 text-xs text-[#91a09f]">{row.jobTitle || '—'}</div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          {roleShortBadges(row.roles, language).map((badge) => (
-                            <Badge key={`${row.id}-${badge}`} variant={badge === 'موظف' || badge === 'Employee' ? 'success' : 'info'}>
-                              {badge}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="mt-2 text-xs text-[#61706f]">
-                          {roleDescriptionFromRoles(row.roles, language)}
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <Badge variant={statusVariant(row.status)}>{statusLabel(row.status)}</Badge>
-                      </td>
-                      <td className="px-5 py-4 text-sm text-[#304342]">
-                        <div>الجوال: {row.mobile || '—'}</div>
-                        <div className="mt-1">التحويلة: {row.extension || '—'}</div>
-                      </td>
-                      <td className="px-5 py-4 text-sm text-[#304342]">
-                        {row.operationalProject || row.department || '—'}
-                      </td>
-                      <td className="px-5 py-4 text-sm text-[#304342]">{formatDate(row.createdAt)}</td>
-                      <td className="px-5 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          <Button variant="ghost" className="!px-4" onClick={() => setSelected(row)}>
-                            عرض
-                          </Button>
-                          <Button className="!px-4" onClick={() => openEdit(row)}>
-                            تعديل
-                          </Button>
-                          <Button
-                            variant={row.status === 'active' ? 'danger' : 'secondary'}
-                            className="!px-4"
-                            onClick={() => quickToggleStatus(row)}
-                          >
-                            {row.status === 'active' ? 'إيقاف' : 'تنشيط'}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-[#f0f3f3]">
+                  {filteredRows.map((row) => {
+                    const initials = row.fullName.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('');
+                    const primaryRole = getPrimaryRole(row.roles);
+                    const avatarColor = primaryRole === 'manager' ? '#2A6364' : primaryRole === 'warehouse' ? '#2E6F8E' : '#6B5A4A';
+                    return (
+                      <tr key={row.id} className="group align-middle transition-colors hover:bg-[#f7fafa]">
+                        {/* User */}
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold text-white"
+                              style={{ backgroundColor: avatarColor }}>
+                              {initials || '?'}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-[13px] font-bold text-[#152625] truncate">{row.fullName}</div>
+                              <div className="text-[11px] text-[#91a09f] truncate">{row.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        {/* Permissions */}
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {roleShortBadges(row.roles, language).map((badge) => (
+                              <span key={`${row.id}-${badge}`}
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                  badge === 'موظف' || badge === 'Employee'
+                                    ? 'bg-[#eef5f4] text-[#2A6364]'
+                                    : badge === 'مدير' || badge === 'Manager'
+                                      ? 'bg-[#fdf8f0] text-[#8a6a37]'
+                                      : 'bg-[#eef3f8] text-[#2E6F8E]'
+                                }`}>
+                                {badge}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        {/* Status */}
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                            row.status === 'active'
+                              ? 'bg-[#eef8f2] text-[#1e6b4c]'
+                              : 'bg-[#fff0f3] text-[#73384B]'
+                          }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${row.status === 'active' ? 'bg-[#4F8F7A]' : 'bg-[#73384B]'}`} />
+                            {statusLabel(row.status, language)}
+                          </span>
+                        </td>
+                        {/* Contact */}
+                        <td className="px-4 py-3 text-[12px] text-[#556867]">
+                          <div>{row.mobile || '—'}</div>
+                          {row.extension && <div className="text-[11px] text-[#91a09f]">{language === 'en' ? 'Ext:' : 'تحويلة:'} {row.extension}</div>}
+                        </td>
+                        {/* Project */}
+                        <td className="px-4 py-3 max-w-[140px]">
+                          <div className="truncate text-[12px] text-[#556867]">{row.operationalProject || row.department || '—'}</div>
+                        </td>
+                        {/* Created */}
+                        <td className="px-4 py-3 text-[12px] text-[#91a09f]">{formatDate(row.createdAt)}</td>
+                        {/* Actions — icon buttons */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-1">
+                            {/* View */}
+                            <button
+                              onClick={() => setSelected(row)}
+                              title={language === 'en' ? 'View' : 'عرض'}
+                              className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#e2e8e8] bg-white text-[#556867] transition hover:border-[#2A6364]/30 hover:bg-[#eef5f4] hover:text-[#2A6364]"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                              </svg>
+                            </button>
+                            {/* Edit */}
+                            <button
+                              onClick={() => openEdit(row)}
+                              title={language === 'en' ? 'Edit' : 'تعديل'}
+                              className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#e2e8e8] bg-white text-[#556867] transition hover:border-[#2A6364]/30 hover:bg-[#eef5f4] hover:text-[#2A6364]"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </button>
+                            {/* Toggle status */}
+                            <button
+                              onClick={() => quickToggleStatus(row)}
+                              title={row.status === 'active' ? (language === 'en' ? 'Suspend' : 'إيقاف') : (language === 'en' ? 'Activate' : 'تنشيط')}
+                              className={`flex h-8 w-8 items-center justify-center rounded-[8px] border transition ${
+                                row.status === 'active'
+                                  ? 'border-[#e2e8e8] bg-white text-[#91a09f] hover:border-[#73384B]/30 hover:bg-[#fff0f3] hover:text-[#73384B]'
+                                  : 'border-[#cce6d7] bg-[#eef8f2] text-[#1e6b4c] hover:bg-[#d4f0e2]'
+                              }`}
+                            >
+                              {row.status === 'active' ? (
+                                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polygon points="5 3 19 12 5 21 5 3"/>
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </div>
 
-        <div className="space-y-3 p-3 xl:hidden sm:p-4">
+        {/* ── Mobile cards ── */}
+        <div className="space-y-2 p-3 xl:hidden sm:p-4">
           {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((item) => (
-                <Skeleton key={item} className="h-44 w-full rounded-[24px]" />
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-36 w-full rounded-[16px]" />
               ))}
             </div>
           ) : filteredRows.length === 0 ? (
-            <Card className="rounded-[24px] border border-[#d6d7d4] p-8 text-center text-sm text-[#61706f] shadow-none">
-              لا توجد نتائج مطابقة
-            </Card>
+            <div className="rounded-[16px] border border-[#edf1f0] bg-white p-8 text-center text-sm text-[#91a09f]">
+              {language === 'en' ? 'No matching results' : 'لا توجد نتائج مطابقة'}
+            </div>
           ) : (
-            filteredRows.map((row) => (
-              <Card
-                key={row.id}
-                className="rounded-[24px] border border-[#d6d7d4] p-4 shadow-none sm:rounded-[28px]"
-              >
-                <div className="space-y-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="break-words text-[17px] font-bold text-[#152625]">{row.fullName}</div>
-                      <div className="mt-1 break-all text-sm text-[#61706f]">{row.email}</div>
+            filteredRows.map((row) => {
+              const initials = row.fullName.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('');
+              const primaryRole = getPrimaryRole(row.roles);
+              const avatarColor = primaryRole === 'manager' ? '#2A6364' : primaryRole === 'warehouse' ? '#2E6F8E' : '#6B5A4A';
+              return (
+                <div key={row.id} className="overflow-hidden rounded-[16px] border border-[#edf1f0] bg-white">
+                  {/* Top row */}
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold text-white"
+                      style={{ backgroundColor: avatarColor }}>
+                      {initials || '?'}
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant={statusVariant(row.status)}>{statusLabel(row.status, language)}</Badge>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[14px] font-bold text-[#152625] truncate">{row.fullName}</div>
+                      <div className="text-[11px] text-[#91a09f] truncate">{row.email}</div>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                      row.status === 'active' ? 'bg-[#eef8f2] text-[#1e6b4c]' : 'bg-[#fff0f3] text-[#73384B]'
+                    }`}>
+                      {statusLabel(row.status, language)}
+                    </span>
+                  </div>
+
+                  {/* Meta row */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#f0f3f3] bg-[#f9fbfb] px-4 py-2 text-[11px] text-[#91a09f]">
+                    <span>{row.mobile || '—'}</span>
+                    {row.extension && <span>{language === 'en' ? 'Ext:' : 'تحويلة:'} {row.extension}</span>}
+                    <span className="truncate max-w-[140px]">{row.operationalProject || row.department || '—'}</span>
+                    <span className="mr-auto flex flex-wrap gap-1">
                       {roleShortBadges(row.roles, language).map((badge) => (
-                        <Badge key={`${row.id}-mobile-${badge}`} variant={badge === 'موظف' || badge === 'Employee' ? 'success' : 'info'}>
+                        <span key={`${row.id}-m-${badge}`}
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            badge === 'موظف' || badge === 'Employee' ? 'bg-[#eef5f4] text-[#2A6364]' :
+                            badge === 'مدير' || badge === 'Manager' ? 'bg-[#fdf8f0] text-[#8a6a37]' :
+                            'bg-[#eef3f8] text-[#2E6F8E]'
+                          }`}>
                           {badge}
-                        </Badge>
+                        </span>
                       ))}
-                    </div>
+                    </span>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <InfoPill label="الجوال" value={row.mobile || '—'} />
-                    <InfoPill label="التحويلة" value={row.extension || '—'} />
-                    <InfoPill label="المشروع" value={row.operationalProject || row.department || '—'} />
-                    <InfoPill label="تاريخ الإنشاء" value={formatDate(row.createdAt)} />
-                  </div>
-
-                  <div className="rounded-2xl border border-[#edf1f0] bg-[#fbfcfc] px-3 py-3 text-sm text-[#556867]">
-                    {roleDescriptionFromRoles(row.roles, language)}
-                  </div>
-
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    <Button variant="ghost" className="w-full" onClick={() => setSelected(row)}>
-                      عرض
-                    </Button>
-                    <Button className="w-full" onClick={() => openEdit(row)}>
-                      تعديل
-                    </Button>
-                    <Button
-                      variant={row.status === 'active' ? 'danger' : 'secondary'}
-                      className="w-full"
-                      onClick={() => quickToggleStatus(row)}
-                    >
-                      {row.status === 'active' ? 'إيقاف الحساب' : 'تنشيط الحساب'}
-                    </Button>
+                  {/* Actions */}
+                  <div className="flex border-t border-[#f0f3f3]">
+                    <button onClick={() => setSelected(row)}
+                      className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold text-[#556867] transition hover:bg-[#f7fafa] hover:text-[#2A6364]">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      {language === 'en' ? 'View' : 'عرض'}
+                    </button>
+                    <div className="w-px bg-[#f0f3f3]" />
+                    <button onClick={() => openEdit(row)}
+                      className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold text-[#556867] transition hover:bg-[#f7fafa] hover:text-[#2A6364]">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      {language === 'en' ? 'Edit' : 'تعديل'}
+                    </button>
+                    <div className="w-px bg-[#f0f3f3]" />
+                    <button onClick={() => quickToggleStatus(row)}
+                      className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold transition ${
+                        row.status === 'active'
+                          ? 'text-[#91a09f] hover:bg-[#fff7f8] hover:text-[#73384B]'
+                          : 'text-[#1e6b4c] hover:bg-[#eef8f2]'
+                      }`}>
+                      {row.status === 'active' ? (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      )}
+                      {row.status === 'active'
+                        ? (language === 'en' ? 'Suspend' : 'إيقاف')
+                        : (language === 'en' ? 'Activate' : 'تنشيط')}
+                    </button>
                   </div>
                 </div>
-              </Card>
-            ))
+              );
+            })
           )}
         </div>
 
