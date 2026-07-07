@@ -28,74 +28,101 @@ export function WorkspaceHeader({ workspace }: { workspace: WorkspaceKey }) {
   };
 
   return (
-    <header className="rounded-[28px] border border-[#dde6e4] bg-white/95 px-5 py-4 shadow-[0_12px_36px_-28px_rgba(15,23,42,0.24)]">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.push('/materials/dashboard')}
-            title={t('workspace.materialsTitle')}
-            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#dbe5e3] bg-[#f7f9f9] text-[#27494a] transition hover:border-[#2A6364]/35 hover:bg-white"
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z" />
-              <path d="M9 21V12h6v9" />
-            </svg>
-          </button>
+    <header className="rounded-[28px] border border-[#dde6e4] bg-white/95 shadow-[0_12px_36px_-28px_rgba(15,23,42,0.24)]">
 
-          <div className="flex items-center gap-2 rounded-2xl border border-[#dbe5e3] bg-[#fbfcfc] px-3 py-2">
-            {user?.id ? <NotificationBell userId={user.id} /> : null}
-
-            <div className="flex items-center gap-3 rounded-xl bg-white px-3 py-2">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4f8f8] text-[#2A6364]">
-                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-                  <circle cx="12" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.7" />
-                  <path d="M5.5 19c1.65-3.1 4.35-4.65 6.5-4.65S16.85 15.9 18.5 19" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-                </svg>
-              </span>
-              <div className="min-w-0">
-                <div className="truncate text-[17px] font-bold text-[#223738]">{user?.fullName || t('common.systemUser')}</div>
-                <div className="truncate text-[12px] text-[#7a8d8b]">{user?.email || ''}</div>
-              </div>
-            </div>
+      {/* ── Mobile header (compact) ── */}
+      <div className="flex items-center justify-between px-4 py-3 lg:hidden">
+        {/* User avatar + name */}
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#2A6364] text-[13px] font-extrabold text-white">
+            {(user?.fullName || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
+          </span>
+          <div className="min-w-0">
+            <div className="truncate text-[14px] font-bold text-[#223738] max-w-[150px]">{user?.fullName || t('common.systemUser')}</div>
+            <div className="text-[11px] text-[#7a8d8b]">{t(`roles.${user?.role || 'user'}`)}</div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <LanguageToggle />
-
-          {canUseRoleSwitch && availableRoles.length > 1 ? (
-            <div
-              className="inline-flex items-center gap-1 rounded-[20px] border border-[#dbe5e3] bg-[#f7f9f9] p-1"
-              role="group"
-              aria-label={language === 'en' ? 'Role switcher' : 'تبديل الدور'}
-            >
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {canUseRoleSwitch && availableRoles.length > 1 && (
+            <div className="flex items-center gap-1 rounded-[14px] border border-[#dbe5e3] bg-[#f7f9f9] p-0.5">
               {availableRoles.map((role) => {
                 const active = user?.role === role;
                 return (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => onRoleChange(role)}
-                    aria-pressed={active}
+                  <button key={role} type="button" onClick={() => onRoleChange(role)}
                     className={active
-                      ? 'min-w-[116px] rounded-[16px] bg-[#2A6364] px-4 py-2.5 text-[15px] font-semibold text-white shadow-[0_14px_28px_-22px_rgba(42,99,100,0.8)]'
-                      : 'min-w-[116px] rounded-[16px] px-4 py-2.5 text-[15px] font-semibold text-[#3e5756] transition hover:bg-white'}
+                      ? 'rounded-[11px] bg-[#2A6364] px-3 py-1.5 text-[11px] font-bold text-white'
+                      : 'rounded-[11px] px-3 py-1.5 text-[11px] font-bold text-[#3e5756]'}
                   >
                     {t(`roles.${role}`)}
                   </button>
                 );
               })}
             </div>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={logout}
-            className="inline-flex h-12 items-center rounded-2xl border border-[#dbe5e3] bg-white px-5 text-[14px] font-semibold text-[#2f4a4a] transition hover:border-[#2A6364]/35 hover:bg-[#f8fbfb]"
+          )}
+          <LanguageToggle />
+          {user?.id ? <NotificationBell userId={user.id} /> : null}
+          <button type="button" onClick={logout}
+            className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-[#dbe5e3] bg-[#fdf4f4] text-[#8b3a3a] transition active:scale-95"
+            title={t('common.logout')}
           >
-            {t('common.logout')}
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
           </button>
+        </div>
+      </div>
+
+      {/* ── Desktop header (full) ── */}
+      <div className="hidden px-5 py-4 lg:block">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={() => router.push('/materials/dashboard')} title={t('workspace.materialsTitle')}
+              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#dbe5e3] bg-[#f7f9f9] text-[#27494a] transition hover:border-[#2A6364]/35 hover:bg-white">
+              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z" />
+                <path d="M9 21V12h6v9" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2 rounded-2xl border border-[#dbe5e3] bg-[#fbfcfc] px-3 py-2">
+              {user?.id ? <NotificationBell userId={user.id} /> : null}
+              <div className="flex items-center gap-3 rounded-xl bg-white px-3 py-2">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#f4f8f8] text-[#2A6364]">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                    <circle cx="12" cy="8" r="3.25" stroke="currentColor" strokeWidth="1.7" />
+                    <path d="M5.5 19c1.65-3.1 4.35-4.65 6.5-4.65S16.85 15.9 18.5 19" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <div className="truncate text-[17px] font-bold text-[#223738]">{user?.fullName || t('common.systemUser')}</div>
+                  <div className="truncate text-[12px] text-[#7a8d8b]">{user?.email || ''}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <LanguageToggle />
+            {canUseRoleSwitch && availableRoles.length > 1 ? (
+              <div className="inline-flex items-center gap-1 rounded-[20px] border border-[#dbe5e3] bg-[#f7f9f9] p-1" role="group">
+                {availableRoles.map((role) => {
+                  const active = user?.role === role;
+                  return (
+                    <button key={role} type="button" onClick={() => onRoleChange(role)} aria-pressed={active}
+                      className={active
+                        ? 'min-w-[116px] rounded-[16px] bg-[#2A6364] px-4 py-2.5 text-[15px] font-semibold text-white shadow-[0_14px_28px_-22px_rgba(42,99,100,0.8)]'
+                        : 'min-w-[116px] rounded-[16px] px-4 py-2.5 text-[15px] font-semibold text-[#3e5756] transition hover:bg-white'}>
+                      {t(`roles.${role}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+            <button type="button" onClick={logout}
+              className="inline-flex h-12 items-center rounded-2xl border border-[#dbe5e3] bg-white px-5 text-[14px] font-semibold text-[#2f4a4a] transition hover:border-[#2A6364]/35 hover:bg-[#f8fbfb]">
+              {t('common.logout')}
+            </button>
+          </div>
         </div>
       </div>
     </header>
