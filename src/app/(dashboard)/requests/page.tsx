@@ -428,13 +428,6 @@ export default function RequestsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, isEmployee]);
 
-  useEffect(() => {
-    if (isModalOpen) {
-      fetchInventory();
-      if (isManager || isWarehouse) fetchEmployees();
-    }
-  }, [isModalOpen, fetchInventory, isManager, isWarehouse, fetchEmployees]);
-
   const fetchEmployees = useCallback(async () => {
     if (!isManager && !isWarehouse) return;
     setEmployeesLoading(true);
@@ -448,7 +441,14 @@ export default function RequestsPage() {
     } finally {
       setEmployeesLoading(false);
     }
-  }, [isManager, sessionHeaders]);
+  }, [isManager, isWarehouse, sessionHeaders]);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      fetchInventory();
+      if (isManager || isWarehouse) fetchEmployees();
+    }
+  }, [isModalOpen, fetchInventory, isManager, isWarehouse, fetchEmployees]);
 
   const resetForm = useCallback(() => {
     setPurpose('');
