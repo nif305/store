@@ -322,6 +322,9 @@ export default function RequestsPage() {
   const [selectedExpectedReturn, setSelectedExpectedReturn] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [warehouseViewMode, setWarehouseViewMode] = useState<WarehouseViewMode>('new');
+  const [onBehalfOfUserId, setOnBehalfOfUserId] = useState('');
+  const [employeesList, setEmployeesList] = useState<{ id: string; fullName: string; department?: string | null }[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
 
   const sessionHeaders = useMemo(
     () => ({
@@ -428,8 +431,24 @@ export default function RequestsPage() {
   useEffect(() => {
     if (isModalOpen) {
       fetchInventory();
+      if (isManager) fetchEmployees();
     }
-  }, [isModalOpen, fetchInventory]);
+  }, [isModalOpen, fetchInventory, isManager, fetchEmployees]);
+
+  const fetchEmployees = useCallback(async () => {
+    if (!isManager) return;
+    setEmployeesLoading(true);
+    try {
+      const res = await fetch('/api/users?limit=200', { credentials: 'include', headers: sessionHeaders });
+      const data = await res.json();
+      const users = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+      setEmployeesList(users.filter((u: any) => u.role === 'user' || u.roles?.includes('USER')));
+    } catch {
+      setEmployeesList([]);
+    } finally {
+      setEmployeesLoading(false);
+    }
+  }, [isManager, sessionHeaders]);
 
   const resetForm = useCallback(() => {
     setPurpose('');
@@ -441,6 +460,7 @@ export default function RequestsPage() {
     setItemSearch('');
     setActiveRequest(null);
     setFormMode('create');
+    setOnBehalfOfUserId('');
   }, []);
 
   const handleCloseModal = useCallback(() => {
@@ -646,6 +666,11 @@ export default function RequestsPage() {
               expectedReturnDate: item.expectedReturnDate || null,
             }));
 
+    if (isManager && formMode === 'create' && !onBehalfOfUserId) {
+      alert('يرجى اختيار الموظف أولاً');
+      return;
+    }
+
     if (formMode !== 'adjust' && !purpose.trim()) {
       alert('الغرض من الطلب مطلوب');
       return;
@@ -679,6 +704,7 @@ export default function RequestsPage() {
             purpose,
             notes,
             items: cleanedItems,
+            ...(isManager && onBehalfOfUserId ? { onBehalfOfUserId } : {}),
           }),
         });
       } else if (formMode === 'edit' && activeRequest) {
@@ -753,11 +779,11 @@ export default function RequestsPage() {
               {isEmployee ? tx('طلباتي', 'My Requests') : isWarehouse ? tx('الطلبات التشغيلية', 'Operational Requests') : tx('متابعة الطلبات', 'Request Tracking')}
             </h1>
           </div>
-          {isEmployee && (
+          {(isEmployee || isManager) && (
             <button onClick={openCreateModal}
               className="inline-flex items-center gap-2 rounded-[14px] bg-white px-4 py-2.5 text-[13px] font-extrabold text-[#2A6364] shadow-[0_4px_12px_rgba(0,0,0,0.15)] transition hover:bg-[#f0fbf9]">
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-              طلب جديد
+              {isManager ? 'طلب باسم موظف' : 'طلب جديد'}
             </button>
           )}
         </div>
@@ -1086,6 +1112,28 @@ export default function RequestsPage() {
             <>
               <section className="rounded-2xl border border-[#e7ebea] bg-[#fcfdfd] p-4 sm:p-5">
                 <div className="text-sm font-bold text-[#016564]">بيانات الطلب</div>
+                {isManager && formMode === 'create' && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">الموظف (الطلب باسمه)</label>
+                    <select
+                      value={onBehalfOfUserId}
+                      onChange={(e) => setOnBehalfOfUserId(e.target.value)}
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-[#016564] focus:ring-4 focus:ring-[#016564]/10"
+                      required
+                    >
+                      <option value="">— اختر الموظف —</option>
+                      {employeesLoading ? (
+                        <option disabled>جاري التحميل...</option>
+                      ) : (
+                        employeesList.map((emp) => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.fullName}{emp.department ? ` — ${emp.department}` : ''}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                )}
                 <div className="mt-4">
                   <Input
                     label="الغرض من الطلب"

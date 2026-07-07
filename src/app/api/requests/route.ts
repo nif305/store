@@ -133,9 +133,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'يجب اختيار صنف واحد على الأقل' }, { status: 400 });
     }
 
+    let requesterId = session.id;
+    let department = session.department;
+
+    const onBehalfOfUserId = typeof body?.onBehalfOfUserId === 'string' ? body.onBehalfOfUserId.trim() : '';
+    if (session.role === Role.MANAGER && onBehalfOfUserId) {
+      const targetUser = await prisma.user.findUnique({
+        where: { id: onBehalfOfUserId },
+        select: { id: true, department: true, status: true },
+      });
+      if (!targetUser) {
+        return NextResponse.json({ error: 'الموظف المحدد غير موجود' }, { status: 404 });
+      }
+      if (targetUser.status !== Status.ACTIVE) {
+        return NextResponse.json({ error: 'حساب الموظف غير نشط' }, { status: 400 });
+      }
+      requesterId = targetUser.id;
+      department = targetUser.department || session.department;
+    }
+
     const result = await RequestService.create({
-      requesterId: session.id,
-      department: session.department,
+      requesterId,
+      department,
       purpose: body.purpose.trim(),
       notes: body.notes?.trim() || '',
       items: items.map((item: any) => ({
